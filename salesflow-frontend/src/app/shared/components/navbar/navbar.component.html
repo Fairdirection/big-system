@@ -1,0 +1,64 @@
+<nav class="w-full h-16 flex items-center px-4 md:px-8 gap-4 bg-sf-surface/95 backdrop-blur-md border-b border-sf-border/50 transition-all duration-300 shadow-lg">
+  <!-- Mobile Menu Toggle -->
+  <button (click)="toggleMobileMenu()" 
+          class="lg:hidden p-2 rounded-xl bg-sf-bg border border-sf-border/50 text-sf-muted hover:text-sf-primary transition-all">
+    <ng-icon [name]="mobileMenuOpen() ? 'heroXMark' : 'heroBars3'" class="text-2xl"></ng-icon>
+  </button>
+
+  <!-- Logo -->
+  <div class="hidden lg:flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sf-primary to-sf-secondary flex items-center justify-center shadow-lg shadow-sf-primary/20">
+      <span class="text-white font-display font-black text-sm">SF</span>
+    </div>
+    <span class="font-display font-black text-sf-text text-xl tracking-tighter">SalesFlow</span>
+  </div>
+
+  <!-- Quarter Selector -->
+  <div class="hidden sm:flex items-center gap-3 px-4 py-2 rounded-2xl bg-sf-bg border border-sf-border/50 shadow-inner relative group">
+    <span class="text-[10px] font-black text-sf-muted uppercase tracking-widest hidden lg:inline">الفترة</span>
+    <select class="bg-transparent text-sf-primary text-xs font-bold outline-none cursor-pointer"
+            [ngModel]="currentQuarter()"
+            (ngModelChange)="theme.setQuarter($event)">
+      @for (q of availableQuarters(); track q) {
+        <option [value]="q" class="bg-sf-surface text-sf-text" [selected]="q === currentQuarter()">
+          {{ formatQ(q) }}
+        </option>
+      }
+    </select>
+
+    <!-- Loading Indicator -->
+    <div *ngIf="loading()" class="absolute -left-1 -top-1">
+      <span class="relative flex h-3 w-3">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sf-primary opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3 w-3 bg-sf-primary"></span>
+      </span>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <!-- Actions -->
+  <div class="flex items-center gap-2 md:gap-4">
+    <button class="p-2.5 rounded-xl text-sf-muted hover:text-sf-primary hover:bg-sf-primary/10 transition-all duration-300">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </button>
+
+    <button (click)="toggleTheme()" class="p-2.5 rounded-xl text-sf-muted hover:text-sf-primary hover:bg-sf-primary/10 transition-all duration-300">
+      <ng-icon [name]="isDark() ? 'heroSun' : 'heroMoon'" class="text-xl"></ng-icon>
+    </button>
+
+    <div class="w-px h-6 bg-sf-border/50 mx-1"></div>
+
+    <div class="flex items-center gap-3 pl-1 pr-3 py-1 rounded-2xl bg-sf-elevated/30 border border-sf-border/30">
+      <div class="w-8 h-8 rounded-lg bg-sf-surface border border-sf-border flex items-center justify-center text-sf-primary text-xs font-black shadow-sm">
+        {{ currentUser()?.name?.charAt(0) || 'U' }}
+      </div>
+      <div class="hidden sm:block text-right">
+        <p class="text-[10px] font-black text-sf-text leading-tight truncate max-w-[100px]">{{ currentUser()?.name }}</p>
+        <p class="text-[8px] font-bold text-sf-muted leading-tight">مسؤول النظام</p>
+      </div>
+    </div>
+  </div>
+</nav>

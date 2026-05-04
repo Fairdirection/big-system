@@ -1,0 +1,117 @@
+<!-- Backdrop Overlay (Mobile Only) -->
+<div *ngIf="mobileMenuOpen()" 
+     (click)="closeMobileMenu()"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-fade-in">
+</div>
+
+<aside [class.w-72]="expanded() || mobileMenuOpen()" 
+       [class.w-20]="!expanded() && !mobileMenuOpen()"
+       [class.translate-x-full]="!mobileMenuOpen()"
+       [class.translate-x-0]="mobileMenuOpen()"
+       class="fixed right-0 top-0 bottom-0 z-50 flex flex-col
+              bg-sf-surface border-l border-sf-border
+              transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) overflow-hidden shadow-2xl
+              lg:translate-x-0">
+
+  <!-- Brand / Logo Area -->
+  <div class="h-20 flex items-center px-6 border-b border-sf-border/30">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sf-primary to-sf-secondary flex items-center justify-center shadow-lg shadow-sf-primary/20 flex-shrink-0">
+      <span class="text-white font-display font-black text-xl">S</span>
+    </div>
+    @if (expanded() || mobileMenuOpen()) {
+      <div class="mr-4 animate-fade-in">
+        <h2 class="text-lg font-display font-black text-sf-text tracking-tight">SalesFlow</h2>
+        <p class="text-[10px] font-black text-sf-muted uppercase tracking-widest leading-none">v1.2.4 Premium</p>
+      </div>
+    }
+  </div>
+
+  <!-- Nav Items -->
+  <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+    @for (item of navItems; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active-nav-item"
+         (click)="closeMobileMenu()"
+         [title]="item.label"
+         class="nav-item group flex items-center gap-4 px-4 py-3 rounded-2xl
+                text-sf-muted hover:text-sf-text hover:bg-sf-elevated
+                transition-all duration-300 cursor-pointer relative">
+        <div class="w-6 h-6 flex-shrink-0 transition-all duration-300
+                    group-hover:scale-110 group-hover:text-sf-primary">
+          <ng-icon [name]="item.icon" class="w-full h-full" />
+        </div>
+        @if (expanded() || mobileMenuOpen()) {
+          <span class="text-sm font-bold font-body whitespace-nowrap animate-fade-in">
+            {{ item.label }}
+          </span>
+          <div class="absolute left-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-1 h-1 rounded-full bg-sf-primary"></div>
+          </div>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- User Profile & Actions -->
+  <div class="p-4 space-y-4 bg-sf-bg/30 border-t border-sf-border/30">
+    <!-- User Card -->
+    <div class="flex items-center gap-4 p-2 rounded-2xl bg-sf-elevated/50 border border-sf-border/50">
+      <div class="w-10 h-10 rounded-xl bg-sf-surface border border-sf-border flex items-center justify-center text-sf-primary font-bold shadow-inner">
+        {{ currentUser()?.name?.charAt(0) || 'U' }}
+      </div>
+      @if (expanded() || mobileMenuOpen()) {
+        <div class="flex-1 min-w-0 animate-fade-in">
+          <p class="text-xs font-bold text-sf-text truncate">{{ currentUser()?.name }}</p>
+          <p class="text-[10px] font-medium text-sf-muted truncate">{{ currentUser()?.email }}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col gap-2">
+      <button (click)="logout()"
+              class="group flex items-center gap-4 px-4 py-3 rounded-2xl
+                     text-sf-danger/70 hover:text-sf-danger hover:bg-sf-danger/10
+                     transition-all duration-300 w-full text-right">
+        <div class="w-6 h-6 flex-shrink-0 transition-transform group-hover:translate-x-1">
+          <ng-icon name="heroArrowRightOnRectangle" class="w-full h-full" />
+        </div>
+        @if (expanded() || mobileMenuOpen()) {
+          <span class="text-sm font-bold font-body animate-fade-in">تسجيل الخروج</span>
+        }
+      </button>
+
+      <!-- Toggle Button (Desktop Only) -->
+      <button (click)="toggle()"
+              class="hidden lg:flex items-center gap-4 px-4 py-2 rounded-2xl
+                     text-sf-muted hover:text-sf-text hover:bg-sf-elevated
+                     transition-all duration-300 w-full">
+        <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+          <svg [class.rotate-180]="!expanded()"
+               class="w-4 h-4 transition-transform duration-500"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M15 19l-7-7 7-7" />
+          </svg>
+        </div>
+        @if (expanded()) {
+          <span class="text-xs font-black uppercase tracking-tighter animate-fade-in">طي القائمة</span>
+        }
+      </button>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .active-nav-item {
+    @apply text-sf-primary bg-sf-primary/10 border border-sf-primary/20 shadow-sm shadow-sf-primary/5;
+  }
+  .active-nav-item div {
+    @apply text-sf-primary scale-110;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-sf-border rounded-full;
+  }
+</style>

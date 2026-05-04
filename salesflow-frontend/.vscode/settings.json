@@ -1,0 +1,16 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.preferences.importModuleSpecifier": "project-relative",
+  "tailwindCSS.experimental.classRegex": [
+    ["[cC]lass[nN]ame\\s*=\\s*['\"]([^'\"]*)['\"]", 1],
+    ["[cC]lass[nN]ame\\s*=\\s*\\{([^}]*)\\}", 1]
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "angular.enable-strict-mode-prompt": false
+}
