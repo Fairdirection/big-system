@@ -29,7 +29,7 @@ import { RouterLink } from '@angular/router';
       </header>
 
       <!-- Search Bar -->
-      <div class="bg-sf-surface/50 p-4 rounded-2xl border border-sf-border shadow-xl">
+      <div class="bg-sf-surface p-4 rounded-2xl border border-sf-border shadow-sm">
         <div class="relative w-full">
           <ng-icon name="heroMagnifyingGlass" class="absolute right-4 top-1/2 -translate-y-1/2 text-sf-muted"></ng-icon>
           <input type="text" (input)="onSearch($event)" placeholder="بحث بالاسم، الكود، أو معلومات الاتصال..." 
@@ -38,7 +38,7 @@ import { RouterLink } from '@angular/router';
       </div>
 
       <!-- Client Table -->
-      <div class="glass-card rounded-2xl border border-sf-border shadow-2xl overflow-hidden">
+      <div class="bg-sf-surface border border-sf-border shadow-sm rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-right border-collapse">
             <thead>
@@ -123,21 +123,7 @@ import { RouterLink } from '@angular/router';
       </ng-template>
     </div>
   `,
-  styles: [`
-    .glass-card {
-      background: rgba(17, 24, 39, 0.4);
-      backdrop-filter: blur(12px);
-    }
-    
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .animate-fade-in {
-      animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-  `]
+  styles: [``]
 })
 export class ClientListComponent implements OnInit {
   private clientService = inject(ClientService);

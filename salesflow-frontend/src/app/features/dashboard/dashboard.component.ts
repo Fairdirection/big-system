@@ -120,7 +120,7 @@ import {
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
         <!-- Team Performance -->
-        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-sf-border shadow-2xl">
+        <div class="lg:col-span-2 bg-sf-surface p-6 rounded-2xl border border-sf-border shadow-sm">
           <div class="flex items-center justify-between mb-8">
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-display font-bold text-sf-text">أداء الفرق</h3>
@@ -161,7 +161,7 @@ import {
         </div>
 
         <!-- Claim Status -->
-        <div class="glass-card p-6 rounded-2xl border border-sf-border shadow-2xl">
+        <div class="bg-sf-surface p-6 rounded-2xl border border-sf-border shadow-sm">
           <div class="flex items-center gap-2 mb-8">
             <h3 class="text-lg font-display font-bold text-sf-text">حالة التحصيل</h3>
             <div class="group relative">
@@ -226,22 +226,7 @@ import {
       </div>
     </ng-template>
   `,
-  styles: [`
-    :host { display: block; }
-    
-    .shadow-glow-sm {
-      box-shadow: 0 0 10px rgba(147, 51, 234, 0.3);
-    }
-    
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .animate-fade-in {
-      animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-  `]
+  styles: [``]
 })
 export class DashboardComponent {
   private dashboardService = inject(DashboardService);

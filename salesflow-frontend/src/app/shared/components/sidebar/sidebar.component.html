@@ -9,7 +9,7 @@
        [class.translate-x-full]="!mobileMenuOpen()"
        [class.translate-x-0]="mobileMenuOpen()"
        class="fixed right-0 top-0 bottom-0 z-50 flex flex-col
-              bg-sf-secondary border-l border-sf-border/10
+              bg-sf-surface border-l border-sf-border
               transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) overflow-hidden shadow-2xl
               lg:translate-x-0">
 
@@ -20,8 +20,8 @@
     </div>
     @if (expanded() || mobileMenuOpen()) {
       <div class="mr-4 animate-fade-in">
-        <h2 class="text-lg font-display font-black text-white tracking-tight">SalesFlow</h2>
-        <p class="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none">v1.2.4 Premium</p>
+        <h2 class="text-lg font-display font-black text-sf-text tracking-tight">SalesFlow</h2>
+        <p class="text-[10px] font-black text-sf-muted uppercase tracking-widest leading-none">v1.2.4 Premium</p>
       </div>
     }
   </div>
@@ -32,8 +32,8 @@
       <a [routerLink]="item.path" routerLinkActive="active-nav-item"
          (click)="closeMobileMenu()"
          [title]="item.label"
-         class="nav-item group flex items-center gap-4 px-4 py-3 rounded-xl
-                text-white/60 hover:text-white hover:bg-white/5
+         class="nav-item group flex items-center gap-4 px-4 py-3 rounded-2xl
+                text-sf-muted hover:text-sf-text hover:bg-sf-elevated
                 transition-all duration-300 cursor-pointer relative">
         <div class="w-6 h-6 flex-shrink-0 transition-all duration-300
                     group-hover:scale-110 group-hover:text-sf-primary">
@@ -60,8 +60,8 @@
       </div>
       @if (expanded() || mobileMenuOpen()) {
         <div class="flex-1 min-w-0 animate-fade-in">
-          <p class="text-xs font-bold text-white truncate">{{ currentUser()?.name }}</p>
-          <p class="text-[10px] font-medium text-white/40 truncate">{{ currentUser()?.email }}</p>
+          <p class="text-xs font-bold text-sf-text truncate">{{ currentUser()?.name }}</p>
+          <p class="text-[10px] font-medium text-sf-muted truncate">{{ currentUser()?.email }}</p>
         </div>
       }
     </div>
@@ -103,7 +103,7 @@
 
 <style>
   .active-nav-item {
-    @apply text-white bg-sf-primary border-none shadow-lg shadow-sf-primary/20;
+    @apply text-sf-primary bg-sf-primary/10 border border-sf-primary/20 shadow-sm shadow-sf-primary/5;
   }
   .active-nav-item div {
     @apply text-sf-primary scale-110;

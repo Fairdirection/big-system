@@ -20,7 +20,7 @@ import { heroBanknotes, heroChartBar, heroShoppingBag, heroClock, heroCheckCircl
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="glass-card p-6 border border-sf-border group hover:border-sf-primary/40 transition-all duration-300">
+    <div class="bg-sf-surface p-6 border border-sf-border group hover:border-sf-primary/40 transition-all duration-300 rounded-2xl shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <span class="text-xs font-black text-sf-muted uppercase tracking-widest">{{ title || label }}</span>
         <div [class]="iconClasses">
