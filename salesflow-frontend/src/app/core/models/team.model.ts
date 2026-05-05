@@ -16,6 +16,14 @@ export interface Team {
     totalAdjustedTarget: number;
     totalAchieved: number;
     overallAchievementPercentage: number;
+    membersPerformance: Array<{
+      employeeId: string;
+      name: string;
+      code: string;
+      adjustedTarget: number;
+      achieved: number;
+      achievementPercentage: number;
+    }>;
   };
   createdAt: Date;
   updatedAt: Date;

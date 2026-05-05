@@ -161,19 +161,21 @@ const deleteTeam = async (id) => {
 };
 
 const getTeamTargetSummary = async (teamId, quarterId) => {
-  const team = await Team.findById(teamId).populate('memberIds').lean();
+  const team = await Team.findById(teamId).populate('memberIds').populate('teamLeaderId').lean();
   if (!team) throw new Error('Team not found');
 
   const { start, end } = require('../utils/quarter.utils').getQuarterBounds(quarterId);
   
   // Bulk fetch sales and history for all members
-  const memberIds = team.memberIds.map(m => m._id);
+  const allStaff = [...team.memberIds, team.teamLeaderId].filter(Boolean);
+  const allStaffIds = allStaff.map(m => m._id);
+
   const [allHistory, allSales] = await Promise.all([
-    EmployeeTeamHistory.find({ employeeId: { $in: memberIds } }).lean(),
+    EmployeeTeamHistory.find({ employeeId: { $in: allStaffIds } }).lean(),
     Sale.find({
       isActive: true,
       status: { $in: ['confirmed', 'claimed', 'collected'] },
-      'sellers.employeeId': { $in: memberIds },
+      'sellers.employeeId': { $in: allStaffIds },
       $or: [
         { quarterId },
         { contractDate: { $gte: start, $lte: end } }
@@ -192,27 +194,37 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
   let totalAdjustedTarget = 0;
   let totalAchieved = 0;
 
-  for (const member of team.memberIds) {
+  for (const member of allStaff) {
     const history = historyMap[member._id.toString()] || [];
     const workingDays = calculateEmployeeQuarterDays(history, quarterId);
     const adjustedTarget = (member.target / 90) * workingDays;
 
+    const memberSales = allSales.filter(sale => 
+      sale.sellers.some(s => s.employeeId.toString() === member._id.toString())
+    );
+
     let achieved = 0;
-    allSales.forEach(sale => {
-      const seller = sale.sellers.find(s => s.employeeId.toString() === member._id.toString());
-      if (seller) achieved += (sale.unitValue || 0);
-    });
+    memberSales.forEach(sale => achieved += (sale.unitValue || 0));
 
     totalAdjustedTarget += adjustedTarget;
     totalAchieved += achieved;
 
     membersProgress.push({
       employeeId: member._id,
-      name: member.name,
+      name: member.name + (member._id.toString() === team.teamLeaderId._id.toString() ? ' (قائد)' : ''),
       code: member.code,
       adjustedTarget: Math.round(adjustedTarget * 100) / 100,
       achieved: Math.round(achieved * 100) / 100,
-      achievementPercentage: adjustedTarget > 0 ? Math.round((achieved / adjustedTarget) * 1000) / 10 : 0
+      achievementPercentage: adjustedTarget > 0 ? Math.round((achieved / adjustedTarget) * 1000) / 10 : 0,
+      sales: memberSales.map(s => ({
+        _id: s._id,
+        projectName: s.projectName,
+        unitNumber: s.unitNumber,
+        unitValue: s.unitValue,
+        contractDate: s.contractDate,
+        clientName: s.clientName,
+        status: s.status
+      }))
     });
   }
 
@@ -229,7 +241,7 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
 
 const getTeamsWithPerformance = async (quarterId) => {
   const teams = await Team.find({ isActive: true })
-    .populate('teamLeaderId', 'name code')
+    .populate('teamLeaderId', 'name code target')
     .populate('memberIds', 'name code target')
     .lean();
   
@@ -246,9 +258,13 @@ const getTeamsWithPerformance = async (quarterId) => {
   }).lean();
 
   // 2. Fetch all history for all members
-  const allMemberIds = teams.flatMap(t => (t.memberIds || []).map(m => m._id));
+  const allRelevantStaffIds = teams.flatMap(t => [
+    ...(t.memberIds || []).map(m => m._id),
+    t.teamLeaderId._id
+  ]).filter(Boolean);
+
   const allHistory = await EmployeeTeamHistory.find({ 
-    employeeId: { $in: allMemberIds } 
+    employeeId: { $in: allRelevantStaffIds } 
   }).lean();
 
   const historyMap = allHistory.reduce((acc, h) => {
@@ -262,17 +278,31 @@ const getTeamsWithPerformance = async (quarterId) => {
   return teams.map(team => {
     let totalAdjustedTarget = 0;
     let totalAchieved = 0;
+    const membersPerformance = [];
 
-    (team.memberIds || []).forEach(member => {
+    const allStaff = [...(team.memberIds || []), team.teamLeaderId].filter(Boolean);
+
+    allStaff.forEach(member => {
       const memHistory = historyMap[member._id.toString()] || [];
       const workingDays = calculateEmployeeQuarterDays(memHistory, quarterId);
       const adjustedTarget = (member.target / 90) * workingDays;
       totalAdjustedTarget += adjustedTarget;
 
       // Find sales for this member
+      let memberAchieved = 0;
       sales.forEach(sale => {
         const seller = (sale.sellers || []).find(s => s.employeeId.toString() === member._id.toString());
-        if (seller) totalAchieved += (sale.unitValue || 0);
+        if (seller) memberAchieved += (sale.unitValue || 0);
+      });
+      totalAchieved += memberAchieved;
+
+      membersPerformance.push({
+        employeeId: member._id,
+        name: member.name,
+        code: member.code,
+        adjustedTarget: Math.round(adjustedTarget),
+        achieved: Math.round(memberAchieved),
+        achievementPercentage: adjustedTarget > 0 ? Math.round((memberAchieved / adjustedTarget) * 1000) / 10 : 0
       });
     });
 
@@ -281,7 +311,8 @@ const getTeamsWithPerformance = async (quarterId) => {
       performance: {
         totalAdjustedTarget: Math.round(totalAdjustedTarget),
         totalAchieved: Math.round(totalAchieved),
-        overallAchievementPercentage: totalAdjustedTarget > 0 ? Math.round((totalAchieved / totalAdjustedTarget) * 1000) / 10 : 0
+        overallAchievementPercentage: totalAdjustedTarget > 0 ? Math.round((totalAchieved / totalAdjustedTarget) * 1000) / 10 : 0,
+        membersPerformance
       }
     };
   });

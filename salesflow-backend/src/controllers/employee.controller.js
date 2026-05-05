@@ -87,6 +87,33 @@ const getSalesDeptEmployees = async (req, res, next) => {
   }
 };
 
+const updateHistory = async (req, res, next) => {
+  try {
+    const history = await employeeService.updateHistoryRecord(req.params.historyId, req.body);
+    return sendSuccess(res, history);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteHistory = async (req, res, next) => {
+  try {
+    const result = await employeeService.deleteHistoryRecord(req.params.historyId);
+    return sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addHistory = async (req, res, next) => {
+  try {
+    const history = await employeeService.addHistoryRecord(req.params.id, req.body);
+    return sendSuccess(res, history, 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createEmployee,
   getEmployees,
@@ -96,5 +123,8 @@ module.exports = {
   getTeamHistory,
   transferTeam,
   getTargetProgress,
-  getSalesDeptEmployees
+  getSalesDeptEmployees,
+  updateHistory,
+  deleteHistory,
+  addHistory
 };

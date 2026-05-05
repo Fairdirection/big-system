@@ -18,11 +18,12 @@ import {
   heroUsers,
   heroBriefcase
 } from '@ng-icons/heroicons/outline';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, StatCardComponent, CurrencyEgpPipe, NgIconComponent],
+  imports: [CommonModule, StatCardComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
   providers: [
     provideIcons({ 
       heroBanknotes, 
@@ -120,7 +121,7 @@ import {
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
         <!-- Team Performance -->
-        <div class="lg:col-span-2 bg-sf-surface p-6 rounded-2xl border border-sf-border shadow-sm">
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-sf-border shadow-sm">
           <div class="flex items-center justify-between mb-8">
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-display font-bold text-sf-text">أداء الفرق</h3>
@@ -139,8 +140,8 @@ import {
                   </div>
                   <span class="text-xs font-bold text-sf-muted">{{ team.revenue | currencyEgp }}</span>
                 </div>
-                <div class="h-2 w-full bg-sf-bg rounded-full overflow-hidden border border-sf-border/50">
-                  <div class="h-full bg-gradient-purple shadow-glow-sm transition-all duration-1000 ease-out"
+                <div class="h-2 w-full bg-sf-bg/50 rounded-full overflow-hidden border border-sf-border/30">
+                  <div class="h-full bg-gradient-to-r from-sf-primary to-sf-secondary shadow-premium transition-all duration-1000 ease-out"
                        [style.width.%]="(team.revenue / (data.totalRevenue || 1)) * 100"></div>
                 </div>
                 <div class="flex justify-between mt-1 px-1">
@@ -148,6 +149,25 @@ import {
                   <span class="text-[10px] font-bold text-sf-primary uppercase tracking-tighter">
                     {{ ((team.revenue / (data.totalRevenue || 1)) * 100) | number:'1.0-1' }}%
                   </span>
+                </div>
+
+                <!-- NEW: Individual Members Progress (Quick View) -->
+                <div class="mt-4 pt-4 border-t border-sf-border/20 space-y-3">
+                   @for (member of team.membersPerformance; track member.employeeId) {
+                     <div class="flex flex-col gap-1.5">
+                       <div class="flex justify-between items-center">
+                         <a [routerLink]="['/employees', member.employeeId]" 
+                            class="text-[10px] font-bold text-sf-text hover:text-sf-primary transition-colors cursor-pointer">
+                            {{ member.name }}
+                         </a>
+                         <span class="text-[9px] font-black text-sf-muted">{{ member.achievementPercentage }}%</span>
+                       </div>
+                       <div class="h-1 w-full bg-sf-bg/30 rounded-full overflow-hidden">
+                          <div class="h-full bg-sf-primary/60 transition-all duration-1000"
+                               [style.width.%]="member.achievementPercentage"></div>
+                       </div>
+                     </div>
+                   }
                 </div>
               </div>
             } @empty {
@@ -161,7 +181,7 @@ import {
         </div>
 
         <!-- Claim Status -->
-        <div class="bg-sf-surface p-6 rounded-2xl border border-sf-border shadow-sm">
+        <div class="glass-card p-6 rounded-2xl border border-sf-border shadow-sm">
           <div class="flex items-center gap-2 mb-8">
             <h3 class="text-lg font-display font-bold text-sf-text">حالة التحصيل</h3>
             <div class="group relative">

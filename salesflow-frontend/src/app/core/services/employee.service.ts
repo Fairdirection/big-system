@@ -50,4 +50,20 @@ export class EmployeeService {
   getTargetProgress(id: string, quarterId: string) {
     return this.http.get<ApiResponse<any>>(`${this.base}/${id}/target-progress`, { params: { quarterId } });
   }
+
+  getTeamHistory(id: string) {
+    return this.http.get<ApiResponse<any>>(`${this.base}/${id}/history`);
+  }
+
+  updateHistory(historyId: string, data: any) {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/history/${historyId}`, data);
+  }
+
+  deleteHistory(historyId: string) {
+    return this.http.delete<ApiResponse<any>>(`${this.base}/history/${historyId}`);
+  }
+
+  addHistory(employeeId: string, data: any) {
+    return this.http.post<ApiResponse<any>>(`${this.base}/${employeeId}/history`, data);
+  }
 }

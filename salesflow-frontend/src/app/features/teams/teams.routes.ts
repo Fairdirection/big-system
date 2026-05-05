@@ -16,6 +16,12 @@ export const TEAM_ROUTES: Routes = [
   {
     path: ':id',
     loadComponent: () =>
+      import('./team-detail/team-detail.component').then(m => m.TeamDetailComponent),
+    title: 'Team Details',
+  },
+  {
+    path: ':id/edit',
+    loadComponent: () =>
       import('./team-form/team-form.component').then(m => m.TeamFormComponent),
     title: 'Edit Team',
   },

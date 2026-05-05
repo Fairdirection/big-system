@@ -17,6 +17,13 @@ export interface DashboardStats {
     teamName: string;
     revenue: number;
     salesCount: number;
+    membersPerformance: Array<{
+      employeeId: string;
+      name: string;
+      achieved: number;
+      adjustedTarget: number;
+      achievementPercentage: number;
+    }>;
   }>;
   recentSales: any[];
 }

@@ -2,21 +2,23 @@ const Setting = require('../src/models/setting.model');
 
 const defaultSettings = [
   // Sale Sources
-  { type: 'saleSource', value: 'Private', label: 'Private', isDefault: true, sortOrder: 1 },
-  { type: 'saleSource', value: 'Website', label: 'Website', isDefault: true, sortOrder: 2 },
-  { type: 'saleSource', value: 'Referral', label: 'Referral', isDefault: true, sortOrder: 3 },
-  { type: 'saleSource', value: 'Walk-in', label: 'Walk-in', isDefault: true, sortOrder: 4 },
+  { type: 'saleSource', value: 'Facebook', label: 'فيسبوك', isDefault: true, sortOrder: 1 },
+  { type: 'saleSource', value: 'Referral', label: 'ترشيح / عميل سابق', isDefault: true, sortOrder: 2 },
+  { type: 'saleSource', value: 'Walk-in', label: 'تواصل مباشر / مقر الشركة', isDefault: true, sortOrder: 3 },
+  { type: 'saleSource', value: 'Cold Call', label: 'مكالمات باردة', isDefault: true, sortOrder: 4 },
+  { type: 'saleSource', value: 'Instagram', label: 'إنستجرام', isDefault: true, sortOrder: 5 },
+  { type: 'saleSource', value: 'Exhibition', label: 'معرض عقاري', isDefault: true, sortOrder: 6 },
+  { type: 'saleSource', value: 'Other', label: 'أخرى', isDefault: true, sortOrder: 7 },
 
   // Invoice Types
-  { type: 'invoiceType', value: 'Standard Tax Invoice', label: 'Standard Tax Invoice', isDefault: true, sortOrder: 1 },
-  { type: 'invoiceType', value: 'Standard Non-Tax Invoice', label: 'Standard Non-Tax Invoice', isDefault: true, sortOrder: 2 },
-  { type: 'invoiceType', value: 'Electronic Tax Invoice', label: 'Electronic Tax Invoice', isDefault: true, sortOrder: 3 },
+  { type: 'invoiceType', value: 'Standard Tax', label: 'فاتورة ضريبية قياسية', isDefault: true, sortOrder: 1 },
+  { type: 'invoiceType', value: 'Electronic', label: 'فاتورة إلكترونية', isDefault: true, sortOrder: 2 },
 
   // Collection Percentages
-  { type: 'collectionPercentage', value: '100', label: '100%', isDefault: true, sortOrder: 1 },
-  { type: 'collectionPercentage', value: '50', label: '50%', isDefault: true, sortOrder: 2 },
-  { type: 'collectionPercentage', value: '33.333', label: '33.333%', isDefault: true, sortOrder: 3 },
-  { type: 'collectionPercentage', value: '25', label: '25%', isDefault: true, sortOrder: 4 },
+  { type: 'collectionPercentage', value: '100', label: 'تحصيل كامل (100%)', isDefault: true, sortOrder: 1 },
+  { type: 'collectionPercentage', value: '50', label: 'نصف التحصيل (50%)', isDefault: true, sortOrder: 2 },
+  { type: 'collectionPercentage', value: '33.33', label: 'ثلث التحصيل (33.3%)', isDefault: true, sortOrder: 3 },
+  { type: 'collectionPercentage', value: '25', label: 'ربع التحصيل (25%)', isDefault: true, sortOrder: 4 },
 ];
 
 const seedSettings = async () => {

@@ -9,6 +9,10 @@ export class SaleService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/sales`;
 
+  getSales(params?: any) {
+    return this.http.get<PaginatedResponse<Sale>>(this.base, { params });
+  }
+
   getSalesByQuarter(quarterId: string, employeeId?: string) {
     const params: any = { quarterId };
     if (employeeId) params.employeeId = employeeId;

@@ -11,14 +11,14 @@ import { InputComponent } from '@shared/components/input/input.component';
   imports: [ReactiveFormsModule, ButtonComponent, InputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="glass-ultra p-10 rounded-[2.5rem] border border-white/10 shadow-glow-purple/20 relative overflow-hidden group">
-      <!-- Decorative Glow -->
-      <div class="absolute -top-24 -right-24 w-48 h-48 bg-sf-primary/10 rounded-full blur-3xl group-hover:bg-sf-primary/20 transition-colors duration-700"></div>
+    <div class="glass-ultra p-10 rounded-[2.5rem] relative overflow-hidden group">
+      <!-- Sophisticated Decorative Glow -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-sf-primary/5 rounded-full blur-3xl group-hover:bg-sf-primary/10 transition-colors duration-700"></div>
       
       <div class="relative z-10">
-        <div class="mb-8">
-          <h2 class="text-3xl font-display font-black text-white mb-2">أهلاً بك مجدداً</h2>
-          <p class="text-sf-muted text-sm font-medium">الرجاء إدخال بياناتك للوصول إلى حسابك.</p>
+        <div class="mb-10">
+          <h2 class="text-4xl font-display font-black text-sf-text mb-2 tracking-tight">أهلاً بك مجدداً</h2>
+          <p class="text-sf-muted text-sm font-medium">الرجاء إدخال بياناتك للوصول إلى حسابك الآمن.</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
@@ -40,24 +40,20 @@ import { InputComponent } from '@shared/components/input/input.component';
               [hasError]="passwordInvalid"
               [errorMessage]="'كلمة المرور مطلوبة'"
               [required]="true" />
-            <div class="flex justify-end">
-              <a href="#" class="text-[11px] font-bold text-sf-primary hover:text-sf-secondary transition-colors uppercase tracking-widest">نسيت كلمة المرور؟</a>
+            <div class="flex justify-end pr-1">
+              <a href="#" class="text-[10px] font-black text-sf-primary hover:text-sf-secondary transition-colors uppercase tracking-[0.1em]">نسيت كلمة المرور؟</a>
             </div>
           </div>
 
           @if (errorMsg()) {
-            <div class="px-4 py-3 rounded-2xl bg-neon-pink/10 border border-neon-pink/20
-                        text-neon-pink text-xs flex items-center gap-3 animate-shake">
-              <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clip-rule="evenodd"/>
-              </svg>
+            <div class="px-4 py-3 rounded-2xl bg-sf-error/10 border border-sf-error/20
+                        text-sf-error text-xs flex items-center gap-3 animate-shake">
+              <div class="w-1.5 h-1.5 rounded-full bg-sf-error"></div>
               <span class="font-bold">{{ errorMsg() }}</span>
             </div>
           }
 
-          <div class="pt-2">
+          <div class="pt-4">
             <app-button
               type="submit"
               variant="primary"
@@ -70,10 +66,10 @@ import { InputComponent } from '@shared/components/input/input.component';
           </div>
         </form>
 
-        <div class="mt-10 pt-8 border-t border-white/5 text-center">
-          <p class="text-sm text-sf-muted">
+        <div class="mt-12 pt-8 border-t border-sf-border/30 text-center">
+          <p class="text-sm text-sf-muted font-medium">
             ليس لديك حساب؟ 
-            <a href="#" class="text-white font-bold hover:text-sf-primary transition-colors">تواصل مع الإدارة</a>
+            <a href="#" class="text-sf-primary font-black hover:text-sf-secondary transition-colors mr-1">تواصل مع الإدارة</a>
           </p>
         </div>
       </div>

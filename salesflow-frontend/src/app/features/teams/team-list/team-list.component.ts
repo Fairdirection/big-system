@@ -49,7 +49,7 @@ import { Team } from '@core/models/team.model';
           </div>
           <div>
             <p class="text-[10px] font-bold text-sf-muted uppercase">متوسط الإنجاز</p>
-            <p class="text-lg font-black text-sf-text">{{ averageAchievement() }}%</p>
+            <p class="text-lg font-black text-sf-text">{{ averageAchievement() | number:'1.0-1' }}%</p>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ import { Team } from '@core/models/team.model';
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <button [routerLink]="['/teams', team._id]"
+                <button [routerLink]="['/teams', team._id, 'edit']"
                         class="p-2.5 rounded-xl bg-sf-surface border border-sf-border text-sf-muted hover:text-sf-primary hover:bg-sf-primary/10 hover:scale-110 transition-all shadow-sm hover:shadow-glow-sm active:scale-95">
                   <ng-icon name="heroPencilSquare" class="text-lg"></ng-icon>
                 </button>
@@ -110,7 +110,7 @@ import { Team } from '@core/models/team.model';
             <div class="mb-8 space-y-3 relative z-10">
               <div class="flex items-center justify-between text-xs">
                 <span class="font-bold text-sf-muted uppercase tracking-widest">إنجاز المستهدف</span>
-                <span class="font-black text-sf-primary">{{ team.performance?.overallAchievementPercentage || 0 }}%</span>
+                <span class="font-black text-sf-primary">{{ (team.performance?.overallAchievementPercentage || 0) | number:'1.0-1' }}%</span>
               </div>
               <div class="h-2.5 w-full bg-sf-surface rounded-full border border-sf-border/50 overflow-hidden p-0.5">
                 <div class="h-full bg-gradient-to-r from-sf-primary to-sf-secondary rounded-full transition-all duration-1000 shadow-glow-sm"
@@ -122,10 +122,11 @@ import { Team } from '@core/models/team.model';
               </div>
             </div>
 
+
             <!-- Team Leader Footer -->
-            <div class="p-4 bg-sf-surface/50 border border-sf-border rounded-2xl flex items-center justify-between relative z-10">
+            <div class="mt-8 p-4 bg-sf-surface/50 border border-sf-border rounded-2xl flex items-center justify-between relative z-10">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-sf-bg border border-sf-border flex items-center justify-center text-sf-primary font-display font-black text-sm">
+                <div class="w-10 h-10 rounded-xl bg-sf-bg border border-sf-border flex items-center justify-center text-sf-primary font-display font-black text-sm group-hover:bg-sf-primary group-hover:text-white transition-colors">
                   {{ team.teamLeaderId.name.charAt(0) || 'L' }}
                 </div>
                 <div>

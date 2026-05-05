@@ -26,29 +26,29 @@ module.exports = {
         // Standard Aliases
         'sf-primary': 'rgb(var(--sf-primary) / <alpha-value>)',
         'sf-secondary': 'rgb(var(--sf-secondary) / <alpha-value>)',
-        'sf-success': '#06ffa5',    // neon-green
-        'sf-warning': '#fbbf24',    // neon-amber
-        'sf-info': '#00d4ff',       // neon-cyan
-        'sf-error': '#f72585',      // neon-pink
+        'sf-success': 'rgb(var(--sf-success) / <alpha-value>)',
+        'sf-warning': 'rgb(var(--sf-warning) / <alpha-value>)',
+        'sf-info':    'rgb(var(--sf-info) / <alpha-value>)',
+        'sf-error':   'rgb(var(--sf-error) / <alpha-value>)',
 
         // Brand Neon Accents
         'neon': {
-          purple: '#9d4edd',        // Primary action color
-          'purple-glow': '#c77dff', // Hover / active highlights
-          cyan:   '#00d4ff',        // Info / active states
-          'cyan-glow': '#67e8f9',   // Cyan hover variant
-          pink:   '#f72585',        // Alerts / danger / badges
-          'pink-glow': '#ff4d9e',   // Pink hover variant
-          green:  '#06ffa5',        // Success / confirmed status
-          amber:  '#fbbf24',        // Warning / pending status
+          purple: 'rgb(var(--sf-primary) / <alpha-value>)',
+          'purple-glow': 'rgb(var(--sf-primary) / 0.4)',
+          cyan:   'rgb(var(--sf-info) / <alpha-value>)',
+          'cyan-glow': 'rgb(var(--sf-info) / 0.4)',
+          pink:   'rgb(var(--sf-secondary) / <alpha-value>)',
+          'pink-glow': 'rgb(var(--sf-secondary) / 0.4)',
+          green:  'rgb(var(--sf-success) / <alpha-value>)',
+          amber:  'rgb(var(--sf-warning) / <alpha-value>)',
         },
 
         // Status colors (mapped to sale statuses from backend)
         'status': {
-          draft:     '#64748b',     // Gray — sale.status === 'draft'
-          confirmed: '#00d4ff',     // Cyan — sale.status === 'confirmed'
-          claimed:   '#9d4edd',     // Purple — sale.status === 'claimed'
-          collected: '#06ffa5',     // Green — sale.status === 'collected'
+          draft:     '#64748b',     // Gray
+          confirmed: 'rgb(var(--sf-info) / <alpha-value>)',
+          claimed:   'rgb(var(--sf-primary) / <alpha-value>)',
+          collected: 'rgb(var(--sf-success) / <alpha-value>)',
         },
       },
 
@@ -80,7 +80,7 @@ module.exports = {
         'md':     '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05)',
         'lg':     '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05)',
         'xl':     '0 20px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.08)',
-        '3d':     '0 10px 30px -5px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.05)',
+        '3d':     '0 10px 30px -5px rgba(0,0,0,0.08), 0 0 0 1px rgba(var(--sf-border) / 0.1)',
 
         // Neon glow effects
         'glow-purple': '0 0 20px rgba(157, 78, 221, 0.4), 0 0 60px rgba(157, 78, 221, 0.15)',

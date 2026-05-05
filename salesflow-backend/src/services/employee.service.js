@@ -8,8 +8,8 @@ const { getQuarterId, getQuarterBounds, calculateEmployeeQuarterDays, calculateW
 const { paginate } = require('../utils/pagination.utils');
 
 const createEmployee = async (data) => {
-  // 1. Generate code
-  const code = await generateCode(Employee, 'code', 'EMP');
+  // 1. Generate code if not provided
+  const code = data.code || await generateCode(Employee, 'code', 'EMP');
 
   // 2. Calculate working days
   const totalWorkingDays = calculateWorkingDays(data.hireDate, new Date());
@@ -113,7 +113,132 @@ const deleteEmployee = async (id) => {
 };
 
 const getTeamHistory = async (employeeId) => {
-  return await EmployeeTeamHistory.find({ employeeId }).populate('teamId').sort({ joinDate: -1 });
+  const employee = await Employee.findById(employeeId);
+  if (!employee) return [];
+
+  const history = await EmployeeTeamHistory.find({ employeeId }).populate('teamId').sort({ joinDate: 1 }).lean();
+  
+  // 3. Fetch sales to calculate achievement per segment
+  const sales = await Sale.find({
+    'sellers.employeeId': employeeId,
+    status: { $ne: 'draft' },
+    isActive: true
+  });
+
+  const timeline = [];
+  let currentDate = new Date(employee.hireDate);
+
+  for (const record of history) {
+    const joinDate = new Date(record.joinDate);
+    
+    // Check for gap between currentDate and joinDate
+    if (joinDate > currentDate) {
+      timeline.push({
+        type: 'no-team',
+        isInitial: currentDate.getTime() === employee.hireDate.getTime(),
+        name: 'بدون فريق',
+        startDate: currentDate,
+        endDate: joinDate,
+        durationDays: calculateWorkingDays(currentDate, joinDate) - 1,
+        achievement: 0 // Gap periods have 0 achievement usually, but we could check sales here too if needed
+      });
+    }
+
+    // Calculate achievement in this period
+    const start = joinDate;
+    const end = record.leaveDate ? new Date(record.leaveDate) : new Date();
+    const periodSales = sales.filter(s => {
+      const contractDate = new Date(s.contractDate);
+      return contractDate >= start && contractDate <= end;
+    });
+
+    const achievement = periodSales.reduce((sum, s) => {
+      const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
+      return sum + (s.unitValue * (seller.sharePercentage / 100));
+    }, 0);
+
+    timeline.push({
+      historyId: record._id,
+      type: record.teamId ? 'team' : 'no-team',
+      name: record.teamId ? (record.teamId.name || 'فريق محذوف') : 'بدون فريق',
+      teamId: record.teamId ? record.teamId._id : null,
+      startDate: joinDate,
+      endDate: record.leaveDate,
+      durationDays: calculateWorkingDays(joinDate, record.leaveDate || new Date()),
+      achievement: Math.round(achievement)
+    });
+
+    if (record.leaveDate) {
+      currentDate = new Date(record.leaveDate);
+    } else {
+      currentDate = null;
+      break;
+    }
+  }
+
+  // If there's time left after the last record and employee is active
+  if (currentDate && employee.isActive) {
+    const now = new Date();
+    if (now > currentDate) {
+      // Calculate achievement for the current unassigned period
+      const periodSales = sales.filter(s => new Date(s.contractDate) >= currentDate);
+      const achievement = periodSales.reduce((sum, s) => {
+        const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
+        return sum + (s.unitValue * (seller.sharePercentage / 100));
+      }, 0);
+
+      timeline.push({
+        type: 'no-team',
+        name: 'بدون فريق (حالي)',
+        startDate: currentDate,
+        endDate: null,
+        durationDays: calculateWorkingDays(currentDate, now),
+        achievement: Math.round(achievement)
+      });
+    }
+  } else if (!history.length && employee.isActive) {
+    // No history at all, count all sales
+    const achievement = sales.reduce((sum, s) => {
+      const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
+      return sum + (s.unitValue * (seller.sharePercentage / 100));
+    }, 0);
+
+    timeline.push({
+      type: 'no-team',
+      name: 'بدون فريق',
+      startDate: currentDate,
+      endDate: null,
+      durationDays: calculateWorkingDays(currentDate, new Date()),
+      achievement: Math.round(achievement)
+    });
+  }
+
+  const result = timeline.reverse();
+  
+  // Calculate summary stats
+  const totalSeniority = calculateWorkingDays(employee.hireDate, new Date());
+  const currentQuarter = getQuarterId(new Date());
+  const quarterDays = calculateEmployeeQuarterDays(history, currentQuarter);
+
+  // Aggregate days per team
+  const teamStats = history.reduce((acc, curr) => {
+    const teamName = curr.teamId?.name || 'بدون فريق';
+    const days = calculateWorkingDays(curr.joinDate, curr.leaveDate || new Date());
+    acc[teamName] = (acc[teamName] || 0) + days;
+    return acc;
+  }, {});
+
+  // Convert to array for easier UI iteration
+  const aggregatedTeams = Object.entries(teamStats).map(([name, days]) => ({ name, days }));
+
+  return {
+    timeline: result,
+    stats: {
+      totalSeniorityDays: totalSeniority,
+      quarterWorkingDays: quarterDays,
+      teamStats: aggregatedTeams
+    }
+  };
 };
 
 const transferTeam = async (employeeId, { newTeamId, transferDate }) => {
@@ -289,6 +414,57 @@ const getSalesDeptEmployees = async () => {
   return await Employee.find({ department: 'Sales', isActive: true }).select('name code');
 };
 
+const updateHistoryRecord = async (historyId, data) => {
+  const history = await EmployeeTeamHistory.findById(historyId);
+  if (!history) throw new Error('History record not found');
+
+  if (data.joinDate) history.joinDate = new Date(data.joinDate);
+  if (data.leaveDate !== undefined) {
+    history.leaveDate = data.leaveDate ? new Date(data.leaveDate) : null;
+  }
+
+  // Recalculate duration
+  const end = history.leaveDate || new Date();
+  history.workingDaysInTeam = calculateWorkingDays(history.joinDate, end);
+
+  await history.save();
+  return history;
+};
+
+const addHistoryRecord = async (employeeId, { teamId, joinDate, leaveDate }) => {
+  const employee = await Employee.findById(employeeId);
+  if (!employee) throw new Error('Employee not found');
+
+  const jDate = new Date(joinDate);
+  const lDate = leaveDate ? new Date(leaveDate) : null;
+  const quarterId = getQuarterId(jDate);
+
+  const history = await EmployeeTeamHistory.create({
+    employeeId,
+    teamId: teamId || null,
+    joinDate: jDate,
+    leaveDate: lDate,
+    quarterId
+  });
+
+  return history;
+};
+
+const deleteHistoryRecord = async (historyId) => {
+  const history = await EmployeeTeamHistory.findById(historyId);
+  if (!history) throw new Error('History record not found');
+
+  // If this was the active team, clear currentTeamId from employee
+  const employee = await Employee.findById(history.employeeId);
+  if (employee && employee.currentTeamId?.toString() === history.teamId?.toString() && !history.leaveDate) {
+    employee.currentTeamId = null;
+    await employee.save();
+  }
+
+  await EmployeeTeamHistory.findByIdAndDelete(historyId);
+  return { success: true };
+};
+
 module.exports = {
   createEmployee,
   getEmployees,
@@ -298,5 +474,8 @@ module.exports = {
   getTeamHistory,
   transferTeam,
   getTargetProgress,
-  getSalesDeptEmployees
+  getSalesDeptEmployees,
+  updateHistoryRecord,
+  deleteHistoryRecord,
+  addHistoryRecord
 };

@@ -91,7 +91,6 @@ import { heroChevronRight, heroCheck, heroUser } from '@ng-icons/heroicons/outli
     </div>
   `,
   styles: [`
-    .glass-card { background: rgba(17, 24, 39, 0.4); backdrop-filter: blur(12px); }
     @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   `]

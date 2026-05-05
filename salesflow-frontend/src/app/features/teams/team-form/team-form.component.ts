@@ -66,8 +66,9 @@ import { ThemeService } from '@core/services/theme.service';
                 <ng-icon name="heroUserPlus" class="text-sf-primary"></ng-icon>
                 أعضاء الفريق
               </label>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 @for (emp of memberCandidates(); track emp._id) {
+                  @let perf = getMemberPerf(emp._id);
                   <div (click)="toggleMember(emp._id)"
                        class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
                        [class.bg-sf-primary/10]="isMemberSelected(emp._id)"
@@ -78,10 +79,19 @@ import { ThemeService } from '@core/services/theme.service';
                       <div class="w-8 h-8 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-[10px] font-black text-sf-muted group-hover:text-sf-primary transition-colors">
                         {{ emp.name.charAt(0) }}
                       </div>
-                      <span class="text-xs font-bold text-sf-text">{{ emp.name }}</span>
-                      @if (emp.currentTeamId) {
-                        <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-sf-warning/10 text-sf-warning border border-sf-warning/20">منضم لفريق</span>
-                      }
+                      <div>
+                        <span class="text-xs font-bold text-sf-text block">{{ emp.name }}</span>
+                        @if (perf) {
+                          <div class="flex items-center gap-2 mt-1">
+                            <span class="text-[9px] font-black text-sf-success">{{ perf.achieved | number }} ج.م</span>
+                            <span class="text-[8px] px-1.5 py-0.5 rounded-md bg-sf-success/10 text-sf-success border border-sf-success/20">
+                              {{ perf.achievementPercentage | number:'1.0-1' }}%
+                            </span>
+                          </div>
+                        } @else if (emp.currentTeamId) {
+                          <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-sf-warning/10 text-sf-warning border border-sf-warning/20">منضم لفريق</span>
+                        }
+                      </div>
                     </div>
                     <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
                          [class.bg-sf-primary]="isMemberSelected(emp._id)"
@@ -111,6 +121,19 @@ import { ThemeService } from '@core/services/theme.service';
               <h3 class="font-bold text-sf-text">ملخص الفريق</h3>
               <p class="text-xs text-sf-muted">يوجد حالياً {{ form.get('memberIds')?.value?.length || 0 }} أعضاء مختارين.</p>
             </div>
+
+            @if (performance(); as perf) {
+              <div class="p-5 rounded-2xl bg-sf-primary/5 border border-sf-primary/10 space-y-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider">إجمالي الإنجاز</p>
+                  <span class="px-2 py-0.5 rounded-full bg-sf-primary/10 text-[10px] font-black text-sf-primary">{{ perf.overallAchievementPercentage | number:'1.0-1' }}%</span>
+                </div>
+                <h4 class="text-xl font-display font-black text-sf-primary">{{ perf.totalAchieved | number }} <span class="text-[10px] opacity-70">ج.م</span></h4>
+                <div class="w-full h-1.5 bg-sf-border rounded-full overflow-hidden">
+                  <div class="h-full bg-sf-primary transition-all duration-1000" [style.width.%]="perf.overallAchievementPercentage"></div>
+                </div>
+              </div>
+            }
 
             <div class="space-y-3 pt-4 border-t border-sf-border/50">
               <button type="submit" 
@@ -151,6 +174,7 @@ export class TeamFormComponent implements OnInit {
   isEdit = signal(false);
   teamId = signal<string | null>(null);
   employees = signal<Employee[]>([]);
+  performance = signal<any>(null);
   
   // ONLY TeamLeader rank who are NOT already leading another team
   leaders = computed(() => {
@@ -183,7 +207,17 @@ export class TeamFormComponent implements OnInit {
       this.isEdit.set(true);
       this.teamId.set(id);
       this.loadTeam(id);
+      this.loadPerformance(id);
     }
+  }
+
+  loadPerformance(id: string) {
+    const quarterId = 'Q2-2026'; // Should be dynamic
+    this.teamService.getTargetSummary(id, quarterId).subscribe({
+      next: (res) => {
+        if (res.success) this.performance.set(res.data);
+      }
+    });
   }
 
   totalEmployeesFound = signal(0);
@@ -237,6 +271,12 @@ export class TeamFormComponent implements OnInit {
 
   isMemberSelected(id: string): boolean {
     return this.form.get('memberIds')?.value.includes(id);
+  }
+
+  getMemberPerf(id: string) {
+    const p = this.performance();
+    if (!p) return null;
+    return p.membersProgress.find((m: any) => (m.employeeId._id || m.employeeId) === id);
   }
 
   onSubmit() {

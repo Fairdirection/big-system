@@ -138,11 +138,39 @@ const getDashboardStats = async (quarterId) => {
 
   const teamRanking = teams.map(team => {
     const tid = team._id.toString();
+    const membersPerformance = [];
+
+    // Calculate individual performance for each member of this team
+    (team.memberIds || []).forEach(memberId => {
+      const mIdStr = memberId.toString();
+      const emp = salesEmployees.find(e => e._id.toString() === mIdStr);
+      if (!emp) return;
+
+      const history = historyByEmployee[mIdStr] || [];
+      const workingDays = calculateEmployeeQuarterDays(history, quarterId);
+      const adjustedTarget = (emp.target / 90) * workingDays;
+
+      let memberAchieved = 0;
+      allSalesForQuarter.forEach(sale => {
+        const seller = (sale.sellers || []).find(s => s.employeeId.toString() === mIdStr);
+        if (seller) memberAchieved += (sale.unitValue || 0);
+      });
+
+      membersPerformance.push({
+        employeeId: mIdStr,
+        name: emp.name,
+        adjustedTarget: Math.round(adjustedTarget),
+        achieved: Math.round(memberAchieved),
+        achievementPercentage: adjustedTarget > 0 ? Math.round((memberAchieved / adjustedTarget) * 1000) / 10 : 0
+      });
+    });
+
     return {
       teamId: team._id,
       teamName: team.name,
       achieved: teamRevenueMap[tid] || 0,
-      salesCount: teamSalesCountMap[tid] || 0
+      salesCount: teamSalesCountMap[tid] || 0,
+      membersPerformance
     };
   }).sort((a, b) => b.achieved - a.achieved);
 

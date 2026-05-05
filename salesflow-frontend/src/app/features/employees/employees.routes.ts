@@ -25,4 +25,10 @@ export const EMPLOYEE_ROUTES: Routes = [
       import('./employee-form/employee-form.component').then(m => m.EmployeeFormComponent),
     title: 'Edit Employee',
   },
+  {
+    path: ':id/history/edit',
+    loadComponent: () =>
+      import('./employee-history-edit/employee-history-edit.component').then(m => m.EmployeeHistoryEditComponent),
+    title: 'Manage Work History',
+  },
 ];

@@ -24,4 +24,16 @@ export class SettingService {
   getAllSettings() {
     return this.http.get<ApiResponse<Setting[]>>(this.base);
   }
+
+  createSetting(data: Partial<Setting>) {
+    return this.http.post<ApiResponse<Setting>>(this.base, data);
+  }
+
+  updateSetting(id: string, data: Partial<Setting>) {
+    return this.http.patch<ApiResponse<Setting>>(`${this.base}/${id}`, data);
+  }
+
+  deleteSetting(id: string) {
+    return this.http.delete<ApiResponse<any>>(`${this.base}/${id}`);
+  }
 }

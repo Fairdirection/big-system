@@ -20,7 +20,8 @@ const getStats = async (req, res, next) => {
       teamPerformance: stats.teamRanking.map(t => ({
         teamName: t.teamName,
         revenue: t.achieved,
-        salesCount: t.salesCount
+        salesCount: t.salesCount,
+        membersPerformance: t.membersPerformance
       })),
       recentSales: stats.recentSales || []
     };

@@ -17,6 +17,12 @@ export class TeamService {
     return this.http.get<ApiResponse<Team>>(`${this.base}/${id}`);
   }
 
+  getTargetSummary(id: string, quarterId: string) {
+    return this.http.get<ApiResponse<any>>(`${this.base}/${id}/target-summary`, {
+      params: { quarterId }
+    });
+  }
+
   createTeam(data: { teamLeaderId: string; memberIds: string[] }) {
     return this.http.post<ApiResponse<Team>>(this.base, data);
   }

@@ -15,7 +15,10 @@ const {
   getTeamHistory,
   transferTeam,
   getTargetProgress,
-  getSalesDeptEmployees
+  getSalesDeptEmployees,
+  updateHistory,
+  deleteHistory,
+  addHistory
 } = require('../controllers/employee.controller');
 
 router.get('/',              getEmployees);
@@ -24,8 +27,11 @@ router.get('/:id',           getEmployee);
 router.post('/',             validate(createEmployeeSchema), createEmployee);
 router.patch('/:id',         validate(updateEmployeeSchema), updateEmployee);
 router.delete('/:id',        deleteEmployee);
-router.get('/:id/team-history',    getTeamHistory);
+router.get('/:id/history',           getTeamHistory);
+router.post('/:id/history',          addHistory);
 router.patch('/:id/transfer-team', validate(transferTeamSchema), transferTeam);
 router.get('/:id/target-progress', getTargetProgress);
+router.patch('/history/:historyId',  updateHistory);
+router.delete('/history/:historyId', deleteHistory);
 
 module.exports = router;

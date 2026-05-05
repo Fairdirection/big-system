@@ -37,18 +37,18 @@ export class ButtonComponent {
   @Output() clicked = new EventEmitter<MouseEvent>();
 
   get buttonClasses(): string {
-    const base = 'inline-flex items-center justify-center gap-2 font-medium font-body rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed select-none';
+    const base = 'btn';
     const sizes = {
       sm: 'text-xs px-3 py-1.5 h-7',
-      md: 'text-sm px-4 py-2 h-9',
-      lg: 'text-sm px-6 py-2.5 h-11',
+      md: 'text-sm px-4 py-2 h-10',
+      lg: 'text-base px-8 py-3 h-12',
     };
     const variants = {
-      primary:   'bg-gradient-purple text-white shadow-glow-purple hover:shadow-glow-purple hover:brightness-110 active:scale-95',
-      secondary: 'bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/20 hover:shadow-glow-cyan active:scale-95',
-      danger:    'bg-neon-pink/10 text-neon-pink border border-neon-pink/30 hover:bg-neon-pink/20 hover:shadow-glow-pink active:scale-95',
-      ghost:     'text-sf-muted hover:text-sf-text hover:bg-sf-elevated active:scale-95',
-      outline:   'border border-sf-border text-sf-text hover:border-neon-purple/40 hover:bg-sf-elevated active:scale-95',
+      primary:   'btn-primary',
+      secondary: 'btn-secondary',
+      danger:    'btn-danger',
+      ghost:     'btn-ghost',
+      outline:   'btn-outline',
     };
     return `${base} ${sizes[this.size]} ${variants[this.variant]}`;
   }

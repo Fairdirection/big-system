@@ -28,7 +28,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
         </div>
         <div class="flex flex-col items-end gap-1">
           <button (click)="submit()" [disabled]="isSubmitting()" 
-                  class="btn btn-primary px-8 py-2.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="btn btn-primary px-8 flex items-center gap-2">
             <ng-icon *ngIf="!isSubmitting()" name="heroCheck"></ng-icon>
             <span *ngIf="isSubmitting()" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
             <span>{{ isSubmitting() ? 'جاري الحفظ...' : 'حفظ الموظف' }}</span>
@@ -56,6 +56,11 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                          [hasError]="isInvalid('name')"
                          errorMessage="الاسم الكامل مطلوب"
                          hint="يرجى كتابة الاسم كما هو في البطاقة الشخصية"></app-input>
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">كود الموظف (اختياري)</label>
+              <app-input formControlName="code" placeholder="EMP-001" 
+                         hint="اتركه فارغاً للتوليد التلقائي أو أدخل كود مخصص"></app-input>
             </div>
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الرقم القومي</label>
@@ -200,6 +205,7 @@ export class EmployeeFormComponent implements OnInit {
             hireDate: emp.hireDate ? new Date(emp.hireDate).toISOString().split('T')[0] : '',
             email: emp.email,
             phone: emp.phone,
+            code: emp.code
           });
           this.isLoading.set(false);
         },
@@ -222,6 +228,7 @@ export class EmployeeFormComponent implements OnInit {
       hireDate: [new Date().toISOString().split('T')[0], [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required]],
+      code: [''],
       managerId: ['69f60230c2120b7ce02988dd'] // Placeholder manager (Adham)
     });
 
