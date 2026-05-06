@@ -117,7 +117,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف الربعي (ج.م)</label>
               <app-input type="number" formControlName="target" placeholder="0.00"
-                         hint="المبلغ المطلوب تحقيقه خلال 3 أشهر"></app-input>
+                         [hint]="getTargetHint()"></app-input>
             </div>
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">تاريخ التعيين</label>
@@ -297,5 +297,16 @@ export class EmployeeFormComponent implements OnInit {
         }
       }
     });
+  }
+
+  getTargetHint(): string {
+    const seniority = this.form?.get('seniorityLevel')?.value;
+    if (seniority === 'TeamLeader') {
+      return 'بما أنه قائد فريق، سيتم حساب المستهدف تلقائياً من مجموع فريقه بمجرد أن يكون له فريق، وفي حال عدم وجود فريق سيتم استخدام القيمة المدخلة هنا كحالة استثنائية.';
+    }
+    if (seniority === 'SalesManager') {
+      return 'بما أنه مدير مبيعات، سيتم حساب المستهدف تلقائياً من مجموع مستهدفات قادة الفرق التابعين له بمجرد أن يكون له فريق، وفي حال عدم وجود فريق سيتم استخدام القيمة المدخلة هنا كحالة استثنائية.';
+    }
+    return 'المبلغ المطلوب تحقيقه خلال 3 أشهر';
   }
 }

@@ -73,7 +73,10 @@ const getDashboardStats = async (quarterId) => {
   ]);
 
   // 2. Target vs Achieved (Optimized Bulk Calculation)
-  const salesEmployees = await Employee.find({ department: 'Sales', isActive: true });
+  const [salesEmployees, teams] = await Promise.all([
+    Employee.find({ department: 'Sales', isActive: true }),
+    Team.find({ isActive: true }).lean()
+  ]);
   
   // Fetch all history for all sales employees in this quarter once
   const allHistory = await EmployeeTeamHistory.find({ 
@@ -105,13 +108,30 @@ const getDashboardStats = async (quarterId) => {
       }
     }
 
-    const adjustedTarget = (emp.target / 90) * actualWorkingDays;
-    totalTargets += adjustedTarget || 0;
+    const isTL = emp.seniorityLevel === 'TeamLeader';
+    const isSM = emp.seniorityLevel === 'SalesManager';
+
+    let hasTeam = false;
+    if (isTL) {
+      const team = teams.find(t => t.teamLeaderId.toString() === empIdStr);
+      const teamMembers = team ? (team.memberIds || []).filter(m => m.toString() !== empIdStr) : [];
+      hasTeam = team && teamMembers.length > 0;
+    } else if (isSM) {
+      const reports = salesEmployees.filter(e => e.managerId.toString() === empIdStr && e.seniorityLevel === 'TeamLeader');
+      hasTeam = reports.some(leader => {
+        const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
+        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+        return leaderTeam && leaderTeamMembers.length > 0;
+      });
+    }
+
+    if (!hasTeam) {
+      const adjustedTarget = (emp.target / 90) * actualWorkingDays;
+      totalTargets += adjustedTarget || 0;
+    }
   }
 
   // 3. Team Ranking (Optimized single aggregation)
-  const teams = await Team.find({ isActive: true }).lean();
-  
   // Calculate revenue per team in memory using allSalesForQuarter
   const teamRevenueMap = {};
   const teamSalesCountMap = {};
@@ -148,7 +168,28 @@ const getDashboardStats = async (quarterId) => {
 
       const history = historyByEmployee[mIdStr] || [];
       const workingDays = calculateEmployeeQuarterDays(history, quarterId);
-      const adjustedTarget = (emp.target / 90) * workingDays;
+
+      const isTL = emp.seniorityLevel === 'TeamLeader';
+      const isSM = emp.seniorityLevel === 'SalesManager';
+
+      let hasTeam = false;
+      if (isTL) {
+        const leaderTeam = teams.find(t => t.teamLeaderId.toString() === mIdStr);
+        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== mIdStr) : [];
+        hasTeam = leaderTeam && leaderTeamMembers.length > 0;
+      } else if (isSM) {
+        const reports = salesEmployees.filter(e => e.managerId.toString() === mIdStr && e.seniorityLevel === 'TeamLeader');
+        hasTeam = reports.some(leader => {
+          const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
+          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+          return leaderTeam && leaderTeamMembers.length > 0;
+        });
+      }
+
+      let adjustedTarget = 0;
+      if (!hasTeam) {
+        adjustedTarget = (emp.target / 90) * workingDays;
+      }
 
       let memberAchieved = 0;
       allSalesForQuarter.forEach(sale => {

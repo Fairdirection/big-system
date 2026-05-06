@@ -387,52 +387,130 @@ const getTargetProgress = async (employeeId, quarterId) => {
     throw new Error('Employee not found or not in Sales department');
   }
 
-  // Find if this employee is a leader of an active team
-  const team = await Team.findOne({ teamLeaderId: employeeId, isActive: true }).populate('memberIds');
+  const isSM = employee.seniorityLevel === 'SalesManager';
+  const isTL = employee.seniorityLevel === 'TeamLeader';
 
-  if (team) {
-    const membersProgress = [];
-    let totalAdjustedTarget = 0;
-    let totalAchievedSales = 0;
-    let totalAchievedCommission = 0;
+  if (isSM) {
+    // A SalesManager's team is defined by active Team Leaders reporting to them
+    const teamLeaders = await Employee.find({
+      managerId: employeeId,
+      seniorityLevel: 'TeamLeader',
+      isActive: true
+    });
 
-    for (const member of team.memberIds) {
-      const memberProgress = await getTargetProgress(member._id.toString(), quarterId);
-      totalAdjustedTarget += Math.round(memberProgress.adjustedTarget);
-      totalAchievedSales += Math.round(memberProgress.achievedSalesValue);
-      totalAchievedCommission += Math.round(memberProgress.achievedCommission);
-      membersProgress.push(memberProgress);
+    if (teamLeaders.length > 0) {
+      const teamLeadersProgress = [];
+      for (const leader of teamLeaders) {
+        const leaderProgress = await getTargetProgress(leader._id.toString(), quarterId);
+        teamLeadersProgress.push(leaderProgress);
+      }
+
+      const activeTeamLeadersProgress = teamLeadersProgress.filter(lp => lp.isTeamLeader);
+
+      if (activeTeamLeadersProgress.length > 0) {
+        let totalFullTarget = 0;
+        let totalAdjustedTarget = 0;
+        let totalAchievedSales = 0;
+        let totalAchievedCommission = 0;
+
+        for (const lp of activeTeamLeadersProgress) {
+          totalFullTarget += Math.round(lp.fullTarget);
+          totalAdjustedTarget += Math.round(lp.adjustedTarget);
+          totalAchievedSales += Math.round(lp.achievedSalesValue);
+          totalAchievedCommission += Math.round(lp.achievedCommission);
+        }
+
+        // SalesManager's own personal target is 0 since they have a team, but their personal sales are added
+        const personalProgress = await getPersonalTargetProgressOnly(employee, quarterId);
+        personalProgress.fullTarget = 0;
+        personalProgress.adjustedTarget = 0;
+        
+        totalAchievedSales += personalProgress.achievedSales;
+        totalAchievedCommission += personalProgress.achievedCommission;
+
+        const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedSales / totalAdjustedTarget) * 100 : 0;
+
+        return {
+          employeeId,
+          employeeName: employee.name,
+          code: employee.code,
+          quarterId,
+          isSalesManager: true,
+          isTeamLeader: false,
+          fullTarget: Math.round(totalFullTarget),
+          actualWorkingDays: personalProgress.actualWorkingDays,
+          adjustedTarget: Math.round(totalAdjustedTarget),
+          achievedSales: Math.round(totalAchievedSales),
+          achievedSalesValue: Math.round(totalAchievedSales),
+          achievedCommission: Math.round(totalAchievedCommission),
+          achievementPercentage: Math.round(achievementPercentage * 10) / 10,
+          gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedSales)),
+          teamMembersCount: teamLeaders.length,
+          personalProgress,
+          membersProgress: teamLeadersProgress
+        };
+      } else {
+        // Exceptional case: SalesManager has TeamLeaders reporting to them, but none of them have teams
+        return await getPersonalTargetProgressOnly(employee, quarterId);
+      }
+    } else {
+      // Exceptional case: SalesManager without a team (no Team Leaders report to them)
+      return await getPersonalTargetProgressOnly(employee, quarterId);
     }
-
-    // Now calculate the leader's own personal target and sales
-    const personalProgress = await getPersonalTargetProgressOnly(employee, quarterId);
-
-    totalAdjustedTarget += personalProgress.adjustedTarget;
-    totalAchievedSales += personalProgress.achievedSales;
-    totalAchievedCommission += personalProgress.achievedCommission;
-
-    const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedSales / totalAdjustedTarget) * 100 : 0;
-
-    return {
-      employeeId,
-      employeeName: employee.name,
-      code: employee.code,
-      quarterId,
-      isTeamLeader: true,
-      fullTarget: Math.round(totalAdjustedTarget),
-      actualWorkingDays: personalProgress.actualWorkingDays,
-      adjustedTarget: Math.round(totalAdjustedTarget),
-      achievedSales: Math.round(totalAchievedSales),
-      achievedSalesValue: Math.round(totalAchievedSales),
-      achievedCommission: Math.round(totalAchievedCommission),
-      achievementPercentage: Math.round(achievementPercentage * 10) / 10,
-      gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedSales)),
-      teamMembersCount: team.memberIds.length,
-      personalProgress,
-      membersProgress
-    };
   } else {
-    return await getPersonalTargetProgressOnly(employee, quarterId);
+    // Find if this employee is a leader of an active team in Team collection
+    const team = await Team.findOne({ teamLeaderId: employeeId, isActive: true }).populate('memberIds');
+    const teamMembers = team ? team.memberIds.filter(m => m._id.toString() !== employeeId && m.isActive) : [];
+
+    if (team && teamMembers.length > 0) {
+      const membersProgress = [];
+      let totalFullTarget = 0;
+      let totalAdjustedTarget = 0;
+      let totalAchievedSales = 0;
+      let totalAchievedCommission = 0;
+
+      for (const member of teamMembers) {
+        const memberProgress = await getTargetProgress(member._id.toString(), quarterId);
+        totalFullTarget += Math.round(memberProgress.fullTarget);
+        totalAdjustedTarget += Math.round(memberProgress.adjustedTarget);
+        totalAchievedSales += Math.round(memberProgress.achievedSalesValue);
+        totalAchievedCommission += Math.round(memberProgress.achievedCommission);
+        membersProgress.push(memberProgress);
+      }
+
+      // TeamLeader's own personal target is 0 since they have a team, but their personal sales are added
+      const personalProgress = await getPersonalTargetProgressOnly(employee, quarterId);
+      personalProgress.fullTarget = 0;
+      personalProgress.adjustedTarget = 0;
+
+      totalAchievedSales += personalProgress.achievedSales;
+      totalAchievedCommission += personalProgress.achievedCommission;
+
+      const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedSales / totalAdjustedTarget) * 100 : 0;
+
+      return {
+        employeeId,
+        employeeName: employee.name,
+        code: employee.code,
+        quarterId,
+        isTeamLeader: true,
+        isSalesManager: false,
+        fullTarget: Math.round(totalFullTarget),
+        actualWorkingDays: personalProgress.actualWorkingDays,
+        adjustedTarget: Math.round(totalAdjustedTarget),
+        achievedSales: Math.round(totalAchievedSales),
+        achievedSalesValue: Math.round(totalAchievedSales),
+        achievedCommission: Math.round(totalAchievedCommission),
+        achievementPercentage: Math.round(achievementPercentage * 10) / 10,
+        gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedSales)),
+        teamMembersCount: teamMembers.length,
+        personalProgress,
+        membersProgress
+      };
+    } else {
+      // Normal employee or exceptional case: TeamLeader without a team (no members report to them)
+      return await getPersonalTargetProgressOnly(employee, quarterId);
+    }
   }
 };
 

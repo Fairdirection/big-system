@@ -176,27 +176,55 @@ export class TeamFormComponent implements OnInit {
   employees = signal<Employee[]>([]);
   performance = signal<any>(null);
   
-  // ONLY TeamLeader rank who are NOT already leading another team
+  selectedLeaderId = signal<string>('');
+  
+  // Both TeamLeader and SalesManager ranks can lead teams
   leaders = computed(() => {
     const currentId = this.teamId();
     return this.employees().filter(e => {
-      const isTL = e.seniorityLevel === 'TeamLeader';
+      const isEligibleLeader = e.seniorityLevel === 'TeamLeader' || e.seniorityLevel === 'SalesManager';
       // If we are editing, allow the current leader of THIS team
-      // Otherwise, only allow TLs who are NOT in a team
+      // Otherwise, only allow leaders who are NOT already in a team
       const isAvailable = !e.currentTeamId || (currentId && (e.currentTeamId === currentId || e.currentTeamId._id === currentId));
-      return isTL && isAvailable;
+      return isEligibleLeader && isAvailable;
     });
   });
 
-  // Anyone else who is NOT a TeamLeader rank can be a member
+  // Dynamically calculated candidates based on selected leader seniority level
   memberCandidates = computed(() => {
-    return this.employees().filter(e => e.seniorityLevel !== 'TeamLeader');
+    const leaderId = this.selectedLeaderId();
+    const leaderObj = this.employees().find(e => e._id === leaderId);
+    
+    if (leaderObj && leaderObj.seniorityLevel === 'SalesManager') {
+      // If the selected leader is a SalesManager, only TeamLeaders can be member candidates
+      return this.employees().filter(e => e.seniorityLevel === 'TeamLeader');
+    } else {
+      // If the selected leader is a TeamLeader (or anyone else), member candidates are standard members
+      // i.e., NOT TeamLeader and NOT SalesManager
+      return this.employees().filter(e => e.seniorityLevel !== 'TeamLeader' && e.seniorityLevel !== 'SalesManager');
+    }
   });
 
   constructor() {
     this.form = this.fb.group({
       teamLeaderId: ['', Validators.required],
       memberIds: [[]]
+    });
+
+    // Listen to value changes of teamLeaderId to update the signal and reset incompatible members
+    this.form.get('teamLeaderId')?.valueChanges.subscribe(val => {
+      const oldLeaderId = this.selectedLeaderId();
+      this.selectedLeaderId.set(val || '');
+
+      // Reset member selection if leader type changes to prevent invalid member types
+      const oldLeaderObj = this.employees().find(e => e._id === oldLeaderId);
+      const newLeaderObj = this.employees().find(e => e._id === val);
+      const oldLevel = oldLeaderObj?.seniorityLevel;
+      const newLevel = newLeaderObj?.seniorityLevel;
+
+      if (oldLeaderId && oldLevel !== newLevel) {
+        this.form.patchValue({ memberIds: [] }, { emitEvent: false });
+      }
     });
   }
 

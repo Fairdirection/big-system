@@ -50,8 +50,8 @@ const getTargetSummary = async (req, res, next) => {
           gap: progress.gap
         });
         
-        // Sum personal targets and achievements to prevent double-counting team leaders and members
-        if (progress.isTeamLeader && progress.personalProgress) {
+        // Sum personal targets and achievements to prevent double-counting team leaders, sales managers and members
+        if ((progress.isTeamLeader || progress.isSalesManager) && progress.personalProgress) {
           totalAdjustedTarget += progress.personalProgress.adjustedTarget || 0;
           totalAchieved += progress.personalProgress.achievedSales || 0;
         } else {
