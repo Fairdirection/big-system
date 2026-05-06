@@ -48,6 +48,14 @@ const createTeam = async (data) => {
     }
   }
 
+  // Sync all targets for leaders in MongoDB so that static employee targets are updated instantly
+  try {
+    const employeeService = require('./employee.service');
+    await employeeService.syncLeaderTargets(quarterId);
+  } catch (err) {
+    console.error('Error syncing leader targets on create:', err);
+  }
+
   return team;
 };
 
@@ -114,6 +122,14 @@ const updateTeam = async (id, data) => {
     }
   }
 
+  // Sync all targets for leaders in MongoDB so that static employee targets are updated instantly
+  try {
+    const employeeService = require('./employee.service');
+    await employeeService.syncLeaderTargets(quarterId);
+  } catch (err) {
+    console.error('Error syncing leader targets on update:', err);
+  }
+
   return await Team.findByIdAndUpdate(id, data, { returnDocument: 'after' })
     .populate('teamLeaderId', 'name code')
     .populate('memberIds', 'name code');
@@ -152,12 +168,23 @@ const deleteTeam = async (id) => {
   }
 
   // 3. Deactivate the team and clear its internal lists
-  return await Team.findByIdAndUpdate(id, { 
+  const resultTeam = await Team.findByIdAndUpdate(id, { 
     $set: { 
       isActive: false,
       memberIds: [] // Clear members list in the team object too
     } 
   }, { returnDocument: 'after' });
+
+  // Sync all targets for leaders in MongoDB so that static employee targets are updated instantly
+  try {
+    const quarterId = getQuarterId(today);
+    const employeeService = require('./employee.service');
+    await employeeService.syncLeaderTargets(quarterId);
+  } catch (err) {
+    console.error('Error syncing leader targets on delete:', err);
+  }
+
+  return resultTeam;
 };
 
 const getTeamTargetSummary = async (teamId, quarterId) => {
@@ -192,6 +219,10 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
   // 2. Process team leader (personal progress only)
   if (team.teamLeaderId) {
     const leaderProg = await employeeService.getPersonalTargetProgressOnly(team.teamLeaderId, quarterId);
+
+    // Since they lead a team, their personal target is 0. Only their personal sales achievements count.
+    leaderProg.adjustedTarget = 0;
+    leaderProg.fullTarget = 0;
 
     totalAdjustedTarget += leaderProg.adjustedTarget || 0;
     totalAchieved += leaderProg.achievedSalesValue || 0;
@@ -254,6 +285,10 @@ const getTeamsWithPerformance = async (quarterId) => {
     // Process team leader (personal progress only)
     if (team.teamLeaderId) {
       const leaderProg = await employeeService.getPersonalTargetProgressOnly(team.teamLeaderId, quarterId);
+
+      // Since they lead a team, their personal target is 0. Only their personal sales achievements count.
+      leaderProg.adjustedTarget = 0;
+      leaderProg.fullTarget = 0;
 
       totalAdjustedTarget += leaderProg.adjustedTarget || 0;
       totalAchieved += leaderProg.achievedSalesValue || 0;
