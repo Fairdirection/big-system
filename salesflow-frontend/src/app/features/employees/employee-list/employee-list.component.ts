@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { EmployeeService } from '@core/services/employee.service';
 import { ThemeService } from '@core/services/theme.service';
 import { Employee } from '@core/models/employee.model';
-import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroPlus, heroMagnifyingGlass, heroIdentification, heroEnvelope, heroPhone, heroChevronRight } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
+import { BadgeComponent } from '@shared/components/badge/badge.component';
 
 @Component({
   selector: 'app-employee-list',
@@ -152,7 +152,7 @@ export class EmployeeListComponent implements OnInit {
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   loadEmployees() {
     this.themeService.loading.set(true);
@@ -177,8 +177,8 @@ export class EmployeeListComponent implements OnInit {
     const term = event.target.value.toLowerCase();
     this.searchTerm.set(term);
     this.filteredEmployees.set(
-      this.employees().filter(e => 
-        e.name.toLowerCase().includes(term) || 
+      this.employees().filter(e =>
+        e.name.toLowerCase().includes(term) ||
         e.code.toLowerCase().includes(term) ||
         e.email.toLowerCase().includes(term)
       )

@@ -7,6 +7,7 @@ import { ApiResponse } from '@core/models/api-response.model';
 import { StatCardComponent } from '@shared/components/stat-card/stat-card.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { RouterLink } from '@angular/router';
 import { 
   heroBanknotes, 
   heroChartBar, 
@@ -18,7 +19,6 @@ import {
   heroUsers,
   heroBriefcase
 } from '@ng-icons/heroicons/outline';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',

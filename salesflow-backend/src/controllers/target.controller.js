@@ -49,8 +49,15 @@ const getTargetSummary = async (req, res, next) => {
           achievementPercentage: progress.achievementPercentage,
           gap: progress.gap
         });
-        totalAdjustedTarget += progress.adjustedTarget;
-        totalAchieved += progress.achievedSales;
+        
+        // Sum personal targets and achievements to prevent double-counting team leaders and members
+        if (progress.isTeamLeader && progress.personalProgress) {
+          totalAdjustedTarget += progress.personalProgress.adjustedTarget || 0;
+          totalAchieved += progress.personalProgress.achievedSales || 0;
+        } else {
+          totalAdjustedTarget += progress.adjustedTarget || 0;
+          totalAchieved += progress.achievedSales || 0;
+        }
       } catch (err) {
         // Handle case where employee target progress fails, usually means no target set
       }
@@ -63,6 +70,7 @@ const getTargetSummary = async (req, res, next) => {
       employees: employeesData,
       totals: {
         totalAdjustedTarget: Math.round(totalAdjustedTarget * 100) / 100,
+        totalAdjustedTargetEgp: Math.round(totalAdjustedTarget), // For convenient display if needed
         totalAchieved: Math.round(totalAchieved * 100) / 100,
         overallAchievementPercentage: Math.round(overallAchievementPercentage * 10) / 10
       }

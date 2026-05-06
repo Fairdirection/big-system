@@ -10,6 +10,7 @@ export interface Setting {
   label: string;
   isDefault: boolean;
   sortOrder: number;
+  isActive?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

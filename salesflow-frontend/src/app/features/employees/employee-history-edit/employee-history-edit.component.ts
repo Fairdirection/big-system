@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EmployeeService } from '@core/services/employee.service';
 import { ThemeService } from '@core/services/theme.service';
@@ -24,7 +24,7 @@ import { TeamService } from '@core/services/team.service';
 @Component({
   selector: 'app-employee-history-edit',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, RouterLink, FormsModule],
+  imports: [CommonModule, NgIconComponent, FormsModule],
   providers: [
     provideIcons({ 
       heroChevronRight, 

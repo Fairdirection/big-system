@@ -284,54 +284,19 @@ const transferTeam = async (employeeId, { newTeamId, transferDate }) => {
   return employee;
 };
 
-const getTargetProgress = async (employeeId, quarterId) => {
-  const employee = await Employee.findById(employeeId);
+const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
+  let employee;
+  if (typeof employeeOrId === 'string' || mongoose.isValidObjectId(employeeOrId)) {
+    employee = await Employee.findById(employeeOrId);
+  } else {
+    employee = employeeOrId;
+  }
+
   if (!employee || employee.department !== 'Sales') {
     throw new Error('Employee not found or not in Sales department');
   }
 
-  // --- SPECIAL CASE: TEAM LEADER ---
-  // If the employee is a TeamLeader, their progress is the TEAM'S progress
-  if (employee.seniorityLevel === 'TeamLeader') {
-    const team = await Team.findOne({ teamLeaderId: employeeId, isActive: true }).populate('memberIds');
-    if (team) {
-      const membersProgress = [];
-      let totalAdjustedTarget = 0;
-      let totalAchievedValue = 0;
-      let totalAchievedCommission = 0;
-      const totalUniqueClients = new Set();
-
-      for (const member of team.memberIds) {
-        // Reuse the same logic for each member
-        const memberProgress = await getTargetProgress(member._id.toString(), quarterId);
-        totalAdjustedTarget += Math.round(memberProgress.adjustedTarget);
-        totalAchievedValue += Math.round(memberProgress.achievedSalesValue);
-        totalAchievedCommission += Math.round(memberProgress.achievedCommission);
-        membersProgress.push(memberProgress);
-      }
-
-      const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedValue / totalAdjustedTarget) * 100 : 0;
-      
-      return {
-        employeeId,
-        employeeName: employee.name,
-        code: employee.code,
-        quarterId,
-        isTeamLeader: true,
-        fullTarget: totalAdjustedTarget, // For a leader, full target is the sum
-        actualWorkingDays: 90, // Leaders are usually full quarter
-        adjustedTarget: Math.round(totalAdjustedTarget),
-        achievedSalesValue: Math.round(totalAchievedValue),
-        achievedCommission: Math.round(totalAchievedCommission),
-        achievementPercentage: Math.round(achievementPercentage * 10) / 10,
-        gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedValue)),
-        teamMembersCount: team.memberIds.length
-      };
-    }
-  }
-
-  // --- NORMAL EMPLOYEE CASE ---
-  // Ensure we use ObjectId for deep queries in Sale.find
+  const employeeId = employee._id.toString();
   const empId = new mongoose.Types.ObjectId(employeeId);
   
   const history = await EmployeeTeamHistory.find({ employeeId: empId });
@@ -352,7 +317,6 @@ const getTargetProgress = async (employeeId, quarterId) => {
 
   const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
   
-  // Use a more robust query that handles both String and ObjectId formats
   const sales = await Sale.find({
     status: { $in: ['confirmed', 'claimed', 'collected'] },
     isActive: true,
@@ -360,7 +324,7 @@ const getTargetProgress = async (employeeId, quarterId) => {
       {
         $or: [
           { 'sellers.employeeId': employeeId },
-          { 'sellers.employeeId': new mongoose.Types.ObjectId(employeeId) }
+          { 'sellers.employeeId': empId }
         ]
       },
       {
@@ -372,16 +336,14 @@ const getTargetProgress = async (employeeId, quarterId) => {
     ]
   }).lean();
 
-  const quarterSales = sales;
-
   let achievedSalesValue = 0;
   let achievedCommission = 0;
   const uniqueClients = new Set();
 
-  quarterSales.forEach(sale => {
+  sales.forEach(sale => {
     const seller = sale.sellers.find(s => {
       const sId = s.employeeId?._id ? s.employeeId._id.toString() : s.employeeId?.toString();
-      return sId === employeeId.toString();
+      return sId === employeeId;
     });
     if (seller) {
       achievedSalesValue += (sale.unitValue || 0); 
@@ -406,8 +368,72 @@ const getTargetProgress = async (employeeId, quarterId) => {
     achievedCommission: Math.round(achievedCommission),
     clientsCount: uniqueClients.size,
     achievementPercentage: Math.round(achievementPercentage * 10) / 10,
-    gap: Math.round(gap)
+    gap: Math.round(gap),
+    sales: sales.map(s => ({
+      _id: s._id,
+      projectName: s.projectName,
+      unitNumber: s.unitNumber,
+      unitValue: s.unitValue,
+      contractDate: s.contractDate,
+      clientName: s.clientName,
+      status: s.status
+    }))
   };
+};
+
+const getTargetProgress = async (employeeId, quarterId) => {
+  const employee = await Employee.findById(employeeId);
+  if (!employee || employee.department !== 'Sales') {
+    throw new Error('Employee not found or not in Sales department');
+  }
+
+  // Find if this employee is a leader of an active team
+  const team = await Team.findOne({ teamLeaderId: employeeId, isActive: true }).populate('memberIds');
+
+  if (team) {
+    const membersProgress = [];
+    let totalAdjustedTarget = 0;
+    let totalAchievedSales = 0;
+    let totalAchievedCommission = 0;
+
+    for (const member of team.memberIds) {
+      const memberProgress = await getTargetProgress(member._id.toString(), quarterId);
+      totalAdjustedTarget += Math.round(memberProgress.adjustedTarget);
+      totalAchievedSales += Math.round(memberProgress.achievedSalesValue);
+      totalAchievedCommission += Math.round(memberProgress.achievedCommission);
+      membersProgress.push(memberProgress);
+    }
+
+    // Now calculate the leader's own personal target and sales
+    const personalProgress = await getPersonalTargetProgressOnly(employee, quarterId);
+
+    totalAdjustedTarget += personalProgress.adjustedTarget;
+    totalAchievedSales += personalProgress.achievedSales;
+    totalAchievedCommission += personalProgress.achievedCommission;
+
+    const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedSales / totalAdjustedTarget) * 100 : 0;
+
+    return {
+      employeeId,
+      employeeName: employee.name,
+      code: employee.code,
+      quarterId,
+      isTeamLeader: true,
+      fullTarget: Math.round(totalAdjustedTarget),
+      actualWorkingDays: personalProgress.actualWorkingDays,
+      adjustedTarget: Math.round(totalAdjustedTarget),
+      achievedSales: Math.round(totalAchievedSales),
+      achievedSalesValue: Math.round(totalAchievedSales),
+      achievedCommission: Math.round(totalAchievedCommission),
+      achievementPercentage: Math.round(achievementPercentage * 10) / 10,
+      gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedSales)),
+      teamMembersCount: team.memberIds.length,
+      personalProgress,
+      membersProgress
+    };
+  } else {
+    return await getPersonalTargetProgressOnly(employee, quarterId);
+  }
 };
 
 const getSalesDeptEmployees = async () => {
@@ -474,6 +500,7 @@ module.exports = {
   getTeamHistory,
   transferTeam,
   getTargetProgress,
+  getPersonalTargetProgressOnly,
   getSalesDeptEmployees,
   updateHistoryRecord,
   deleteHistoryRecord,

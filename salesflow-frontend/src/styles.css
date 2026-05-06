@@ -45,6 +45,7 @@ html.dark {
   html {
     @apply bg-sf-bg text-sf-text font-body antialiased transition-all duration-300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    zoom: 0.67;
   }
 
   * {

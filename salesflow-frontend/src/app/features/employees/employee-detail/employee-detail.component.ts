@@ -12,11 +12,12 @@ import {
   heroCalendar, heroBriefcase, heroClock, heroIdentification, heroTrophy, heroChartBar, 
   heroUsers, heroXMark, heroCheck, heroHashtag, heroMapPin, heroBuildingOffice
 } from '@ng-icons/heroicons/outline';
+import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 
 @Component({
   selector: 'app-employee-detail',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, RouterLink],
+  imports: [CommonModule, NgIconComponent, RouterLink, CurrencyEgpPipe],
   providers: [
     provideIcons({ 
       heroChevronLeft, heroChevronRight, heroPencil, heroTrash, heroEnvelope, heroPhone, 
