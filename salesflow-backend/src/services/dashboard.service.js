@@ -117,22 +117,12 @@ const getDashboardStats = async (quarterId) => {
       const teamMembers = team ? (team.memberIds || []).filter(m => m.toString() !== empIdStr) : [];
       hasTeam = team && teamMembers.length > 0;
     } else if (isSM) {
-      const explicitTeam = teams.find(t => t.teamLeaderId.toString() === empIdStr);
-      if (explicitTeam) {
-        const teamMembers = (explicitTeam.memberIds || []).filter(m => m.toString() !== empIdStr);
-        hasTeam = teamMembers.some(memberId => {
-          const leaderTeam = teams.find(t => t.teamLeaderId.toString() === memberId.toString());
-          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== memberId.toString()) : [];
-          return leaderTeam && leaderTeamMembers.length > 0;
-        });
-      } else {
-        const reports = salesEmployees.filter(e => e.managerId.toString() === empIdStr && e.seniorityLevel === 'TeamLeader');
-        hasTeam = reports.some(leader => {
-          const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
-          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
-          return leaderTeam && leaderTeamMembers.length > 0;
-        });
-      }
+      const reports = salesEmployees.filter(e => e.managerId.toString() === empIdStr && e.seniorityLevel === 'TeamLeader');
+      hasTeam = reports.some(leader => {
+        const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
+        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+        return leaderTeam && leaderTeamMembers.length > 0;
+      });
     }
 
     if (!hasTeam) {
@@ -188,22 +178,12 @@ const getDashboardStats = async (quarterId) => {
         const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== mIdStr) : [];
         hasTeam = leaderTeam && leaderTeamMembers.length > 0;
       } else if (isSM) {
-        const explicitTeam = teams.find(t => t.teamLeaderId.toString() === mIdStr);
-        if (explicitTeam) {
-          const teamMembers = (explicitTeam.memberIds || []).filter(m => m.toString() !== mIdStr);
-          hasTeam = teamMembers.some(memberId => {
-            const leaderTeam = teams.find(t => t.teamLeaderId.toString() === memberId.toString());
-            const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== memberId.toString()) : [];
-            return leaderTeam && leaderTeamMembers.length > 0;
-          });
-        } else {
-          const reports = salesEmployees.filter(e => e.managerId.toString() === mIdStr && e.seniorityLevel === 'TeamLeader');
-          hasTeam = reports.some(leader => {
-            const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
-            const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
-            return leaderTeam && leaderTeamMembers.length > 0;
-          });
-        }
+        const reports = salesEmployees.filter(e => e.managerId.toString() === mIdStr && e.seniorityLevel === 'TeamLeader');
+        hasTeam = reports.some(leader => {
+          const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
+          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+          return leaderTeam && leaderTeamMembers.length > 0;
+        });
       }
 
       let adjustedTarget = 0;
