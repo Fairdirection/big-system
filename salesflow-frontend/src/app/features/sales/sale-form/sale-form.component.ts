@@ -379,7 +379,7 @@ export class SaleFormComponent implements OnInit {
   }
 
   sellerTotalShare() {
-    return this.sellers.value.reduce((sum: number, s: any) => sum + (s.sharePercentage || 0), 0);
+    return this.sellers.value.reduce((sum: number, s: any) => sum + (Number(s.sharePercentage) || 0), 0);
   }
 
   calculatedGross() {

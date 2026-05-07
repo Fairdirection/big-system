@@ -10,6 +10,9 @@ const updateClaimSchema = Joi.object({
   collectionDate: Joi.date().optional().allow(null),
   collectedAmount: Joi.number().min(0).optional().allow(null),
   notes: Joi.string().optional().allow(''),
+  commissionDue: Joi.number().min(0).optional(),
+  invoiceStatus: Joi.string().optional().allow(''),
+  expectedCollectionDate: Joi.date().optional().allow(null, ''),
   isActive: Joi.boolean().optional()
 });
 

@@ -55,7 +55,7 @@ const createEmployee = async (data) => {
 };
 
 const getEmployees = async (query) => {
-  const { department, isActive, search, seniorityLevel, teamId, page, limit, sortBy, order } = query;
+  const { department, isActive, search, seniorityLevel, teamId, page, limit, sortBy, order, includePerformance } = query;
   
   const filter = {};
   if (department) filter.department = department;
@@ -88,8 +88,8 @@ const getEmployees = async (query) => {
 
   const paginatedResult = await paginate(Employee, filter, { page, limit, sort, populate: 'currentTeamId managerId' });
   
-  // Enrich with dynamic quarterly target progress if they are in Sales
-  if (paginatedResult && paginatedResult.data) {
+  // Enrich with dynamic quarterly target progress if they are in Sales and requested
+  if (paginatedResult && paginatedResult.data && includePerformance === 'true') {
     const currentQuarter = getQuarterId(new Date());
     const enrichedDocs = [];
     for (const emp of paginatedResult.data) {

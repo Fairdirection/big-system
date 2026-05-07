@@ -9,6 +9,8 @@ export interface Claim {
   commissionDue: number;
   status: 'pending' | 'submitted' | 'collected' | 'disputed';
   invoiceNumber?: string;
+  invoiceStatus?: string;
+  expectedCollectionDate?: string | Date;
   collectionDate?: Date;
   collectedAmount?: number;
   notes?: string;

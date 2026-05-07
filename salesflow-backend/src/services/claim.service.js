@@ -61,6 +61,8 @@ const updateClaim = async (id, data) => {
 
   if (data.status === 'collected') {
     await Sale.findByIdAndUpdate(claim.saleId, { status: 'collected' });
+  } else if (data.status && data.status !== 'collected') {
+    await Sale.findByIdAndUpdate(claim.saleId, { status: 'claimed' });
   }
 
   return updatedClaim;

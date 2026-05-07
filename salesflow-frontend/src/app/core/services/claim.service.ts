@@ -32,4 +32,8 @@ export class ClaimService {
   syncClaims() {
     return this.http.post<ApiResponse<Claim[]>>(`${this.base}/sync`, {});
   }
+
+  deleteClaim(id: string) {
+    return this.http.delete<ApiResponse<Claim>>(`${this.base}/${id}`);
+  }
 }
