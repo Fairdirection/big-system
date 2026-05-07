@@ -8,11 +8,12 @@ import { Employee } from '@core/models/employee.model';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroArrowRight, heroCheck, heroUserGroup, heroIdentification, heroUserPlus } from '@ng-icons/heroicons/outline';
 import { ThemeService } from '@core/services/theme.service';
+import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 
 @Component({
   selector: 'app-team-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgIconComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgIconComponent, CurrencyEgpPipe],
   providers: [
     provideIcons({ heroArrowRight, heroCheck, heroUserGroup, heroIdentification, heroUserPlus })
   ],
@@ -83,7 +84,7 @@ import { ThemeService } from '@core/services/theme.service';
                         <span class="text-xs font-bold text-sf-text block">{{ emp.name }}</span>
                         @if (perf) {
                           <div class="flex items-center gap-2 mt-1">
-                            <span class="text-[9px] font-black text-sf-success">{{ perf.achieved | number }} ج.م</span>
+                            <span class="text-[9px] font-black text-sf-success">{{ perf.achieved | currencyEgp }}</span>
                             <span class="text-[8px] px-1.5 py-0.5 rounded-md bg-sf-success/10 text-sf-success border border-sf-success/20">
                               {{ perf.achievementPercentage | number:'1.0-1' }}%
                             </span>
@@ -128,7 +129,7 @@ import { ThemeService } from '@core/services/theme.service';
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider">إجمالي الإنجاز</p>
                   <span class="px-2 py-0.5 rounded-full bg-sf-primary/10 text-[10px] font-black text-sf-primary">{{ perf.overallAchievementPercentage | number:'1.0-1' }}%</span>
                 </div>
-                <h4 class="text-xl font-display font-black text-sf-primary">{{ perf.totalAchieved | number }} <span class="text-[10px] opacity-70">ج.م</span></h4>
+                <h4 class="text-xl font-display font-black text-sf-primary">{{ perf.totalAchieved | currencyEgp }}</h4>
                 <div class="w-full h-1.5 bg-sf-border rounded-full overflow-hidden">
                   <div class="h-full bg-sf-primary transition-all duration-1000" [style.width.%]="perf.overallAchievementPercentage"></div>
                 </div>
@@ -183,9 +184,17 @@ export class TeamFormComponent implements OnInit {
     const currentId = this.teamId();
     return this.employees().filter(e => {
       const isEligibleLeader = e.seniorityLevel === 'TeamLeader' || e.seniorityLevel === 'SalesManager';
+      
+      let empTeamId: string | null = null;
+      if (e.currentTeamId) {
+        empTeamId = typeof e.currentTeamId === 'object' && e.currentTeamId._id 
+          ? e.currentTeamId._id.toString() 
+          : e.currentTeamId.toString();
+      }
+
       // If we are editing, allow the current leader of THIS team
       // Otherwise, only allow leaders who are NOT already in a team
-      const isAvailable = !e.currentTeamId || (currentId && (e.currentTeamId === currentId || e.currentTeamId._id === currentId));
+      const isAvailable = !empTeamId || (currentId && empTeamId === currentId.toString());
       return isEligibleLeader && isAvailable;
     });
   });
@@ -194,15 +203,25 @@ export class TeamFormComponent implements OnInit {
   memberCandidates = computed(() => {
     const leaderId = this.selectedLeaderId();
     const leaderObj = this.employees().find(e => e._id === leaderId);
+    const currentId = this.teamId();
     
-    if (leaderObj && leaderObj.seniorityLevel === 'SalesManager') {
-      // If the selected leader is a SalesManager, only TeamLeaders can be member candidates
-      return this.employees().filter(e => e.seniorityLevel === 'TeamLeader');
-    } else {
-      // If the selected leader is a TeamLeader (or anyone else), member candidates are standard members
-      // i.e., NOT TeamLeader and NOT SalesManager
-      return this.employees().filter(e => e.seniorityLevel !== 'TeamLeader' && e.seniorityLevel !== 'SalesManager');
-    }
+    return this.employees().filter(e => {
+      const isEligibleRole = leaderObj && leaderObj.seniorityLevel === 'SalesManager'
+        ? e.seniorityLevel === 'TeamLeader'
+        : (e.seniorityLevel !== 'TeamLeader' && e.seniorityLevel !== 'SalesManager');
+
+      let empTeamId: string | null = null;
+      if (e.currentTeamId) {
+        empTeamId = typeof e.currentTeamId === 'object' && e.currentTeamId._id 
+          ? e.currentTeamId._id.toString() 
+          : e.currentTeamId.toString();
+      }
+
+      // Allow if they have no team, OR if they are already in the team we are editing!
+      const isAvailable = !empTeamId || (currentId && empTeamId === currentId.toString());
+
+      return isEligibleRole && isAvailable;
+    });
   });
 
   constructor() {
@@ -298,7 +317,9 @@ export class TeamFormComponent implements OnInit {
   }
 
   isMemberSelected(id: string): boolean {
-    return this.form.get('memberIds')?.value.includes(id);
+    const val = this.form.get('memberIds')?.value;
+    if (!val || !Array.isArray(val)) return false;
+    return val.some(v => v && v.toString() === id.toString());
   }
 
   getMemberPerf(id: string) {

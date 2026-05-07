@@ -9,12 +9,15 @@ const {
   updateClaim,
   deleteClaim,
   collectClaim,
-  updateClaimStatus
+  updateClaimStatus,
+  syncClaims
 } = require('../controllers/claim.controller');
 
 router.get('/',      getClaims);
+router.post('/sync', syncClaims);
 router.get('/:id',   getClaim);
 router.post('/',     validate(createClaimSchema), createClaim);
+router.post('/:id/collect', collectClaim);
 router.patch('/:id/collect', collectClaim);
 router.patch('/:id/status', updateClaimStatus);
 router.patch('/:id', validate(updateClaimSchema), updateClaim);

@@ -93,6 +93,35 @@ const deleteClaim = async (id) => {
   return await Claim.findByIdAndUpdate(id, { isActive: false }, { returnDocument: 'after' });
 };
 
+const syncClaims = async () => {
+  const confirmedSales = await Sale.find({ status: 'confirmed', isActive: true });
+  const createdClaims = [];
+
+  for (const sale of confirmedSales) {
+    const existing = await Claim.findOne({ saleId: sale._id, isActive: true });
+    if (!existing) {
+      const claimNumber = await generateCode(Claim, 'claimNumber', 'CLM');
+      const claim = await Claim.create({
+        saleId: sale._id,
+        claimNumber,
+        saleNumber:   sale.saleNumber,
+        projectName:  sale.projectName,
+        unitNumber:   sale.unitNumber,
+        clientName:   sale.clientName,
+        commissionDue: sale.invoiceAmount,
+        invoiceStatus: sale.invoiceStatus,
+        expectedCollectionDate: sale.expectedCollectionDate,
+        status: 'pending'
+      });
+
+      await Sale.findByIdAndUpdate(sale._id, { status: 'claimed' });
+      createdClaims.push(claim);
+    }
+  }
+
+  return createdClaims;
+};
+
 module.exports = {
   createClaim,
   getClaims,
@@ -100,5 +129,6 @@ module.exports = {
   updateClaim,
   deleteClaim,
   collectClaim,
-  updateClaimStatus
+  updateClaimStatus,
+  syncClaims
 };

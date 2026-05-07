@@ -5,6 +5,7 @@ import { TeamService } from '@core/services/team.service';
 import { ThemeService } from '@core/services/theme.service';
 import { ApiResponse } from '@core/models/api-response.model';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { 
   heroArrowRight, heroUserGroup, heroTrophy, heroChartBar, 
   heroUsers, heroBuildingOffice, heroCalendar, heroChevronDown, 
@@ -14,7 +15,7 @@ import {
 @Component({
   selector: 'app-team-detail',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, RouterLink],
+  imports: [CommonModule, NgIconComponent, RouterLink, CurrencyEgpPipe],
   providers: [
     provideIcons({ 
       heroArrowRight, heroUserGroup, heroTrophy, heroChartBar, 
@@ -57,13 +58,28 @@ import {
         </div>
       </header>
 
+      <!-- Target Calculation Note Banner -->
+      <div class="glass-card p-4 rounded-2xl border border-sf-border bg-sf-primary/5 flex items-start gap-3 text-xs leading-relaxed text-sf-text max-w-5xl relative overflow-hidden group">
+        <div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sf-primary to-sf-secondary"></div>
+        <div class="w-8 h-8 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary shrink-0">
+          <ng-icon name="heroChartBar" class="text-lg"></ng-icon>
+        </div>
+        <div class="space-y-1">
+          <p class="font-bold text-sf-text text-sm">💡 كيف يتم حساب مستهدف الفريق للربع الحالي؟</p>
+          <p class="text-sf-muted font-medium">
+            يتم احتساب مستهدف الفريق ديناميكياً كمجموع <strong>المستهدفات المعدلة</strong> لجميع أعضاء الفريق النشطين في هذا الربع. 
+            المستهدف الفردي لكل عضو يُحسب تناسبياً بناءً على عدد أيام انضمامه الفعلي للفرق في الربع الحالي (قاعدة الـ 30 يوماً للشهر)، مما يضمن عدالة التقييم في حال الانضمام المتأخر أو الانتقال.
+          </p>
+        </div>
+      </div>
+
       <!-- Team Overview Stats -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
           <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">إجمالي مبيعات الفريق</p>
           <div class="flex items-end justify-between relative z-10">
-            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAchieved | number }} <span class="text-xs opacity-50">ج.م</span></h4>
+            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAchieved | currencyEgp }}</h4>
             <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
               <ng-icon name="heroTrophy"></ng-icon>
             </div>
@@ -74,7 +90,7 @@ import {
           <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
           <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">المستهدف المعدل</p>
           <div class="flex items-end justify-between relative z-10">
-            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAdjustedTarget | number }} <span class="text-xs opacity-50">ج.م</span></h4>
+            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAdjustedTarget | currencyEgp }}</h4>
             <div class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent">
               <ng-icon name="heroChartBar"></ng-icon>
             </div>
@@ -115,7 +131,7 @@ import {
                   <div class="flex items-center gap-3 mt-1 text-[10px] font-black text-sf-muted uppercase">
                     <span>كود: {{ member.code }}</span>
                     <span class="opacity-30">•</span>
-                    <span class="text-sf-primary">المستهدف: {{ member.adjustedTarget | number }} ج.م</span>
+                    <span class="text-sf-primary">المستهدف: {{ member.adjustedTarget | currencyEgp }}</span>
                   </div>
                 </div>
               </div>
@@ -123,7 +139,7 @@ import {
               <div class="flex items-center gap-8">
                 <div class="text-right">
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-1">المحقق</p>
-                  <p class="text-lg font-black text-sf-success">{{ member.achieved | number }} ج.م</p>
+                  <p class="text-lg font-black text-sf-success">{{ member.achieved | currencyEgp }}</p>
                 </div>
                 
                 <div class="w-32">
@@ -146,6 +162,35 @@ import {
             <!-- Member Details (Sales List) -->
             <div *ngIf="expandedMember() === member.employeeId" 
                  class="border-t border-sf-border bg-sf-surface/30 p-8 animate-fade-in">
+              
+              <!-- Calculation Breakdown -->
+              <div *ngIf="member.fullTarget > 0" class="p-5 rounded-2xl bg-sf-bg border border-sf-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 relative overflow-hidden group">
+                <div class="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-sf-primary to-sf-secondary"></div>
+                <div class="space-y-1">
+                  <h6 class="text-xs font-black text-sf-muted uppercase tracking-wider flex items-center gap-1.5">
+                    🔬 تفاصيل الحسبة الرياضية للمستهدف المعدل
+                  </h6>
+                  <p class="text-xs text-sf-text font-bold leading-relaxed">
+                    (المستهدف الفردي للربع: <span class="text-sf-primary">{{ member.fullTarget | currencyEgp }}</span> ÷ 90 يوماً) × {{ member.actualWorkingDays }} يوم عمل في الفريق = <span class="text-sf-success">{{ member.adjustedTarget | currencyEgp }}</span>
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 shrink-0 text-[10px]">
+                  <div class="px-3 py-1.5 rounded-xl bg-sf-primary/10 border border-sf-primary/20 font-black text-sf-primary">
+                     أيام العمل: {{ member.actualWorkingDays }} يوم
+                  </div>
+                  <div class="px-3 py-1.5 rounded-xl bg-sf-success/10 border border-sf-success/20 font-black text-sf-success">
+                     المستهدف المعدل: {{ member.adjustedTarget | currencyEgp }}
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="member.fullTarget === 0" class="p-5 rounded-2xl bg-sf-bg border border-sf-border flex items-center gap-3 mb-6 relative overflow-hidden">
+                <div class="absolute inset-y-0 right-0 w-1 bg-sf-accent"></div>
+                <p class="text-xs text-sf-muted font-bold">
+                  💡 بصفتك قائد الفريق، فإن مستهدفك الفردي هو <span class="text-sf-accent">{{ 0 | currencyEgp }}</span> (يتم احتساب إنجازك من مبيعاتك الشخصية فقط، بينما يُحسب مستهدف الفريق الإجمالي ديناميكياً من مستهدفات الأعضاء).
+                </p>
+              </div>
+
               <div class="flex items-center justify-between mb-6">
                 <h5 class="text-sm font-black text-sf-text uppercase tracking-widest flex items-center gap-2">
                   <ng-icon name="heroTrophy" class="text-sf-primary"></ng-icon>
@@ -179,7 +224,7 @@ import {
                       </div>
                       <div class="text-left">
                         <p class="text-[9px] font-black text-sf-muted uppercase mb-0.5">القيمة</p>
-                        <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | number }} <span class="text-[9px]">ج.م</span></p>
+                        <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | currencyEgp }}</p>
                       </div>
                     </div>
                   </div>

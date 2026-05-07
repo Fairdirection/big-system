@@ -32,6 +32,21 @@ import { Team } from '@core/models/team.model';
         </button>
       </header>
 
+      <!-- Target Calculation Note Banner -->
+      <div class="glass-card p-4 rounded-2xl border border-sf-border bg-sf-primary/5 flex items-start gap-3 text-xs leading-relaxed text-sf-text max-w-5xl relative overflow-hidden group">
+        <div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sf-primary to-sf-secondary"></div>
+        <div class="w-8 h-8 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary shrink-0">
+          <ng-icon name="heroChartBar" class="text-lg"></ng-icon>
+        </div>
+        <div class="space-y-1">
+          <p class="font-bold text-sf-text text-sm">💡 كيف يتم حساب مستهدف الفريق للربع الحالي؟</p>
+          <p class="text-sf-muted font-medium">
+            يتم احتساب مستهدف الفريق ديناميكياً كمجموع <strong>المستهدفات المعدلة</strong> لجميع أعضاء الفريق النشطين في هذا الربع. 
+            المستهدف الفردي لكل عضو يُحسب تناسبياً بناءً على عدد أيام انضمامه الفعلي للفرق في الربع الحالي (قاعدة الـ 30 يوماً للشهر)، مما يضمن عدالة التقييم في حال الانضمام المتأخر أو الانتقال.
+          </p>
+        </div>
+      </div>
+
       <!-- Stats Bar -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="glass-card p-4 rounded-2xl border border-sf-border flex items-center gap-4">

@@ -59,8 +59,8 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
             </div>
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">كود الموظف (اختياري)</label>
-              <app-input formControlName="code" placeholder="EMP-001" 
-                         hint="اتركه فارغاً للتوليد التلقائي أو أدخل كود مخصص"></app-input>
+              <app-input formControlName="code" placeholder="مثال: 125" 
+                         hint="اتركه فارغاً للتوليد التلقائي، أو اكتب رقماً وسيقوم النظام بتحويله تلقائياً لصيغة EMP-0125"></app-input>
             </div>
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الرقم القومي</label>
@@ -114,12 +114,12 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
+            <div class="space-y-2" *ngIf="form.get('department')?.value === 'Sales'">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف الربعي (ج.م)</label>
               <app-input type="number" formControlName="target" placeholder="0.00"
                          [hint]="getTargetHint()"></app-input>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2" [class.md:col-span-2]="form.get('department')?.value !== 'Sales'">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">تاريخ التعيين</label>
               <app-input type="date" formControlName="hireDate"
                          [hasError]="isInvalid('hireDate')"
@@ -236,6 +236,7 @@ export class EmployeeFormComponent implements OnInit {
     this.form.get('department')?.valueChanges.subscribe(dept => {
       if (dept !== 'Sales') {
         this.form.get('seniorityLevel')?.setValue(null);
+        this.form.get('target')?.setValue(0);
       } else {
         this.form.get('seniorityLevel')?.setValue('Fresh');
       }

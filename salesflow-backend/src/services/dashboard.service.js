@@ -136,16 +136,47 @@ const getDashboardStats = async (quarterId) => {
   const teamRevenueMap = {};
   const teamSalesCountMap = {};
 
+  const getTeamForEmployeeOnDate = (empIdStr, contractDate, empObj) => {
+    const saleDate = new Date(contractDate);
+    const history = historyByEmployee[empIdStr] || [];
+
+    // Find the history record that covers this contractDate
+    const match = history.find(h => {
+      const join = new Date(h.joinDate);
+      join.setHours(0, 0, 0, 0);
+      const leave = h.leaveDate ? new Date(h.leaveDate) : null;
+      if (leave) {
+        leave.setHours(23, 59, 59, 999);
+      }
+      return saleDate >= join && (!leave || saleDate <= leave);
+    });
+
+    if (match) return match.teamId ? match.teamId.toString() : null;
+
+    // Fallback if no history matches (legacy or fallback data)
+    if (empObj && empObj.currentTeamId) {
+      const joinDate = empObj.teamJoinDate || empObj.createdAt || new Date();
+      const join = new Date(joinDate);
+      join.setHours(0, 0, 0, 0);
+      if (saleDate >= join) {
+        return empObj.currentTeamId.toString();
+      }
+    }
+
+    return null;
+  };
+
   allSalesForQuarter.forEach(sale => {
     const saleId = sale._id.toString();
     const uniqueTeamsForThisSale = new Set();
 
     sale.sellers.forEach(seller => {
       const empId = seller.employeeId.toString();
-      // Find which team this employee belongs to
-      const team = teams.find(t => t.memberIds.some(m => m.toString() === empId));
-      if (team) {
-        const teamIdStr = team._id.toString();
+      const empObj = salesEmployees.find(e => e._id.toString() === empId);
+      
+      // Find which team this employee belonged to on the contractDate of the sale
+      const teamIdStr = getTeamForEmployeeOnDate(empId, sale.contractDate, empObj);
+      if (teamIdStr) {
         teamRevenueMap[teamIdStr] = (teamRevenueMap[teamIdStr] || 0) + (seller.commissionValue || 0);
         uniqueTeamsForThisSale.add(teamIdStr);
       }
@@ -194,7 +225,12 @@ const getDashboardStats = async (quarterId) => {
       let memberAchieved = 0;
       allSalesForQuarter.forEach(sale => {
         const seller = (sale.sellers || []).find(s => s.employeeId.toString() === mIdStr);
-        if (seller) memberAchieved += (sale.unitValue || 0);
+        if (seller) {
+          const saleTeamId = getTeamForEmployeeOnDate(mIdStr, sale.contractDate, emp);
+          if (saleTeamId && saleTeamId === tid) {
+            memberAchieved += (sale.unitValue || 0);
+          }
+        }
       });
 
       membersPerformance.push({

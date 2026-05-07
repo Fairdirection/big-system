@@ -2,6 +2,10 @@ const Joi = require('joi');
 
 const createEmployeeSchema = Joi.object({
   name: Joi.string().trim().required(),
+  code: Joi.alternatives().try(
+    Joi.string().trim().pattern(/^(EMP-\d+|\d+)$/),
+    Joi.number().integer()
+  ).optional().allow(null, ''),
   nationalId: Joi.string().required(),
   department: Joi.string().valid(
     'Operations', 'IT', 'Marketing', 'HR', 'Finance', 'Sales', 'TopManagement'
@@ -23,6 +27,10 @@ const createEmployeeSchema = Joi.object({
 
 const updateEmployeeSchema = Joi.object({
   name: Joi.string().trim().optional(),
+  code: Joi.alternatives().try(
+    Joi.string().trim().pattern(/^(EMP-\d+|\d+)$/),
+    Joi.number().integer()
+  ).optional().allow(null, ''),
   nationalId: Joi.string().optional(),
   department: Joi.string().valid(
     'Operations', 'IT', 'Marketing', 'HR', 'Finance', 'Sales', 'TopManagement'

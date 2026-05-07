@@ -3,18 +3,19 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SaleService } from '@core/services/sale.service';
 import { ClaimService } from '@core/services/claim.service';
+import { ThemeService } from '@core/services/theme.service';
 import { Sale } from '@core/models/sale.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate } from '@ng-icons/heroicons/outline';
+import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-sale-detail',
   standalone: true,
   imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
   providers: [
-    provideIcons({ heroChevronRight, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate })
+    provideIcons({ heroChevronRight, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -56,6 +57,10 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
             <button [routerLink]="['/sales', s._id, 'edit']" class="btn btn-primary px-6 py-2 flex items-center gap-2">
               <ng-icon name="heroPencilSquare"></ng-icon>
               <span>تعديل المبيعة</span>
+            </button>
+            <button (click)="deleteSale()" class="btn btn-danger px-5 py-2 flex items-center gap-2">
+              <ng-icon name="heroTrash" class="text-lg"></ng-icon>
+              <span>حذف البيعة</span>
             </button>
           </div>
         </header>
@@ -182,6 +187,7 @@ export class SaleDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private saleService = inject(SaleService);
   private claimService = inject(ClaimService);
+  private themeService = inject(ThemeService);
   private router = inject(Router);
   sale = signal<Sale | null>(null);
 
@@ -220,6 +226,26 @@ export class SaleDetailComponent implements OnInit {
         this.router.navigate(['/claims']);
       }
     });
+  }
+
+  deleteSale() {
+    const s = this.sale();
+    if (!s) return;
+
+    if (confirm(`هل أنت متأكد من حذف هذه البيعة رقم ${s.saleNumber}؟`)) {
+      this.themeService.loading.set(true);
+      this.saleService.deleteSale(s._id).subscribe({
+        next: (res) => {
+          this.themeService.loading.set(false);
+          if (res.success) {
+            this.router.navigate(['/sales']);
+          }
+        },
+        error: () => {
+          this.themeService.loading.set(false);
+        }
+      });
+    }
   }
 
   getStatusColor(status: string): any {

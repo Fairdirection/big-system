@@ -28,4 +28,8 @@ export class ClaimService {
   collectClaim(id: string, data: { collectionDate: Date, collectedAmount: number }) {
     return this.http.post<ApiResponse<Claim>>(`${this.base}/${id}/collect`, data);
   }
+
+  syncClaims() {
+    return this.http.post<ApiResponse<Claim[]>>(`${this.base}/sync`, {});
+  }
 }

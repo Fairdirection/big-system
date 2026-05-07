@@ -60,8 +60,22 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
             <ng-icon name="heroPencil"></ng-icon>
             <span>تعديل الملف</span>
           </button>
-          <button (click)="deleteEmployee()" class="p-3 bg-sf-danger/10 border border-sf-danger/20 rounded-2xl text-sf-danger hover:bg-sf-danger hover:text-white transition-all shadow-sm">
-            <ng-icon name="heroTrash" class="text-xl"></ng-icon>
+          
+          @if (emp.isActive) {
+            <button (click)="toggleActivation()" class="btn btn-secondary h-12 px-6">
+              <ng-icon name="heroXMark"></ng-icon>
+              <span>تعطيل الحساب</span>
+            </button>
+          } @else {
+            <button (click)="toggleActivation()" class="btn btn-primary h-12 px-6">
+              <ng-icon name="heroCheck"></ng-icon>
+              <span>تفعيل الحساب</span>
+            </button>
+          }
+
+          <button (click)="deleteEmployee()" class="btn btn-danger h-12 px-6 flex items-center gap-2">
+            <ng-icon name="heroTrash"></ng-icon>
+            <span>حذف الموظف</span>
           </button>
         </div>
       </header>
@@ -70,13 +84,24 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
         <!-- Main Stats & Info -->
         <div class="lg:col-span-2 space-y-8">
           <!-- Quick Stats -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
               <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+              <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">المستهدف المعدل</p>
+              <div class="flex items-end justify-between relative z-10">
+                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.adjustedTarget || stats()?.fullTarget || emp.target) | currencyEgp }}</h4>
+                <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
+                  <ng-icon name="heroChartBar"></ng-icon>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
               <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">إجمالي المبيعات</p>
               <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-3xl font-display font-black text-sf-text">{{ stats()?.achievedSales | number }}</h4>
-                <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
+                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievedSales || 0) | currencyEgp }}</h4>
+                <div class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success">
                   <ng-icon name="heroTrophy"></ng-icon>
                 </div>
               </div>
@@ -86,7 +111,7 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
               <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
               <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">نسبة الإنجاز</p>
               <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-3xl font-display font-black text-sf-text">{{ stats()?.achievementPercentage | number:'1.0-1' }}%</h4>
+                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievementPercentage || 0) | number:'1.0-1' }}%</h4>
                 <div class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent">
                   <ng-icon name="heroChartBar"></ng-icon>
                 </div>
@@ -94,16 +119,29 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
             </div>
 
             <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-warning/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
               <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">العملاء النشطين</p>
               <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-3xl font-display font-black text-sf-text">{{ stats()?.activeClients || 0 }}</h4>
-                <div class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success">
+                <h4 class="text-2xl font-display font-black text-sf-text">{{ stats()?.clientsCount || 0 }}</h4>
+                <div class="w-10 h-10 rounded-xl bg-sf-warning/10 flex items-center justify-center text-sf-warning">
                   <ng-icon name="heroUsers"></ng-icon>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Prorated Target Explanation Banner -->
+          @if (stats()?.adjustedTarget && stats()?.adjustedTarget !== stats()?.fullTarget) {
+            <div class="glass-card p-5 rounded-2xl border-r-4 border-r-sf-primary border-sf-border bg-sf-surface/60 flex items-center gap-4 shadow-md">
+              <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
+                <ng-icon name="heroClock"></ng-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs font-black text-sf-text mb-0.5">تم تعديل المستهدف بما يتناسب مع أيام العمل</p>
+                <p class="text-[10px] font-semibold text-sf-muted leading-relaxed">المستهدف الكامل للربع: {{ stats()?.fullTarget | currencyEgp }} • أيام العمل النشطة: {{ stats()?.actualWorkingDays }} يوم من أصل 90 يوم.</p>
+              </div>
+            </div>
+          }
 
           <!-- Profile Details -->
           <div class="glass-card p-8 rounded-3xl border border-sf-border shadow-xl">
@@ -181,7 +219,7 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
                     <div class="flex items-center justify-between md:justify-end gap-6 md:min-w-[150px]">
                       <div class="text-left md:text-right">
                         <p class="text-[10px] font-black text-sf-muted uppercase tracking-tighter mb-0.5">قيمة الوحدة</p>
-                        <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | number }} <span class="text-[8px] opacity-70">ج.م</span></p>
+                        <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | currencyEgp }}</p>
                       </div>
                       <span class="badge h-8 px-4" 
                             [class.badge-success]="sale.status === 'collected' || sale.status === 'confirmed'"
@@ -352,6 +390,26 @@ export class EmployeeDetailComponent implements OnInit {
         next: () => {
           this.themeService.loading.set(false);
           this.router.navigate(['/employees']);
+        },
+        error: () => this.themeService.loading.set(false)
+      });
+    }
+  }
+
+  toggleActivation() {
+    const emp = this.employee();
+    if (!emp) return;
+
+    const actionText = emp.isActive ? 'تعطيل' : 'تفعيل';
+    if (confirm(`هل أنت متأكد من ${actionText} حساب الموظف "${emp.name}"؟`)) {
+      this.themeService.loading.set(true);
+      this.employeeService.updateEmployee(emp._id, { isActive: !emp.isActive }).subscribe({
+        next: (res) => {
+          this.themeService.loading.set(false);
+          if (res.success) {
+            this.employee.set(res.data);
+            this.employeeService.invalidateCache();
+          }
         },
         error: () => this.themeService.loading.set(false)
       });

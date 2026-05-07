@@ -69,6 +69,15 @@ const updateClaimStatus = async (req, res, next) => {
   }
 };
 
+const syncClaims = async (req, res, next) => {
+  try {
+    const claims = await claimService.syncClaims();
+    return sendSuccess(res, claims, 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createClaim,
   getClaims,
@@ -76,5 +85,6 @@ module.exports = {
   updateClaim,
   deleteClaim,
   collectClaim,
-  updateClaimStatus
+  updateClaimStatus,
+  syncClaims
 };

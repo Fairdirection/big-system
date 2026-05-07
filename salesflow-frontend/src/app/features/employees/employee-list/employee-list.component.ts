@@ -38,9 +38,24 @@ import { BadgeComponent } from '@shared/components/badge/badge.component';
           <input type="text" placeholder="بحث بالاسم، الكود أو البريد..." 
                  (input)="onSearch($event)"
                  class="w-full pr-11 pl-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 transition-all outline-none">
-          <p class="absolute -bottom-5 right-2 text-[10px] text-sf-muted opacity-0 group-focus-within:opacity-100 transition-opacity">ابحث بالاسم أو الكود الوظيفي للوصول السريع.</p>
         </div>
         
+        <!-- Status Filter Tabs -->
+        <div class="flex items-center gap-2 bg-sf-bg p-1 rounded-xl border border-sf-border">
+          <button (click)="changeStatusFilter('active')" 
+                  [class]="statusFilter() === 'active' ? 'px-4 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm' : 'px-4 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all'">
+            النشطين
+          </button>
+          <button (click)="changeStatusFilter('inactive')" 
+                  [class]="statusFilter() === 'inactive' ? 'px-4 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm' : 'px-4 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all'">
+            غير النشطين
+          </button>
+          <button (click)="changeStatusFilter('all')" 
+                  [class]="statusFilter() === 'all' ? 'px-4 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm' : 'px-4 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all'">
+            الكل
+          </button>
+        </div>
+
         <div class="flex items-center gap-3">
           <div class="px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm font-semibold text-sf-text">
             <span class="text-sf-muted ml-2">الإجمالي:</span>
@@ -140,6 +155,7 @@ export class EmployeeListComponent implements OnInit {
   private themeService = inject(ThemeService);
   employees = signal<Employee[]>([]);
   searchTerm = signal('');
+  statusFilter = signal<'active' | 'inactive' | 'all'>('active');
   loading = signal(true);
 
   filteredEmployees = signal<Employee[]>([]);
@@ -163,7 +179,7 @@ export class EmployeeListComponent implements OnInit {
         this.loading.set(false);
         if (res.success) {
           this.employees.set(res.data);
-          this.filteredEmployees.set(res.data);
+          this.applyFilters();
         }
       },
       error: () => {
@@ -176,13 +192,39 @@ export class EmployeeListComponent implements OnInit {
   onSearch(event: any) {
     const term = event.target.value.toLowerCase();
     this.searchTerm.set(term);
-    this.filteredEmployees.set(
-      this.employees().filter(e =>
+    this.applyFilters();
+  }
+
+  changeStatusFilter(filter: 'active' | 'inactive' | 'all') {
+    this.statusFilter.set(filter);
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    const term = this.searchTerm().toLowerCase();
+    const filter = this.statusFilter();
+    
+    let list = this.employees();
+    
+    // 1. Filter by status
+    if (filter === 'active') {
+      // Show only active employees (isActive === true)
+      list = list.filter(e => e.isActive);
+    } else if (filter === 'inactive') {
+      // Show only deactivated/disabled employees (isActive === false)
+      list = list.filter(e => !e.isActive);
+    }
+    
+    // 2. Filter by search term
+    if (term) {
+      list = list.filter(e =>
         e.name.toLowerCase().includes(term) ||
         e.code.toLowerCase().includes(term) ||
         e.email.toLowerCase().includes(term)
-      )
-    );
+      );
+    }
+    
+    this.filteredEmployees.set(list);
   }
 
   translateDepartment(dept: string): string {

@@ -12,6 +12,7 @@ export interface Employee {
   isActive: boolean;
   hireDate: string;
   terminationDate?: string;
+  endDate?: string;
   userId?: string;
   code: string;
   nationalId?: string;

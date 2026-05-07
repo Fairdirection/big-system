@@ -24,7 +24,7 @@ import { RouterLink } from '@angular/router';
           <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">مطالبات العمولات</h1>
           <p class="text-sf-muted font-medium mt-1">تتبع وإدارة حالة التحصيل لجميع المبيعات المؤكدة.</p>
         </div>
-        <button class="btn btn-secondary flex items-center gap-2">
+        <button (click)="onSyncClaims()" class="btn btn-secondary flex items-center gap-2">
           <ng-icon name="heroArrowPath"></ng-icon>
           <span>مزامنة المطالبات</span>
         </button>
@@ -133,6 +133,16 @@ export class ClaimListComponent implements OnInit {
         if (res.success) {
           this.claims.set(res.data);
         }
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  onSyncClaims() {
+    this.loading.set(true);
+    this.claimService.syncClaims().subscribe({
+      next: (res) => {
+        this.loadClaims();
       },
       error: () => this.loading.set(false)
     });
