@@ -137,7 +137,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">البريد الإلكتروني للعمل</label>
-              <app-input type="email" formControlName="email" placeholder="email@salesflow.com"
+              <app-input type="email" formControlName="email" placeholder="email@fairdirection.com"
                          [hasError]="isInvalid('email')"
                          errorMessage="يرجى إدخال بريد إلكتروني صالح"
                          hint="سيتم استخدامه لتسجيل الدخول"></app-input>

@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, forwardRef, ChangeDetectionStrategy, inject, ChangeDetectorRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -34,13 +34,12 @@ import { CommonModule } from '@angular/common';
           [disabled]="isDisabled"
           [value]="value"
           (input)="onInput($event)"
-          (blur)="onTouched()"
           [class.pl-9]="prefixIcon"
           [class.border-neon-pink]="hasError"
           [class.border-neon-purple/50]="isFocused && !hasError"
           [class.shadow-inner-purple]="isFocused && !hasError"
           (focus)="isFocused = true"
-          (blur)="isFocused = false"
+          (blur)="onBlur()"
           class="w-full h-9 px-3 rounded-xl text-sm font-body
                  bg-sf-elevated border border-sf-border
                  text-sf-text placeholder:text-sf-muted
@@ -63,6 +62,8 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class InputComponent implements ControlValueAccessor {
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() label = '';
   @Input() type = 'text';
   @Input() placeholder = '';
@@ -79,13 +80,26 @@ export class InputComponent implements ControlValueAccessor {
   onChange: (v: string) => void = () => {};
   onTouched: () => void = () => {};
 
-  writeValue(v: string) { this.value = v ?? ''; }
+  writeValue(v: string) {
+    this.value = v ?? '';
+    this.cdr.detectChanges();
+  }
+
   registerOnChange(fn: (v: string) => void) { this.onChange = fn; }
   registerOnTouched(fn: () => void) { this.onTouched = fn; }
-  setDisabledState(d: boolean) { this.isDisabled = d; }
+
+  setDisabledState(d: boolean) {
+    this.isDisabled = d;
+    this.cdr.detectChanges();
+  }
 
   onInput(e: Event) {
     this.value = (e.target as HTMLInputElement).value;
     this.onChange(this.value);
+  }
+
+  onBlur() {
+    this.isFocused = false;
+    this.onTouched();
   }
 }

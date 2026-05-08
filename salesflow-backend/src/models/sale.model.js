@@ -74,4 +74,10 @@ saleSchema.index({ 'sellers.employeeId': 1, quarterId: 1 });
 saleSchema.index({ status: 1 });
 saleSchema.index({ isActive: 1, quarterId: 1, status: 1 });
 
+// فهرس مركب للبحث السريع عن مبيعات عميل معين خلال تاريخ محدد وحالة مبيعة معينة
+saleSchema.index({ clientId: 1, status: 1, contractDate: -1 });
+
+// فهرس مركب لحساب عمولات البائعين فورياً لتقارير الأداء
+saleSchema.index({ 'sellers.employeeId': 1, status: 1 });
+
 module.exports = mongoose.model('Sale', saleSchema);

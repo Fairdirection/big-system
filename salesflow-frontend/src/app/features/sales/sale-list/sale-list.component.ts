@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, Input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, Input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SaleService } from '@core/services/sale.service';
 import { ThemeService } from '@core/services/theme.service';
@@ -54,7 +54,7 @@ import { formatQuarter } from '@core/utils/quarter.utils';
       <!-- Table -->
       <div class="glass-card rounded-2xl border border-sf-border shadow-2xl overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-right border-collapse">
+          <table class="w-full text-right border-collapse table-compact table-sticky-header">
             <thead>
               <tr class="bg-sf-surface/50 border-b border-sf-border">
                 <th class="px-6 py-4 text-[11px] font-black text-sf-muted uppercase tracking-widest text-right">بيانات المبيعة</th>
@@ -67,26 +67,34 @@ import { formatQuarter } from '@core/utils/quarter.utils';
             </thead>
             <tbody class="divide-y divide-sf-border/50" *ngIf="!loading(); else skeleton">
               @for (sale of filteredSales(); track sale._id) {
-                <tr class="group hover:bg-sf-surface/30 transition-colors cursor-pointer" [routerLink]="[sale._id]">
+                <tr class="group row-financial-hover cursor-pointer" [routerLink]="[sale._id]">
                   <td class="px-6 py-4">
                     <div class="flex flex-col">
-                      <span class="text-sm font-bold text-sf-text group-hover:text-sf-primary transition-colors">{{ sale.saleNumber }}</span>
-                      <span class="text-xs font-medium text-sf-muted mt-0.5">{{ sale.projectName }} • {{ sale.unitNumber }}</span>
+                      <span class="text-sm font-bold text-sf-text group-hover:text-sf-primary font-financial transition-colors">{{ sale.saleNumber }}</span>
+                      <span class="text-xs font-medium text-sf-muted mt-0.5 font-financial">{{ sale.projectName }} • {{ sale.unitNumber }}</span>
                     </div>
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex flex-col">
-                      <span class="text-sm font-semibold text-sf-text">{{ sale.clientName }}</span>
+                      @if (sale.clientId) {
+                        <a [routerLink]="['/clients', getClientId(sale.clientId)]" 
+                           (click)="$event.stopPropagation()"
+                           class="text-sm font-bold text-sf-primary hover:underline hover:text-sf-primary-hover transition-all">
+                          {{ sale.clientName }}
+                        </a>
+                      } @else {
+                        <span class="text-sm font-semibold text-sf-text">{{ sale.clientName }}</span>
+                      }
                       <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ sale.source }}</span>
                     </div>
                   </td>
-                  <td class="px-6 py-4 text-left">
+                  <td class="px-6 py-4 text-left font-mono-numbers">
                     <span class="text-sm font-bold text-sf-text">{{ sale.unitValue | currencyEgp }}</span>
                   </td>
-                  <td class="px-6 py-4 text-left">
+                  <td class="px-6 py-4 text-left font-mono-numbers">
                     <div class="flex flex-col items-start">
                       <span class="text-sm font-black text-sf-primary">{{ (sale.grossCommissionWithVAT || 0) | currencyEgp }}</span>
-                      <span class="text-[10px] font-bold text-sf-muted">بنسبة {{ sale.contractCommissionPercentage }}%</span>
+                      <span class="text-[10px] font-bold text-sf-muted font-financial">بنسبة {{ sale.contractCommissionPercentage }}%</span>
                     </div>
                   </td>
                   <td class="px-6 py-4">
@@ -116,13 +124,22 @@ import { formatQuarter } from '@core/utils/quarter.utils';
         </div>
         
         <!-- Pagination -->
-        <div class="px-6 py-4 bg-sf-surface/20 border-t border-sf-border flex items-center justify-between">
-          <span class="text-xs font-bold text-sf-muted uppercase tracking-widest">عرض {{ filteredSales().length }} مبيعة</span>
+        <div class="px-6 py-4 bg-sf-surface/20 border-t border-sf-border flex items-center justify-between" *ngIf="totalPages() > 1 && !loading()">
+          <span class="text-xs font-bold text-sf-muted uppercase tracking-widest font-financial">
+            عرض {{ (currentPage() - 1) * limit() + 1 }} - {{ getMin(currentPage() * limit(), totalItems()) }} من أصل {{ totalItems() }} مبيعة
+          </span>
           <div class="flex items-center gap-2">
-            <button class="p-2 bg-sf-bg border border-sf-border rounded-lg disabled:opacity-30" disabled>
+            <button (click)="prevPage()" 
+                    [disabled]="currentPage() === 1"
+                    class="p-2 bg-sf-bg border border-sf-border rounded-lg disabled:opacity-30 disabled:hover:text-sf-muted transition-all flex items-center justify-center active:scale-95 cursor-pointer">
               <ng-icon name="heroChevronRight" class="rotate-180"></ng-icon>
             </button>
-            <button class="p-2 bg-sf-bg border border-sf-border rounded-lg">
+            <span class="px-3 py-1 bg-sf-primary/10 border border-sf-primary/20 rounded-lg text-xs font-black text-sf-primary font-financial">
+              الصفحة {{ currentPage() }} من {{ totalPages() }}
+            </span>
+            <button (click)="nextPage()" 
+                    [disabled]="currentPage() === totalPages()"
+                    class="p-2 bg-sf-bg border border-sf-border rounded-lg disabled:opacity-30 disabled:hover:text-sf-muted transition-all flex items-center justify-center active:scale-95 cursor-pointer">
               <ng-icon name="heroChevronRight"></ng-icon>
             </button>
           </div>
@@ -157,6 +174,7 @@ export class SaleListComponent {
   @Input() employeeId: string = '';
   @Input() set quarterId(value: string | null) {
     if (value) {
+      this.currentPage.set(1);
       this.loadSales(value, this.employeeId);
     }
   }
@@ -170,7 +188,15 @@ export class SaleListComponent {
   sales = signal<Sale[]>([]);
   loading = signal(true);
   searchQuery = signal('');
-  filteredSales = signal<Sale[]>([]);
+  
+  // Computed Signal to bind directly to sales (backward-compatible)
+  filteredSales = computed(() => this.sales());
+
+  // Pagination Signals
+  currentPage = signal(1);
+  limit = signal(10);
+  totalItems = signal(0);
+  totalPages = signal(1);
 
   constructor() {
     effect(() => {
@@ -179,19 +205,29 @@ export class SaleListComponent {
   }
 
   onQuarterChange(event: any) {
+    this.currentPage.set(1);
     this.themeService.setQuarter(event.target.value);
   }
 
   loadSales(quarterId: string, employeeId?: string) {
     this.themeService.loading.set(true);
     this.loading.set(true); // local skeleton
-    this.saleService.getSalesByQuarter(quarterId, employeeId).subscribe({
-      next: (res) => {
+    this.saleService.getSalesByQuarter(
+      quarterId, 
+      employeeId, 
+      this.currentPage(), 
+      this.limit(), 
+      this.searchQuery()
+    ).subscribe({
+      next: (res: any) => {
         this.themeService.loading.set(false);
         this.loading.set(false);
         if (res.success) {
           this.sales.set(res.data);
-          this.applyFilter();
+          if (res.pagination) {
+            this.totalItems.set(res.pagination.total);
+            this.totalPages.set(res.pagination.totalPages);
+          }
         }
       },
       error: () => {
@@ -203,24 +239,26 @@ export class SaleListComponent {
 
   onSearch(event: any) {
     this.searchQuery.set(event.target.value);
-    this.applyFilter();
+    this.currentPage.set(1); // Go back to first page when search changes
+    this.loadSales(this.currentQuarter(), this.employeeId);
   }
 
-  applyFilter() {
-    const query = this.searchQuery().toLowerCase();
-    if (!query) {
-      this.filteredSales.set(this.sales());
-      return;
+  nextPage() {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update((p: number) => p + 1);
+      this.loadSales(this.currentQuarter(), this.employeeId);
     }
+  }
 
-    this.filteredSales.set(
-      this.sales().filter(s => 
-        s.saleNumber?.toLowerCase().includes(query) ||
-        s.projectName?.toLowerCase().includes(query) ||
-        s.clientName?.toLowerCase().includes(query) ||
-        s.unitNumber?.toLowerCase().includes(query)
-      )
-    );
+  prevPage() {
+    if (this.currentPage() > 1) {
+      this.currentPage.update((p: number) => p - 1);
+      this.loadSales(this.currentQuarter(), this.employeeId);
+    }
+  }
+
+  getMin(a: number, b: number): number {
+    return Math.min(a, b);
   }
 
   translateStatus(status: string): string {
@@ -244,5 +282,10 @@ export class SaleListComponent {
 
   formatQ(q: string) {
     return formatQuarter(q);
+  }
+
+  getClientId(client: any): string {
+    if (!client) return '';
+    return typeof client === 'object' ? (client._id || client.toString()) : client;
   }
 }

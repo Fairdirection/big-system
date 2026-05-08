@@ -2,6 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ApiResponse } from '../models/api-response.model';
+import { of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 export interface Setting {
   _id: string;
@@ -17,6 +19,7 @@ export interface Setting {
 export class SettingService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/settings`;
+  private cache = new Map<string, Setting[]>();
 
   preferredLanguage = signal<string>(localStorage.getItem('sf_lang') || 'ar');
   preferredCurrency = signal<string>(localStorage.getItem('sf_currency') || 'EGP');
@@ -54,7 +57,16 @@ export class SettingService {
   }
 
   getSettingsByType(type: string) {
-    return this.http.get<ApiResponse<Setting[]>>(`${this.base}/${type}`);
+    if (this.cache.has(type)) {
+      return of({ success: true, data: this.cache.get(type)! } as ApiResponse<Setting[]>);
+    }
+    return this.http.get<ApiResponse<Setting[]>>(`${this.base}/${type}`).pipe(
+      tap(res => {
+        if (res.success && res.data) {
+          this.cache.set(type, res.data);
+        }
+      })
+    );
   }
 
   getAllSettings() {
@@ -62,14 +74,17 @@ export class SettingService {
   }
 
   createSetting(data: Partial<Setting>) {
+    this.cache.clear();
     return this.http.post<ApiResponse<Setting>>(this.base, data);
   }
 
   updateSetting(id: string, data: Partial<Setting>) {
+    this.cache.clear();
     return this.http.patch<ApiResponse<Setting>>(`${this.base}/${id}`, data);
   }
 
   deleteSetting(id: string) {
+    this.cache.clear();
     return this.http.delete<ApiResponse<any>>(`${this.base}/${id}`);
   }
 }

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SaleService } from '@core/services/sale.service';
 import { ClaimService } from '@core/services/claim.service';
 import { ThemeService } from '@core/services/theme.service';
+import { ToastService } from '@core/services/toast.service';
 import { Sale } from '@core/models/sale.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
@@ -20,9 +21,24 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (sale(); as s) {
-      <div class="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
+      <div class="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20 print:space-y-6">
+        <!-- Premium Accounting Print Header (Only visible on print) -->
+        <div class="hidden print:flex items-center justify-between pb-6 border-b-2 border-slate-900/10 mb-8 text-right font-financial">
+          <div class="space-y-1.5">
+            <h1 class="text-2xl font-black text-slate-900">مستند تسوية عمولة مبيعات</h1>
+            <p class="text-xs font-bold text-slate-500">شركة Fair Direction للتسويق العقاري</p>
+            <p class="text-[10px] text-slate-400 font-mono-numbers">تاريخ المستند: {{ todayDate | date:'medium' }}</p>
+          </div>
+          <div class="flex flex-col items-center gap-1">
+            <div class="w-14 h-14 bg-white p-1.5 rounded-xl border border-slate-200 flex items-center justify-center shadow-sm">
+              <img src="/logo.png" alt="Fair Direction Logo" class="w-full h-full object-contain" />
+            </div>
+            <span class="text-[10px] font-black text-slate-900 tracking-wider">FAIR DIRECTION</span>
+          </div>
+        </div>
+
         <!-- Header -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 print:hidden">
           <div class="flex items-center gap-4">
             <button [routerLink]="['/sales']" class="p-2 hover:bg-sf-surface rounded-xl transition-colors">
               <ng-icon name="heroChevronRight" class="text-xl"></ng-icon>
@@ -50,7 +66,7 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
                 <span>مطالبة بالعمولة</span>
               </button>
             }
-            <button class="btn btn-secondary px-5 py-2 flex items-center gap-2">
+            <button (click)="printSale()" class="btn btn-secondary px-5 py-2 flex items-center gap-2">
               <ng-icon name="heroPrinter"></ng-icon>
               <span>طباعة الإيصال</span>
             </button>
@@ -65,9 +81,9 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
           </div>
         </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 print:grid-cols-1 print:gap-6">
         <!-- Main Details -->
-        <div class="lg:col-span-2 space-y-8">
+        <div class="lg:col-span-2 space-y-8 print:space-y-6">
           <!-- Property Information -->
           <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6">
             <div class="flex items-center gap-3 pb-4 border-b border-sf-border/30">
@@ -82,11 +98,11 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
               </div>
               <div class="space-y-1">
                 <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">مواصفات الوحدة</span>
-                <p class="text-sm font-semibold text-sf-text">{{ sale()?.unitType }} ({{ sale()?.unitNumber }})</p>
+                <p class="text-sm font-semibold text-sf-text font-financial">{{ sale()?.unitType }} ({{ sale()?.unitNumber }})</p>
               </div>
               <div class="space-y-1">
                 <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">تاريخ التعاقد</span>
-                <p class="text-sm font-semibold text-sf-text">{{ sale()?.contractDate | date:'longDate' }}</p>
+                <p class="text-sm font-semibold text-sf-text font-financial">{{ sale()?.contractDate | date:'longDate' }}</p>
               </div>
               <div class="space-y-1">
                 <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">مصدر المبيعة</span>
@@ -103,19 +119,19 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
             </div>
 
             <div class="space-y-4">
-              <div class="flex justify-between items-center py-2 border-b border-sf-border/20">
+              <div class="flex justify-between items-center py-2 border-b border-sf-border/20 font-financial">
                 <span class="text-sm font-medium text-sf-muted">سعر التعاقد للوحدة</span>
                 <span class="text-sm font-black text-sf-text">{{ sale()?.unitValue | currencyEgp }}</span>
               </div>
-              <div class="flex justify-between items-center py-2 border-b border-sf-border/20">
+              <div class="flex justify-between items-center py-2 border-b border-sf-border/20 font-financial">
                 <span class="text-sm font-medium text-sf-muted">نسبة العمولة المتفق عليها</span>
                 <span class="text-sm font-black text-sf-text">{{ sale()?.contractCommissionPercentage }}%</span>
               </div>
-              <div class="flex justify-between items-center py-2 border-b border-sf-border/20">
+              <div class="flex justify-between items-center py-2 border-b border-sf-border/20 font-financial">
                 <span class="text-sm font-medium text-sf-muted">إجمالي العمولة (شامل القيمة المضافة)</span>
                 <span class="text-lg font-black text-sf-primary">{{ sale()?.grossCommissionWithVAT | currencyEgp }}</span>
               </div>
-              <div class="flex justify-between items-center py-3 px-4 bg-sf-bg rounded-xl mt-4">
+              <div class="flex justify-between items-center py-3 px-4 bg-sf-bg rounded-xl mt-4 font-financial">
                 <span class="text-xs font-bold text-sf-muted uppercase tracking-widest">صافي ربح الشركة (Revenue)</span>
                 <span class="text-xl font-display font-black text-sf-success">{{ sale()?.netRevenue | currencyEgp }}</span>
               </div>
@@ -137,13 +153,16 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
                       {{ seller.employeeName?.charAt(0) }}
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-sf-text">{{ seller.employeeName }}</p>
-                      <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">نسبة المشاركة: {{ seller.sharePercentage }}%</p>
+                      <a [routerLink]="['/employees', getEmployeeId(seller)]" 
+                         class="text-sm font-bold text-sf-primary hover:underline transition-all">
+                        {{ seller.employeeName }}
+                      </a>
+                      <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest font-financial">نسبة المشاركة: {{ seller.sharePercentage }}%</p>
                     </div>
                   </div>
                   <div class="text-left">
                     <p class="text-xs font-bold text-sf-muted uppercase mb-0.5">العمولة المستحقة</p>
-                    <p class="text-sm font-black text-sf-text">{{ seller.commissionValue | currencyEgp }}</p>
+                    <p class="text-sm font-black text-sf-text font-financial">{{ seller.commissionValue | currencyEgp }}</p>
                   </div>
                 </div>
               }
@@ -152,8 +171,8 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
         </div>
 
         <!-- Sidebar / Client -->
-        <div class="space-y-8">
-          <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 sticky top-8">
+        <div class="space-y-8 print:space-y-6">
+          <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 sticky top-8 print:relative print:top-0">
             <div class="flex items-center gap-3 pb-4 border-b border-sf-border/30">
               <div class="w-2 h-6 bg-sf-success rounded-full"></div>
               <h3 class="text-lg font-display font-bold text-sf-text">بيانات العميل</h3>
@@ -167,8 +186,8 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
               <p class="text-xs font-bold text-sf-muted uppercase tracking-widest mt-1">عميل مباشر</p>
             </div>
 
-            <div class="pt-6 border-t border-sf-border/30 space-y-4">
-              <button class="w-full btn btn-secondary text-sm font-bold flex items-center justify-center gap-2">
+            <div class="pt-6 border-t border-sf-border/30 space-y-4 print:hidden">
+              <button [routerLink]="['/clients', getClientId(sale())]" class="w-full btn btn-secondary text-sm font-bold flex items-center justify-center gap-2">
                 <span>عرض الملف الشخصي</span>
               </button>
             </div>
@@ -189,7 +208,13 @@ export class SaleDetailComponent implements OnInit {
   private claimService = inject(ClaimService);
   private themeService = inject(ThemeService);
   private router = inject(Router);
+  private toastService = inject(ToastService);
   sale = signal<Sale | null>(null);
+  todayDate = new Date();
+
+  printSale() {
+    window.print();
+  }
 
   ngOnInit() {
     this.loadSale();
@@ -232,20 +257,22 @@ export class SaleDetailComponent implements OnInit {
     const s = this.sale();
     if (!s) return;
 
-    if (confirm(`هل أنت متأكد من حذف هذه البيعة رقم ${s.saleNumber}؟`)) {
-      this.themeService.loading.set(true);
-      this.saleService.deleteSale(s._id).subscribe({
-        next: (res) => {
-          this.themeService.loading.set(false);
-          if (res.success) {
-            this.router.navigate(['/sales']);
-          }
-        },
-        error: () => {
-          this.themeService.loading.set(false);
-        }
-      });
-    }
+    // Navigate to the list instantly
+    this.router.navigate(['/sales']);
+
+    // Show a Success Toast with the Undo countdown action
+    this.toastService.showWithUndo(
+      `تم حذف البيعة رقم ${s.saleNumber} بنجاح.`,
+      () => {
+        // UNDO callback: Navigate back to details and show recovery toast
+        this.router.navigate(['/sales', s._id]);
+        this.toastService.showSuccess('تم استعادة المبيعة والتراجع عن الحذف.');
+      },
+      () => {
+        // COMMIT callback: silently execute the delete on backend database
+        this.saleService.deleteSale(s._id).subscribe();
+      }
+    );
   }
 
   getStatusColor(status: string): any {
@@ -265,5 +292,19 @@ export class SaleDetailComponent implements OnInit {
       case 'draft': return 'مسودة';
       default: return status;
     }
+  }
+
+  getClientId(sale: any): string {
+    if (!sale) return '';
+    const id = sale.clientId?._id || sale.clientId;
+    if (!id) return '';
+    return typeof id === 'object' ? (id._id || id.toString()) : id;
+  }
+
+  getEmployeeId(seller: any): string {
+    if (!seller) return '';
+    const id = seller.employeeId?._id || seller.employeeId;
+    if (!id) return '';
+    return typeof id === 'object' ? (id._id || id.toString()) : id;
   }
 }

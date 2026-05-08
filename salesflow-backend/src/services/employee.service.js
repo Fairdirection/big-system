@@ -202,7 +202,7 @@ const updateEmployee = async (id, data) => {
     }
   }
 
-  return await Employee.findByIdAndUpdate(id, data, { returnDocument: 'after' }).populate('currentTeamId managerId');
+  return await Employee.findByIdAndUpdate(id, data, { new: true }).populate('currentTeamId managerId');
 };
 
 const deleteEmployee = async (id) => {

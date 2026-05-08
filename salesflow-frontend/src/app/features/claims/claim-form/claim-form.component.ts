@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClaimService } from '@core/services/claim.service';
+import { ToastService } from '@core/services/toast.service';
 import { Claim } from '@core/models/claim.model';
+import { CelebrationService } from '@core/services/celebration.service';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -354,6 +356,8 @@ export class ClaimFormComponent implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private claimService = inject(ClaimService);
+  private toastService = inject(ToastService);
+  private celebrationService = inject(CelebrationService);
 
   claim = signal<Claim | null>(null);
   submitting = signal(false);
@@ -422,27 +426,51 @@ export class ClaimFormComponent implements OnInit {
         this.isEditing.set(false);
         if (res.success) {
           this.loadClaim();
+          this.toastService.showSuccess('تم تحديث بيانات المطالبة المالية بنجاح.');
         }
       },
-      error: () => this.submitting.set(false)
+      error: (err) => {
+        this.submitting.set(false);
+        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء تحديث بيانات المطالبة.');
+      }
     });
   }
 
   onUpdateStatus(id: string, status: 'pending' | 'submitted' | 'collected' | 'disputed') {
+    // 1. Pre-unlock AudioContext synchronously during click gesture to bypass Chrome security policies
+    if (status === 'collected') {
+      this.celebrationService.unlockAudio();
+    }
+
     this.submitting.set(true);
     this.claimService.updateClaim(id, { status }).subscribe({
       next: (res) => {
         this.submitting.set(false);
         if (res.success) {
           this.loadClaim();
+          this.toastService.showSuccess(`تم تحديث حالة المطالبة إلى: ${this.translateStatus(status)}.`);
+          if (status === 'collected') {
+            this.celebrationService.celebrate();
+          }
         }
       },
-      error: () => this.submitting.set(false)
+      error: (err) => {
+        this.submitting.set(false);
+        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء تغيير حالة المطالبة.');
+      }
     });
   }
 
   onCollect() {
-    if (this.collectForm.invalid || !this.claim()) return;
+    // 1. Pre-unlock AudioContext synchronously during click gesture to bypass Chrome security policies
+    this.celebrationService.unlockAudio();
+
+    if (this.collectForm.invalid || !this.claim()) {
+      if (this.collectForm.invalid) {
+        this.toastService.showWarning('تنبيه: يرجى التحقق من صحة وقيمة مبلغ التحصيل المدخل.');
+      }
+      return;
+    }
     
     this.submitting.set(true);
     const data = this.collectForm.value as any;
@@ -452,22 +480,37 @@ export class ClaimFormComponent implements OnInit {
         this.submitting.set(false);
         if (res.success) {
           this.loadClaim();
+          this.toastService.showSuccess('تم تسجيل إيداع وتحصيل المطالبة بنجاح!');
+          this.celebrationService.celebrate();
         }
       },
-      error: () => this.submitting.set(false)
+      error: (err) => {
+        this.submitting.set(false);
+        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء إتمام عملية التحصيل.');
+      }
     });
   }
 
   onDeleteClaim(id: string) {
-    if (confirm('هل أنت متأكد من رغبتك في حذف هذه المطالبة؟ سيتم استعادة حالة المبيعة إلى "مؤكدة" وإلغاء تنشيط المطالبة.')) {
-      this.claimService.deleteClaim(id).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.router.navigate(['/claims']);
-          }
-        }
-      });
-    }
+    const c = this.claim();
+    if (!c) return;
+
+    // Navigate to list instantly
+    this.router.navigate(['/claims']);
+
+    // Show a Success Toast with the Undo countdown action
+    this.toastService.showWithUndo(
+      `تم حذف المطالبة المالية ${c.claimNumber} بنجاح.`,
+      () => {
+        // UNDO callback: Navigate back to detail page and show recovery toast
+        this.router.navigate(['/claims', c._id]);
+        this.toastService.showSuccess('تم استعادة المطالبة والتراجع عن الحذف.');
+      },
+      () => {
+        // COMMIT callback: silently execute the delete on backend database
+        this.claimService.deleteClaim(id).subscribe();
+      }
+    );
   }
 
   // Timeline Helper Methods
@@ -699,9 +742,12 @@ export class ClaimFormComponent implements OnInit {
           <div class="stamp ${statusStampClass}">${statusStampText}</div>
           
           <div class="header">
-            <div class="logo-area">
-              <h1>SalesFlow</h1>
-              <p>نظام إدارة وتوجيه المبيعات الذكي</p>
+            <div class="logo-area" style="display: flex; align-items: center; gap: 15px;">
+              <img src="/logo.png" alt="Fair Direction Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px;" />
+              <div>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #3b82f6;">فير دايركشن</h1>
+                <p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">المنصة الذكية لإدارة مبيعات العقارات</p>
+              </div>
             </div>
             <div class="invoice-details">
               <h2>مطالبة عمولة مبيعات</h2>
@@ -713,8 +759,8 @@ export class ClaimFormComponent implements OnInit {
           <div class="parties">
             <div class="party-box">
               <h4>الجهة المستحقة للعمولة</h4>
-              <p class="title">شركة صانع اتجاه المبيعات (SalesFlow)</p>
-              <p>الموقع الإلكتروني: salesflow.com</p>
+              <p class="title">شركة فير دايركشن للتطوير العقاري (Fair Direction)</p>
+              <p>الموقع الإلكتروني: fairdirection.com</p>
               <p>رقم مبيعة مرجعي: ${c.saleNumber}</p>
             </div>
             <div class="party-box">
@@ -767,7 +813,7 @@ export class ClaimFormComponent implements OnInit {
           ` : ''}
 
           <div class="footer-note">
-            <p>تم توليد هذه الوثيقة آلياً من نظام SalesFlow لإدارة المبيعات. جميع الحقوق محفوظة لعام ٢٠٢ \u0666.</p>
+            <p>تم توليد هذه الوثيقة آلياً من نظام فير دايركشن لإدارة المبيعات العقارية. جميع الحقوق محفوظة لعام ٢٠٢٦.</p>
           </div>
         </div>
         <script>

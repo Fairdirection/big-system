@@ -13,9 +13,12 @@ export class SaleService {
     return this.http.get<PaginatedResponse<Sale>>(this.base, { params });
   }
 
-  getSalesByQuarter(quarterId: string, employeeId?: string) {
+  getSalesByQuarter(quarterId: string, employeeId?: string, page?: number, limit?: number, search?: string) {
     const params: any = { quarterId };
     if (employeeId) params.employeeId = employeeId;
+    if (page) params.page = page.toString();
+    if (limit) params.limit = limit.toString();
+    if (search) params.search = search;
     return this.http.get<PaginatedResponse<Sale>>(this.base, { params });
   }
 

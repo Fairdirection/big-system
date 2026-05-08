@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse, PaginatedResponse } from '../models/api-response.model';
 import { Claim } from '../models/claim.model';
 
 @Injectable({ providedIn: 'root' })
@@ -14,7 +14,7 @@ export class ClaimService {
   }
 
   getClaims(params?: Record<string, string>) {
-    return this.http.get<ApiResponse<Claim[]>>(this.base, { params });
+    return this.http.get<PaginatedResponse<Claim>>(this.base, { params });
   }
 
   getClaim(id: string) {

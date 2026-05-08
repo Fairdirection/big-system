@@ -155,7 +155,7 @@ const updateTeam = async (id, data) => {
     }
   }
 
-  return await Team.findByIdAndUpdate(id, data, { returnDocument: 'after' })
+  return await Team.findByIdAndUpdate(id, data, { new: true })
     .populate('teamLeaderId', 'name code')
     .populate('memberIds', 'name code');
 };
@@ -198,7 +198,7 @@ const deleteTeam = async (id) => {
       isActive: false,
       memberIds: [] // Clear members list in the team object too
     } 
-  }, { returnDocument: 'after' });
+  }, { new: true });
 };
 
 const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {

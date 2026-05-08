@@ -12,13 +12,14 @@
   --sf-muted: 71 85 105;      /* Slate 600 - Readable secondary */
   --sf-subtle: 148 163 184;   /* Slate 400 - Subtle tertiary */
   
-  --sf-primary: 99 102 241;    /* Indigo 500 - Modern & Vibrant */
-  --sf-secondary: 244 63 94;   /* Rose 500 - Energetic but balanced */
+  --sf-primary: 124 58 237;    /* Amethyst 600 - Luxurious Sovereign Purple */
+  --sf-secondary: 14 116 144;  /* Cyan 700 - Balanced Teal Accent */
   
   --sf-success: 16 185 129;    /* Emerald 500 */
   --sf-warning: 245 158 11;    /* Amber 500 */
   --sf-error: 239 68 68;       /* Red 500 */
   --sf-info: 6 182 212;        /* Cyan 500 */
+  --sf-profit: 139 92 246;     /* Violet 500 - #8B5CF6 */
 }
 
 html.dark {
@@ -31,16 +32,17 @@ html.dark {
   --sf-muted: 148 163 184;    /* Slate 400 */
   --sf-subtle: 71 85 105;     /* Slate 600 */
   
-  --sf-primary: 129 140 248;  /* Indigo 400 */
-  --sf-secondary: 251 113 133;/* Rose 400 */
+  --sf-primary: 139 92 246;  /* Amethyst 500 - Luxurious Sovereign Purple */
+  --sf-secondary: 34 211 238;/* Cyan 400 - Balanced Teal Accent */
 
   --sf-success: 52 211 153;
   --sf-warning: 251 191 36;
   --sf-error: 248 113 113;
   --sf-info: 34 211 238;
+  --sf-profit: 167 139 250;    /* Violet 400 - #A78BFA */
 }
 
-/* SalesFlow global base */
+/* Fair Direction global base */
 @layer base {
   html {
     @apply bg-sf-bg text-sf-text font-body antialiased transition-all duration-300;
@@ -199,4 +201,97 @@ html.dark {
   .shadow-glow-sm {
     box-shadow: 0 0 15px rgba(var(--sf-primary), 0.25);
   }
+
+  .shadow-glow-profit {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.35), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+
+  .text-sf-profit { color: rgb(var(--sf-profit)); }
+  .bg-sf-profit { background-color: rgb(var(--sf-profit)); }
+  .border-sf-profit { border-color: rgb(var(--sf-profit)); }
+
+  /* Premium Financial Tabular Numbers and Fonts for Accountant Manager */
+  .font-financial {
+    font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif !important;
+    font-variant-numeric: tabular-nums !important;
+    letter-spacing: -0.01em;
+  }
+
+  /* Dedicated Monospace numbers utility for absolute alignment of numerical columns */
+  .font-mono-numbers {
+    font-family: 'JetBrains Mono', 'IBM Plex Sans Arabic', monospace !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  /* Compact Table utilities for Accountant Data Density */
+  .table-compact th {
+    @apply py-2.5 px-4 text-[10px] font-black uppercase tracking-widest text-sf-muted border-b border-sf-border/40 text-right;
+  }
+  .table-compact td {
+    @apply py-2 px-4 text-xs font-bold text-sf-text border-b border-sf-border/10;
+  }
+  
+  /* Focus row highlight for comfortable horizontal scanning */
+  .row-financial-hover {
+    @apply hover:bg-sf-primary/5 dark:hover:bg-sf-primary/10 transition-all duration-200;
+  }
+
+  /* Sticky Table Headers for long lists */
+  .table-sticky-header thead {
+    @apply sticky top-0 z-10 bg-sf-surface/95 backdrop-blur-md shadow-sm;
+  }
 }
+
+/* Universal Print Stylesheet - Premium A4 Accounting Output */
+@media print {
+  /* Reset background and text color for perfect printing */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    zoom: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide all interactive, navigational, or floating elements */
+  app-sidebar,
+  .print\:hidden,
+  button,
+  .btn,
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make containers use full page width */
+  .max-w-6xl, .max-w-5xl, .container, .mx-auto {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Force cards to print beautifully with solid thin borders and no shadows */
+  .glass-card, .glass-ultra {
+    background: transparent !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border-radius: 12px !important;
+    page-break-inside: avoid;
+    transform: none !important;
+    margin-bottom: 1.5rem !important;
+    padding: 1.5rem !important;
+  }
+
+  /* Styling for financial numbers in print */
+  .font-mono-numbers {
+    color: #0f172a !important;
+    font-weight: bold !important;
+  }
+}
+

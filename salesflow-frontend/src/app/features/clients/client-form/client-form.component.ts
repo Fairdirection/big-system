@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -100,6 +100,7 @@ export class ClientFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private clientService = inject(ClientService);
+  private cdr = inject(ChangeDetectorRef);
 
   form!: FormGroup;
   isSubmitting = signal(false);
@@ -131,6 +132,7 @@ export class ClientFormComponent implements OnInit {
       next: (res) => {
         if (res.success) {
           this.form.patchValue(res.data);
+          this.cdr.markForCheck();
         }
       }
     });
@@ -155,7 +157,11 @@ export class ClientFormComponent implements OnInit {
 
     obs.subscribe({
       next: () => this.router.navigate(['/clients']),
-      error: () => this.isSubmitting.set(false)
+      error: (err) => {
+        this.isSubmitting.set(false);
+        const errorMsg = err?.error?.message || 'حدث خطأ أثناء حفظ بيانات العميل. يرجى التأكد من البيانات والمحاولة مرة أخرى.';
+        alert(errorMsg);
+      }
     });
   }
 }

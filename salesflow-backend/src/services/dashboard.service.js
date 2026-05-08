@@ -6,7 +6,17 @@ const EmployeeTeamHistory = require('../models/employee-team-history.model');
 const employeeService = require('./employee.service');
 const { getQuarterBounds, calculateEmployeeQuarterDays, calculateWorkingDays } = require('../utils/quarter.utils');
 
+const dashboardCache = new Map();
+
+const clearDashboardCache = () => {
+  dashboardCache.clear();
+};
+
 const getDashboardStats = async (quarterId) => {
+  if (dashboardCache.has(quarterId)) {
+    return dashboardCache.get(quarterId);
+  }
+
   const { start, end } = getQuarterBounds(quarterId);
 
   const matchQuery = {
@@ -254,7 +264,7 @@ const getDashboardStats = async (quarterId) => {
   // 4. Client Count (Optimized)
   const totalClients = new Set(allSalesForQuarter.map(s => s.clientId?.toString()).filter(Boolean)).size;
 
-  return {
+  const result = {
     overview: {
       totalGross: salesStats.length > 0 ? salesStats[0].totalGross : 0,
       totalNet: salesStats.length > 0 ? salesStats[0].totalNet : 0,
@@ -277,6 +287,9 @@ const getDashboardStats = async (quarterId) => {
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, 5)
   };
+
+  dashboardCache.set(quarterId, result);
+  return result;
 };
 
-module.exports = { getDashboardStats };
+module.exports = { getDashboardStats, clearDashboardCache };

@@ -27,11 +27,11 @@ const getClientById = async (id) => {
 };
 
 const updateClient = async (id, data) => {
-  return await Client.findByIdAndUpdate(id, data, { returnDocument: 'after' });
+  return await Client.findByIdAndUpdate(id, data, { new: true });
 };
 
 const deleteClient = async (id) => {
-  return await Client.findByIdAndUpdate(id, { isActive: false }, { returnDocument: 'after' });
+  return await Client.findByIdAndUpdate(id, { isActive: false }, { new: true });
 };
 
 module.exports = {

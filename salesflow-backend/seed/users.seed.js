@@ -33,6 +33,34 @@ const seedUsers = async () => {
       console.log(`Seeded user: ${adminEmail}`);
     }
 
+    // 3. Ensure Ahmed Zidan User (Full Email)
+    const zidanEmail = 'ahmed.zidan@salesflow.com';
+    const zidanExists = await User.findOne({ email: zidanEmail });
+    if (!zidanExists) {
+      const zidanPasswordHash = await bcrypt.hash('zidan1234', salt);
+      await User.create({
+        name: 'Ahmed Zidan',
+        email: zidanEmail,
+        passwordHash: zidanPasswordHash,
+        role: 'admin'
+      });
+      console.log(`Seeded user: ${zidanEmail}`);
+    }
+
+    // 4. Ensure Ahmed Zidan User (Short Email)
+    const zidanShortEmail = 'zidan@salesflow.com';
+    const zidanShortExists = await User.findOne({ email: zidanShortEmail });
+    if (!zidanShortExists) {
+      const zidanPasswordHash = await bcrypt.hash('zidan1234', salt);
+      await User.create({
+        name: 'Ahmed Zidan',
+        email: zidanShortEmail,
+        passwordHash: zidanPasswordHash,
+        role: 'admin'
+      });
+      console.log(`Seeded user: ${zidanShortEmail}`);
+    }
+
     console.log('User seeding synchronization complete');
   } catch (error) {
     console.error('Error seeding users:', error);

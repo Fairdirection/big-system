@@ -5,18 +5,20 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { SaleService } from '@core/services/sale.service';
 import { ClientService } from '@core/services/client.service';
 import { EmployeeService } from '@core/services/employee.service';
+import { ToastService } from '@core/services/toast.service';
 import { SettingService } from '@core/services/setting.service';
+import { CelebrationService } from '@core/services/celebration.service';
 import { InputComponent } from '@shared/components/input/input.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroChevronLeft, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle } from '@ng-icons/heroicons/outline';
+import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle, heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-sale-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, InputComponent, NgIconComponent, CurrencyEgpPipe],
   providers: [
-    provideIcons({ heroChevronLeft, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle })
+    provideIcons({ heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle, heroXMark })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -73,13 +75,20 @@ import { heroChevronLeft, heroCheck, heroUserPlus, heroTrash, heroExclamationCir
               </div>
               <div class="space-y-2">
                 <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">العميل</label>
-                <select formControlName="clientId" class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all h-[42px]">
-                  <option [value]="null">اختر العميل</option>
-                  @for (client of clients(); track client._id) {
-                    <option [value]="client._id">{{ client.name }}</option>
-                  }
-                </select>
-                <p class="text-[10px] text-sf-muted mr-1">يجب أن يكون العميل مسجلاً مسبقاً في النظام</p>
+                <div class="flex gap-2">
+                  <select formControlName="clientId" class="flex-1 px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all h-[42px]">
+                    <option [value]="null">اختر العميل</option>
+                    @for (client of clients(); track client._id) {
+                      <option [value]="client._id">{{ client.name }}</option>
+                    }
+                  </select>
+                  <button type="button" (click)="openQuickClientModal()" 
+                          class="p-2.5 bg-sf-primary/10 hover:bg-sf-primary/25 border border-sf-primary/20 text-sf-primary rounded-xl transition-all flex items-center justify-center h-[42px] w-[42px] shrink-0"
+                          title="تسجيل عميل سريع">
+                    <ng-icon name="heroUserPlus" class="text-lg"></ng-icon>
+                  </button>
+                </div>
+                <p class="text-[10px] text-sf-muted mr-1">يمكنك اختيار العميل أو الضغط على الزر لتسجيل عميل جديد فوراً</p>
               </div>
             </div>
 
@@ -122,6 +131,60 @@ import { heroChevronLeft, heroCheck, heroUserPlus, heroTrash, heroExclamationCir
                 إضافة بائع
               </button>
             </div>
+
+            <!-- Segmented Progress Bar Visualizer -->
+            @if (sellers.length > 0) {
+              <div class="space-y-3 p-4 bg-sf-bg/20 border border-sf-border/40 rounded-2xl">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-sf-muted">مؤشر توزيع النسب التفاعلي:</span>
+                  <span class="font-mono-numbers font-black px-2.5 py-1 rounded-full text-xs" 
+                        [class.bg-sf-success/10]="sellerTotalShare() === 100" 
+                        [class.text-sf-success]="sellerTotalShare() === 100"
+                        [class.bg-sf-error/10]="sellerTotalShare() !== 100" 
+                        [class.text-sf-error]="sellerTotalShare() !== 100"
+                        [class.shadow-glow-profit]="sellerTotalShare() === 100">
+                    {{ sellerTotalShare() }}% / 100%
+                  </span>
+                </div>
+                
+                <!-- Progress Bar Container -->
+                <div class="w-full h-5 bg-sf-bg border border-sf-border/50 rounded-xl overflow-hidden flex transition-all duration-500 shadow-inner"
+                     [class.ring-2]="sellerTotalShare() === 100"
+                     [class.ring-sf-profit/40]="sellerTotalShare() === 100"
+                     [class.border-sf-profit/50]="sellerTotalShare() === 100">
+                  @for (s of sellers.value; track $index; let i = $index) {
+                    @if (s.sharePercentage > 0) {
+                      <div class="h-full transition-all duration-500 ease-out flex items-center justify-center text-[10px] font-mono-numbers font-black text-white"
+                           [class.bg-sf-primary]="i === 0"
+                           [class.bg-sf-secondary]="i === 1"
+                           [class.bg-sf-success]="i === 2"
+                           [class.bg-sf-info]="i === 3"
+                           [style.width.%]="s.sharePercentage">
+                        @if (s.sharePercentage >= 10) {
+                          <span>{{ s.sharePercentage }}%</span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+                
+                <!-- Quick dynamic legend -->
+                <div class="flex flex-wrap gap-4 pt-1 border-t border-sf-border/20">
+                  @for (s of sellers.value; track $index; let i = $index) {
+                    @if (s.employeeId) {
+                      <div class="flex items-center gap-2 text-[10px] font-bold text-sf-muted">
+                        <span class="w-2.5 h-2.5 rounded-full"
+                              [class.bg-sf-primary]="i === 0"
+                              [class.bg-sf-secondary]="i === 1"
+                              [class.bg-sf-success]="i === 2"
+                              [class.bg-sf-info]="i === 3"></span>
+                        <span>{{ getEmployeeName(s.employeeId) }} ({{ s.sharePercentage }}%)</span>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            }
 
             <div class="space-y-4" formArrayName="sellers">
               @for (seller of sellers.controls; track $index; let i = $index) {
@@ -245,19 +308,146 @@ import { heroChevronLeft, heroCheck, heroUserPlus, heroTrash, heroExclamationCir
 
       <ng-template #skeleton>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-pulse">
+          <!-- Main Form Skeleton -->
           <div class="lg:col-span-2 space-y-8">
-            <div class="glass-card p-8 h-64 rounded-3xl border border-sf-border skeleton"></div>
-            <div class="glass-card p-8 h-96 rounded-3xl border border-sf-border skeleton"></div>
+            <div class="glass-card p-8 rounded-3xl border border-sf-border/40 space-y-6">
+              <!-- Section Header -->
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-6 bg-sf-primary/20 rounded-full"></div>
+                <div class="h-4 bg-sf-muted/10 rounded-full w-48"></div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div class="space-y-2">
+                  <div class="h-3 bg-sf-muted/10 rounded-full w-24"></div>
+                  <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                </div>
+                <div class="space-y-2">
+                  <div class="h-3 bg-sf-muted/10 rounded-full w-16"></div>
+                  <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                  <div class="h-3 bg-sf-muted/10 rounded-full w-16"></div>
+                  <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                </div>
+                <div class="space-y-2">
+                  <div class="h-3 bg-sf-muted/10 rounded-full w-20"></div>
+                  <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                </div>
+                <div class="space-y-2">
+                  <div class="h-3 bg-sf-muted/10 rounded-full w-24"></div>
+                  <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card p-8 rounded-3xl border border-sf-border/40 space-y-6">
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-6 bg-sf-secondary/20 rounded-full"></div>
+                <div class="h-4 bg-sf-muted/10 rounded-full w-40"></div>
+              </div>
+              <div class="h-24 bg-sf-muted/5 rounded-2xl w-full"></div>
+              <div class="space-y-4">
+                <div class="flex items-end gap-4 p-4 bg-sf-bg/30 rounded-2xl border border-sf-border/30">
+                  <div class="flex-1 space-y-2">
+                    <div class="h-3 bg-sf-muted/10 rounded-full w-20"></div>
+                    <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                  </div>
+                  <div class="w-32 space-y-2">
+                    <div class="h-3 bg-sf-muted/10 rounded-full w-12"></div>
+                    <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="glass-card p-8 h-96 rounded-3xl border border-sf-border skeleton"></div>
+
+          <!-- Sidebar Skeleton -->
+          <div class="glass-card p-8 rounded-3xl border border-sf-border/40 space-y-6 h-[500px]">
+            <div class="flex items-center gap-3 pb-4 border-b border-sf-border/20">
+              <div class="w-2 h-6 bg-sf-info/20 rounded-full"></div>
+              <div class="h-4 bg-sf-muted/10 rounded-full w-32"></div>
+            </div>
+            <div class="space-y-6">
+              <div class="space-y-2">
+                <div class="h-3 bg-sf-muted/10 rounded-full w-24"></div>
+                <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+              </div>
+              <div class="space-y-2">
+                <div class="h-3 bg-sf-muted/10 rounded-full w-28"></div>
+                <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+              </div>
+              <div class="space-y-2">
+                <div class="h-3 bg-sf-muted/10 rounded-full w-32"></div>
+                <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+              </div>
+              <div class="space-y-2">
+                <div class="h-3 bg-sf-muted/10 rounded-full w-20"></div>
+                <div class="h-10 bg-sf-muted/5 rounded-xl w-full"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </ng-template>
+
+      <!-- Quick Create Client Modal -->
+      @if (showQuickClientModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sf-bg/60 backdrop-blur-md animate-fade-in">
+          <div class="glass-card max-w-md w-full p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 relative animate-scale-up" [formGroup]="quickClientForm">
+            <button type="button" (click)="closeQuickClientModal()" class="absolute top-6 left-6 p-1.5 hover:bg-sf-surface rounded-lg text-sf-muted hover:text-sf-text transition-colors">
+              <ng-icon name="heroXMark" class="text-lg"></ng-icon>
+            </button>
+
+            <div class="space-y-1 text-right">
+              <h3 class="text-lg font-display font-bold text-sf-text">تسجيل عميل جديد وسريع</h3>
+              <p class="text-xs text-sf-muted">أدخل بيانات العميل الأساسية لحفظه واختياره فوراً</p>
+            </div>
+
+            <div class="space-y-4 text-right">
+              <div class="space-y-1">
+                <label class="text-[10px] font-black text-sf-muted uppercase tracking-widest mr-1">الاسم الكامل *</label>
+                <app-input formControlName="name" placeholder="مثال: أحمد زيدان"
+                           [hasError]="quickClientInvalid('name')"
+                           errorMessage="الاسم مطلوب"></app-input>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] font-black text-sf-muted uppercase tracking-widest mr-1">رقم الهاتف *</label>
+                <app-input formControlName="phone" placeholder="مثال: 01515124909"
+                           [hasError]="quickClientInvalid('phone')"
+                           errorMessage="رقم الهاتف مطلوب"></app-input>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] font-black text-sf-muted uppercase tracking-widest mr-1">البريد الإلكتروني</label>
+                <app-input formControlName="email" placeholder="example@domain.com"></app-input>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] font-black text-sf-muted uppercase tracking-widest mr-1">الشركة</label>
+                <app-input formControlName="company" placeholder="مثال: Fair Direction"></app-input>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button type="button" (click)="closeQuickClientModal()" class="px-4 py-2 text-xs font-bold text-sf-muted hover:text-sf-text transition-colors uppercase">إلغاء</button>
+              <button type="button" (click)="submitQuickClient()" class="bg-sf-primary text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-glow-purple flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                <ng-icon name="heroCheck"></ng-icon>
+                <span>تسجيل واختيار</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
     </div>
   `,
   styles: [`
-    @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scale-up { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-fade-in { animation: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
   `]
 })
 export class SaleFormComponent implements OnInit {
@@ -268,11 +458,15 @@ export class SaleFormComponent implements OnInit {
   private clientService = inject(ClientService);
   private employeeService = inject(EmployeeService);
   private settingService = inject(SettingService);
+  private toastService = inject(ToastService);
+  private celebrationService = inject(CelebrationService);
 
   form!: FormGroup;
+  quickClientForm!: FormGroup;
   isSubmitting = signal(false);
   isLoading = signal(false);
   isEditMode = signal(false);
+  showQuickClientModal = signal(false);
   saleId: string | null = null;
   
   clients = signal<any[]>([]);
@@ -351,6 +545,13 @@ export class SaleFormComponent implements OnInit {
       sellers: this.fb.array([])
     });
 
+    this.quickClientForm = this.fb.group({
+      name: ['', [Validators.required]],
+      phone: ['20', [Validators.required]],
+      email: [''],
+      company: ['']
+    });
+
     // Add initial seller only if not in edit mode (edit mode will load its own sellers)
     if (!this.saleId) {
       this.addSeller();
@@ -382,6 +583,11 @@ export class SaleFormComponent implements OnInit {
     return this.sellers.value.reduce((sum: number, s: any) => sum + (Number(s.sharePercentage) || 0), 0);
   }
 
+  getEmployeeName(id: string): string {
+    const emp = this.employees().find(e => e._id === id);
+    return emp ? emp.name : 'البائع...';
+  }
+
   calculatedGross() {
     const val = this.form.get('unitValue')?.value || 0;
     const rate = this.form.get('contractCommissionPercentage')?.value || 0;
@@ -397,6 +603,45 @@ export class SaleFormComponent implements OnInit {
     // Logic for updating derived fields if needed
   }
 
+  quickClientInvalid(controlName: string): boolean {
+    const control = this.quickClientForm.get(controlName);
+    return !!(control && control.invalid && (control.dirty || control.touched));
+  }
+
+  openQuickClientModal() {
+    this.quickClientForm.reset({
+      name: '',
+      phone: '20',
+      email: '',
+      company: ''
+    });
+    this.showQuickClientModal.set(true);
+  }
+
+  closeQuickClientModal() {
+    this.showQuickClientModal.set(false);
+  }
+
+  submitQuickClient() {
+    if (this.quickClientForm.invalid) {
+      this.quickClientForm.markAllAsTouched();
+      return;
+    }
+
+    this.clientService.createClient(this.quickClientForm.value).subscribe({
+      next: (res) => {
+        const newClient = res.data;
+        this.clients.set([...this.clients(), newClient]);
+        this.form.patchValue({ clientId: newClient._id });
+        this.closeQuickClientModal();
+        this.toastService.showSuccess(`تم تسجيل العميل السريع ${newClient.name} واختياره بنجاح!`);
+      },
+      error: (err) => {
+        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء تسجيل العميل السريع.');
+      }
+    });
+  }
+
   isInvalid(controlName: string): boolean {
     const control = this.form.get(controlName);
     return !!(control && control.invalid && (control.dirty || control.touched));
@@ -407,9 +652,16 @@ export class SaleFormComponent implements OnInit {
   }
 
   submit() {
+    // 1. Pre-unlock AudioContext synchronously during user click gesture to bypass Chrome security policies
+    this.celebrationService.unlockAudio();
+
     if (this.form.invalid || this.sellerTotalShare() !== 100) {
       this.form.markAllAsTouched();
-      // Optional: scroll to first error or show a toast
+      if (this.sellerTotalShare() !== 100) {
+        this.toastService.showWarning('تنبيه: يجب أن يكون مجموع نسب المشاركة للبائعين مساويًا لـ 100% تمامًا.');
+      } else {
+        this.toastService.showWarning('تنبيه: يرجى التحقق من ملء جميع الحقول المطلوبة بشكل صحيح قبل الحفظ.');
+      }
       return;
     }
 
@@ -419,10 +671,22 @@ export class SaleFormComponent implements OnInit {
       : this.saleService.createSale(this.form.value);
 
     obs.subscribe({
-      next: () => this.router.navigate(['/sales']),
+      next: () => {
+        this.toastService.showSuccess(this.isEditMode() ? 'تم تحديث المبيعة وتعديل الحسابات بنجاح!' : 'تم حفظ المبيعة وتسوية العمولات بنجاح!');
+        
+        if (!this.isEditMode()) {
+          // Trigger the gorgeous confetti explosion & synthesized success sound
+          this.celebrationService.celebrate();
+        }
+
+        // Delay route navigation by 800ms so the user sees and hears the celebration on the current page before transition
+        setTimeout(() => {
+          this.router.navigate(['/sales']);
+        }, 800);
+      },
       error: (err) => {
         this.isSubmitting.set(false);
-        alert(err.error?.message || 'حدث خطأ أثناء حفظ المبيعة. يرجى التأكد من البيانات والمحاولة مرة أخرى.');
+        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء حفظ المبيعة. يرجى التأكد من البيانات والمحاولة مرة أخرى.');
       }
     });
   }

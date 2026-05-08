@@ -1,5 +1,7 @@
 /**
  * Performs full commission chain calculation.
+ * Guarantees that the invoiceAmount matches the sum of its rounded line items perfectly
+ * to prevent any ledger reconciliation imbalances.
  */
 function calculateCommission({ unitValue, contractCommissionPercentage, developerCollectionPercentage }) {
   // Step 1: Collected commission percentage
@@ -17,27 +19,65 @@ function calculateCommission({ unitValue, contractCommissionPercentage, develope
   // Step 5: Withholding tax
   const withholdingTax = netRevenue * 0.05;
 
-  // Step 6: Invoice amount
-  const invoiceAmount = netRevenue + vat - withholdingTax;
+  // Precise Accounting Rounding of individual components
+  const roundedCollectedPercentage = round2(collectedCommissionPercentage);
+  const roundedGross = round2(grossCommissionWithVAT);
+  const roundedNet = round2(netRevenue);
+  const roundedVat = round2(vat);
+  const roundedTax = round2(withholdingTax);
+
+  // Step 6: Invoice amount (Calculated from rounded components to guarantee perfect balancing)
+  const invoiceAmount = round2(roundedNet + roundedVat - roundedTax);
 
   return {
-    collectedCommissionPercentage: round2(collectedCommissionPercentage),
-    grossCommissionWithVAT:        round2(grossCommissionWithVAT),
-    netRevenue:                    round2(netRevenue),
-    vat:                           round2(vat),
-    withholdingTax:                round2(withholdingTax),
-    invoiceAmount:                 round2(invoiceAmount)
+    collectedCommissionPercentage: roundedCollectedPercentage,
+    grossCommissionWithVAT:        roundedGross,
+    netRevenue:                    roundedNet,
+    vat:                           roundedVat,
+    withholdingTax:                roundedTax,
+    invoiceAmount:                 invoiceAmount
   };
 }
 
 /**
  * Calculates individual commission for each seller based on their share.
+ * Implements the Largest Remainder Method (Penny Allocation Adjustment)
+ * to guarantee that the sum of all individual rounded commissions is EXACTLY EQUAL
+ * to the grossCommissionWithVAT, preventing any piasters/pennies ledger mismatches.
  */
 function calculateSellerCommissions(sellers, grossCommissionWithVAT) {
-  return sellers.map(seller => ({
-    ...seller,
-    commissionValue: round2((seller.sharePercentage / 100) * grossCommissionWithVAT)
-  }));
+  if (!sellers || sellers.length === 0) return [];
+
+  // 1. Calculate raw and standard-rounded commission values
+  const results = sellers.map(seller => {
+    const rawVal = (seller.sharePercentage / 100) * grossCommissionWithVAT;
+    return {
+      ...seller,
+      commissionValue: round2(rawVal)
+    };
+  });
+
+  // 2. Sum up the rounded individual values
+  const sumOfCommissions = results.reduce((acc, s) => acc + s.commissionValue, 0);
+
+  // 3. Calculate discrepancy compared to the exact total
+  const discrepancy = round2(grossCommissionWithVAT - sumOfCommissions);
+
+  // 4. If there's any discrepancy, allocate it to the seller with the highest share percentage
+  if (discrepancy !== 0) {
+    let maxIdx = 0;
+    let maxShare = -1;
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].sharePercentage > maxShare) {
+        maxShare = results[i].sharePercentage;
+        maxIdx = i;
+      }
+    }
+    // Adjust the largest share seller's commission by the discrepancy
+    results[maxIdx].commissionValue = round2(results[maxIdx].commissionValue + discrepancy);
+  }
+
+  return results;
 }
 
 function round2(num) {

@@ -2,34 +2,68 @@ const Claim = require('../models/claim.model');
 const Sale = require('../models/sale.model');
 const { generateCode } = require('../utils/code-generator');
 const { paginate } = require('../utils/pagination.utils');
+const { runInTransaction } = require('../utils/transaction.utils');
+const { clearDashboardCache } = require('./dashboard.service');
 
 const createClaim = async (data) => {
-  const sale = await Sale.findById(data.saleId);
-  if (!sale) throw new Error('Sale not found');
-  if (sale.status === 'draft') throw new Error('Cannot claim a draft sale');
+  return await runInTransaction(async (session) => {
+    const sale = await Sale.findById(data.saleId).session(session);
+    if (!sale) throw new Error('Sale not found');
+    if (sale.status === 'draft') throw new Error('Cannot claim a draft sale');
 
-  // Check if claim already exists
-  const existing = await Claim.findOne({ saleId: data.saleId, isActive: true });
-  if (existing) throw new Error('Claim already exists for this sale');
+    // Check if claim already exists (active or inactive)
+    const existing = await Claim.findOne({ saleId: data.saleId }).session(session);
+    if (existing) {
+      if (existing.isActive) {
+        throw new Error('Claim already exists for this sale');
+      } else {
+        // Reactivate soft-deleted claim to satisfy database unique index!
+        existing.isActive = true;
+        existing.status = 'pending';
+        existing.saleNumber = sale.saleNumber;
+        existing.projectName = sale.projectName;
+        existing.unitNumber = sale.unitNumber;
+        existing.clientName = sale.clientName;
+        existing.commissionDue = sale.invoiceAmount;
+        existing.invoiceStatus = sale.invoiceStatus;
+        existing.expectedCollectionDate = sale.expectedCollectionDate;
+        if (data.notes) existing.notes = data.notes;
+        
+        await existing.save({ session });
+        await Sale.findByIdAndUpdate(data.saleId, { status: 'claimed' }, { session });
+        clearDashboardCache();
+        return existing;
+      }
+    }
 
-  const claimNumber = await generateCode(Claim, 'claimNumber', 'CLM');
+    const claimNumber = await generateCode(Claim, 'claimNumber', 'CLM');
 
-  const claim = await Claim.create({
-    ...data,
-    claimNumber,
-    saleNumber:   sale.saleNumber,
-    projectName:  sale.projectName,
-    unitNumber:   sale.unitNumber,
-    clientName:   sale.clientName,
-    commissionDue: sale.invoiceAmount,
-    invoiceStatus: sale.invoiceStatus,
-    expectedCollectionDate: sale.expectedCollectionDate
+    let claim;
+    const claimData = {
+      ...data,
+      claimNumber,
+      saleNumber:   sale.saleNumber,
+      projectName:  sale.projectName,
+      unitNumber:   sale.unitNumber,
+      clientName:   sale.clientName,
+      commissionDue: sale.invoiceAmount,
+      invoiceStatus: sale.invoiceStatus,
+      expectedCollectionDate: sale.expectedCollectionDate
+    };
+
+    if (session) {
+      const [created] = await Claim.create([claimData], { session });
+      claim = created;
+    } else {
+      claim = await Claim.create(claimData);
+    }
+
+    // Update sale status
+    await Sale.findByIdAndUpdate(data.saleId, { status: 'claimed' }, { session });
+
+    clearDashboardCache();
+    return claim;
   });
-
-  // Update sale status
-  await Sale.findByIdAndUpdate(data.saleId, { status: 'claimed' });
-
-  return claim;
 };
 
 const getClaims = async (query) => {
@@ -46,7 +80,12 @@ const getClaims = async (query) => {
     ];
   }
 
-  return await paginate(Claim, filter, { page, limit, populate: 'saleId' });
+  return await paginate(Claim, filter, { 
+    page, 
+    limit, 
+    populate: 'saleId',
+    select: 'claimNumber saleNumber projectName clientName commissionDue collectedAmount collectionDate status expectedCollectionDate notes saleId'
+  });
 };
 
 const getClaimById = async (id) => {
@@ -54,18 +93,21 @@ const getClaimById = async (id) => {
 };
 
 const updateClaim = async (id, data) => {
-  const claim = await Claim.findById(id);
-  if (!claim) throw new Error('Claim not found');
+  return await runInTransaction(async (session) => {
+    const claim = await Claim.findById(id).session(session);
+    if (!claim) throw new Error('Claim not found');
 
-  const updatedClaim = await Claim.findByIdAndUpdate(id, data, { returnDocument: 'after' });
+    const updatedClaim = await Claim.findByIdAndUpdate(id, data, { session, new: true });
 
-  if (data.status === 'collected') {
-    await Sale.findByIdAndUpdate(claim.saleId, { status: 'collected' });
-  } else if (data.status && data.status !== 'collected') {
-    await Sale.findByIdAndUpdate(claim.saleId, { status: 'claimed' });
-  }
+    if (data.status === 'collected') {
+      await Sale.findByIdAndUpdate(claim.saleId, { status: 'collected' }, { session });
+    } else if (data.status && data.status !== 'collected') {
+      await Sale.findByIdAndUpdate(claim.saleId, { status: 'claimed' }, { session });
+    }
 
-  return updatedClaim;
+    clearDashboardCache();
+    return updatedClaim;
+  });
 };
 
 const collectClaim = async (id, data) => {
@@ -86,42 +128,80 @@ const updateClaimStatus = async (id, data) => {
 };
 
 const deleteClaim = async (id) => {
-  const claim = await Claim.findById(id);
-  if (claim) {
-    // Revert sale status if claim is deleted? 
-    // Business rule: "Soft delete only".
-    await Sale.findByIdAndUpdate(claim.saleId, { status: 'confirmed' });
-  }
-  return await Claim.findByIdAndUpdate(id, { isActive: false }, { returnDocument: 'after' });
+  return await runInTransaction(async (session) => {
+    const claim = await Claim.findById(id).session(session);
+    if (claim) {
+      // Revert sale status if claim is deleted? 
+      // Business rule: "Soft delete only".
+      await Sale.findByIdAndUpdate(claim.saleId, { status: 'confirmed' }, { session });
+    }
+    clearDashboardCache();
+    return await Claim.findByIdAndUpdate(id, { isActive: false }, { session, new: true });
+  });
 };
 
 const syncClaims = async () => {
-  const confirmedSales = await Sale.find({ status: 'confirmed', isActive: true });
-  const createdClaims = [];
+  return await runInTransaction(async (session) => {
+    const confirmedSales = await Sale.find({ status: 'confirmed', isActive: true }).session(session);
+    const createdClaims = [];
 
-  for (const sale of confirmedSales) {
-    const existing = await Claim.findOne({ saleId: sale._id, isActive: true });
-    if (!existing) {
-      const claimNumber = await generateCode(Claim, 'claimNumber', 'CLM');
-      const claim = await Claim.create({
-        saleId: sale._id,
-        claimNumber,
-        saleNumber:   sale.saleNumber,
-        projectName:  sale.projectName,
-        unitNumber:   sale.unitNumber,
-        clientName:   sale.clientName,
-        commissionDue: sale.invoiceAmount,
-        invoiceStatus: sale.invoiceStatus,
-        expectedCollectionDate: sale.expectedCollectionDate,
-        status: 'pending'
-      });
+    for (const sale of confirmedSales) {
+      // Check for any existing claim (active or soft-deleted)
+      const existing = await Claim.findOne({ saleId: sale._id }).session(session);
+      
+      if (existing) {
+        if (!existing.isActive) {
+          // Reactivate the soft-deleted claim to respect the MongoDB unique index constraint
+          existing.isActive = true;
+          existing.status = 'pending';
+          existing.saleNumber = sale.saleNumber;
+          existing.projectName = sale.projectName;
+          existing.unitNumber = sale.unitNumber;
+          existing.clientName = sale.clientName;
+          existing.commissionDue = sale.invoiceAmount;
+          existing.invoiceStatus = sale.invoiceStatus;
+          existing.expectedCollectionDate = sale.expectedCollectionDate;
+          
+          await existing.save({ session });
+          await Sale.findByIdAndUpdate(sale._id, { status: 'claimed' }, { session });
+          createdClaims.push(existing);
+        }
+        // If it's already active, skip it!
+      } else {
+        // Create new claim
+        const claimNumber = await generateCode(Claim, 'claimNumber', 'CLM');
+        
+        let claim;
+        const claimData = {
+          saleId: sale._id,
+          claimNumber,
+          saleNumber:   sale.saleNumber,
+          projectName:  sale.projectName,
+          unitNumber:   sale.unitNumber,
+          clientName:   sale.clientName,
+          commissionDue: sale.invoiceAmount,
+          invoiceStatus: sale.invoiceStatus,
+          expectedCollectionDate: sale.expectedCollectionDate,
+          status: 'pending'
+        };
 
-      await Sale.findByIdAndUpdate(sale._id, { status: 'claimed' });
-      createdClaims.push(claim);
+        if (session) {
+          const [created] = await Claim.create([claimData], { session });
+          claim = created;
+        } else {
+          claim = await Claim.create(claimData);
+        }
+
+        await Sale.findByIdAndUpdate(sale._id, { status: 'claimed' }, { session });
+        createdClaims.push(claim);
+      }
     }
-  }
 
-  return createdClaims;
+    if (createdClaims.length > 0) {
+      clearDashboardCache();
+    }
+    return createdClaims;
+  });
 };
 
 module.exports = {

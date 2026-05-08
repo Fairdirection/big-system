@@ -40,7 +40,7 @@ import { RouterLink } from '@angular/router';
       <!-- Client Table -->
       <div class="bg-sf-surface border border-sf-border shadow-sm rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-right border-collapse">
+          <table class="w-full text-right border-collapse table-compact">
             <thead>
               <tr class="bg-sf-surface/50 border-b border-sf-border text-right">
                 <th class="px-6 py-4 text-[11px] font-black text-sf-muted uppercase tracking-widest">اسم العميل</th>
@@ -52,7 +52,7 @@ import { RouterLink } from '@angular/router';
             </thead>
             <tbody class="divide-y divide-sf-border/50" *ngIf="!loading(); else skeleton">
               @for (client of filteredClients(); track client._id) {
-                <tr class="group hover:bg-sf-surface/30 transition-colors">
+                <tr class="group row-financial-hover">
                   <td class="px-6 py-5">
                     <div class="flex items-center gap-3">
                       <div class="w-10 h-10 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-sf-primary font-bold shadow-inner">
@@ -68,15 +68,15 @@ import { RouterLink } from '@angular/router';
                     <div class="space-y-1">
                       <div class="flex items-center gap-2 text-xs text-sf-muted">
                         <ng-icon name="heroEnvelope" class="text-sf-primary/70"></ng-icon>
-                        <span>{{ client.email || 'لا يوجد بريد' }}</span>
+                        <span class="font-financial">{{ client.email || 'لا يوجد بريد' }}</span>
                       </div>
                       <div class="flex items-center gap-2 text-xs text-sf-muted">
                         <ng-icon name="heroPhone" class="text-sf-primary/70"></ng-icon>
-                        <span>{{ client.phone }}</span>
+                        <span class="font-financial">{{ client.phone }}</span>
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-5 text-center">
+                  <td class="px-6 py-5 text-center font-financial">
                     <span class="px-2 py-1 bg-sf-bg border border-sf-border rounded text-[10px] font-bold text-sf-muted uppercase tracking-widest">
                       {{ client.code }}
                     </span>
