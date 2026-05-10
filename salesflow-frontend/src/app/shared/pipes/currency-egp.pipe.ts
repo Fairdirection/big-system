@@ -14,17 +14,17 @@ export class CurrencyEgpPipe implements PipeTransform {
     const lang = this.settingService.preferredLanguage();
 
     if (lang === 'ar') {
-      const formattedNum = new Intl.NumberFormat('ar-EG', {
+      const formattedNum = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
       }).format(num);
-      return currency === 'USD' ? `${formattedNum} $` : `${formattedNum} ج.م`;
+      return currency === 'USD' ? `$ ${formattedNum}` : `${formattedNum} ج.م`;
     } else {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
       }).format(num);
     }
   }

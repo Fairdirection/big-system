@@ -53,11 +53,29 @@ const createTeam = async (data) => {
 };
 
 const getTeams = async () => {
-  return await Team.find({ isActive: true }).populate('teamLeaderId', 'name code').populate('memberIds', 'name code');
+  return await Team.find({ isActive: true })
+    .populate({
+      path: 'teamLeaderId',
+      select: 'name code seniorityLevel managerId',
+      populate: {
+        path: 'managerId',
+        select: 'name code'
+      }
+    })
+    .populate('memberIds', 'name code seniorityLevel');
 };
 
 const getTeamById = async (id) => {
-  return await Team.findById(id).populate('teamLeaderId', 'name code').populate('memberIds', 'name code');
+  return await Team.findById(id)
+    .populate({
+      path: 'teamLeaderId',
+      select: 'name code seniorityLevel managerId',
+      populate: {
+        path: 'managerId',
+        select: 'name code'
+      }
+    })
+    .populate('memberIds', 'name code seniorityLevel');
 };
 
 const updateTeam = async (id, data) => {
@@ -422,7 +440,13 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
 
 const getTeamsWithPerformance = async (quarterId) => {
   const teams = await Team.find({ isActive: true })
-    .populate('teamLeaderId')
+    .populate({
+      path: 'teamLeaderId',
+      populate: {
+        path: 'managerId',
+        select: 'name code'
+      }
+    })
     .populate('memberIds')
     .lean();
   

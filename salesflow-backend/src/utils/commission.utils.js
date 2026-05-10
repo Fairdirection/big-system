@@ -3,21 +3,21 @@
  * Guarantees that the invoiceAmount matches the sum of its rounded line items perfectly
  * to prevent any ledger reconciliation imbalances.
  */
-function calculateCommission({ unitValue, contractCommissionPercentage, developerCollectionPercentage }) {
-  // Step 1: Collected commission percentage
+function calculateCommission({ unitValue, contractCommissionPercentage, developerCollectionPercentage, vatPercentage = 14, withholdingTaxPercentage = 5 }) {
+  // Step 1: Collected commission percentage (النسبة المحصلة الأولى)
   const collectedCommissionPercentage = contractCommissionPercentage * (developerCollectionPercentage / 100);
 
   // Step 2: Gross commission (includes VAT)
   const grossCommissionWithVAT = (collectedCommissionPercentage / 100) * unitValue;
 
   // Step 3: Net revenue (extract VAT)
-  const netRevenue = grossCommissionWithVAT / 1.14;
+  const netRevenue = grossCommissionWithVAT / (1 + (vatPercentage / 100));
 
   // Step 4: VAT amount
-  const vat = netRevenue * 0.14;
+  const vat = netRevenue * (vatPercentage / 100);
 
   // Step 5: Withholding tax
-  const withholdingTax = netRevenue * 0.05;
+  const withholdingTax = netRevenue * (withholdingTaxPercentage / 100);
 
   // Precise Accounting Rounding of individual components
   const roundedCollectedPercentage = round2(collectedCommissionPercentage);

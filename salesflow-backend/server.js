@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const { connectDB } = require('./src/config/db');
 const seedUsers = require('./seed/users.seed');
+const seedSettings = require('./seed/settings.seed');
 const routes = require('./src/routes/index');
 const { errorHandler } = require('./src/middleware/error.middleware');
 const { notFoundHandler } = require('./src/middleware/notFound.middleware');
@@ -35,6 +36,7 @@ const PORT = process.env.PORT || 3000;
 console.log('Connecting to MongoDB...');
 connectDB().then(async () => {
   console.log('Database connected, synchronizing seeds...');
+  await seedSettings();
   await seedUsers();
   console.log('Starting server...');
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

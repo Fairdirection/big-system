@@ -31,6 +31,8 @@ const saleSchema = new mongoose.Schema({
   developerCollectionPercentage: { type: Number, required: true }, // 100, 50, 33.333, 25, or custom
   contractCommissionPercentage:  { type: Number, required: true },
   incentivePercentage:           { type: Number, default: 0 },
+  vatPercentage:                 { type: Number, default: 14 },
+  withholdingTaxPercentage:      { type: Number, default: 5 },
 
   // Commission calculated
   collectedCommissionPercentage: { type: Number },   // = contractCommission% × devCollection%

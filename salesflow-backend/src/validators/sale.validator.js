@@ -20,9 +20,17 @@ const createSaleSchema = Joi.object({
   unitType: Joi.string().required(),
   unitValue: Joi.number().min(0).required(),
 
-  developerCollectionPercentage: Joi.number().valid(100, 50, 33.333, 25).required(),
+  developerCollectionPercentage: Joi.number().min(0).max(100).required(),
   contractCommissionPercentage: Joi.number().min(0).required(),
   incentivePercentage: Joi.number().min(0).default(0),
+  vatPercentage: Joi.number().min(0).max(100).optional().default(14),
+  withholdingTaxPercentage: Joi.number().min(0).max(100).optional().default(5),
+
+  collectedCommissionPercentage: Joi.number().min(0).optional(),
+  grossCommissionWithVAT: Joi.number().min(0).optional(),
+  netRevenue: Joi.number().min(0).optional(),
+  withholdingTax: Joi.number().min(0).optional(),
+  invoiceAmount: Joi.number().min(0).optional(),
 
   invoiceStatus: Joi.string().required(),
   expectedCollectionDate: Joi.date().optional(),
@@ -53,9 +61,17 @@ const updateSaleSchema = Joi.object({
   unitType: Joi.string().optional(),
   unitValue: Joi.number().min(0).optional(),
 
-  developerCollectionPercentage: Joi.number().valid(100, 50, 33.333, 25).optional(),
+  developerCollectionPercentage: Joi.number().min(0).max(100).optional(),
   contractCommissionPercentage: Joi.number().min(0).optional(),
   incentivePercentage: Joi.number().min(0).optional(),
+  vatPercentage: Joi.number().min(0).max(100).optional(),
+  withholdingTaxPercentage: Joi.number().min(0).max(100).optional(),
+
+  collectedCommissionPercentage: Joi.number().min(0).optional(),
+  grossCommissionWithVAT: Joi.number().min(0).optional(),
+  netRevenue: Joi.number().min(0).optional(),
+  withholdingTax: Joi.number().min(0).optional(),
+  invoiceAmount: Joi.number().min(0).optional(),
 
   invoiceStatus: Joi.string().optional(),
   expectedCollectionDate: Joi.date().optional(),

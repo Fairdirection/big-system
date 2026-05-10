@@ -98,10 +98,16 @@ import { Team } from '@core/models/team.model';
                       class="text-xl font-display font-bold text-sf-text hover:text-sf-primary transition-colors cursor-pointer decoration-sf-primary/30 hover:underline underline-offset-8">
                     {{ team.name }}
                   </h3>
-                  <div class="flex items-center gap-2 mt-1">
+                  <div class="flex flex-wrap items-center gap-2 mt-1">
                     <span class="flex items-center gap-1 text-[10px] font-black text-sf-muted uppercase tracking-widest bg-sf-bg px-2 py-0.5 rounded border border-sf-border">
                       <ng-icon name="heroUsers" class="text-xs"></ng-icon>
-                      {{ team.memberIds.length || 0 }} أعضاء
+                      {{ team.memberIds.length || 0 }} {{ team.teamLeaderId.seniorityLevel === 'SalesManager' ? 'قادة' : 'أعضاء' }}
+                    </span>
+                    <span *ngIf="team.teamLeaderId.seniorityLevel === 'SalesManager'" class="text-[10px] font-black text-sf-secondary uppercase tracking-widest bg-sf-secondary/10 px-2 py-0.5 rounded border border-sf-secondary/20">
+                      مجموعة إدارة
+                    </span>
+                    <span *ngIf="team.teamLeaderId.managerId?.name" class="text-[10px] font-black text-sf-primary uppercase tracking-widest bg-sf-primary/10 px-2 py-0.5 rounded border border-sf-primary/20">
+                      تحت إدارة: {{ team.teamLeaderId.managerId?.name }}
                     </span>
                     <span class="text-[10px] font-black text-sf-success uppercase tracking-widest bg-sf-success/10 px-2 py-0.5 rounded border border-sf-success/20">
                       نشط
@@ -145,7 +151,9 @@ import { Team } from '@core/models/team.model';
                   {{ team.teamLeaderId.name.charAt(0) || 'L' }}
                 </div>
                 <div>
-                  <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest leading-none mb-1">قائد الفريق</p>
+                  <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest leading-none mb-1">
+                    {{ team.teamLeaderId.seniorityLevel === 'SalesManager' ? 'مدير المبيعات' : 'قائد الفريق' }}
+                  </p>
                   <p class="text-sm font-bold text-sf-text leading-none">{{ team.teamLeaderId.name || 'غير معين' }}</p>
                 </div>
               </div>

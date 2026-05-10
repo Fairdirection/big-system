@@ -47,7 +47,7 @@ html.dark {
   html {
     @apply bg-sf-bg text-sf-text font-body antialiased transition-all duration-300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    zoom: 0.67;
+    zoom: 0.92;
   }
 
   * {
@@ -186,7 +186,7 @@ html.dark {
 
   /* Status Badges - Unified with Color Theory */
   .badge {
-    @apply px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border;
+    @apply px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-widest border;
   }
   .badge-success { @apply bg-sf-success/10 text-sf-success border-sf-success/20; }
   .badge-warning { @apply bg-sf-warning/10 text-sf-warning border-sf-warning/20; }
@@ -225,10 +225,10 @@ html.dark {
 
   /* Compact Table utilities for Accountant Data Density */
   .table-compact th {
-    @apply py-2.5 px-4 text-[10px] font-black uppercase tracking-widest text-sf-muted border-b border-sf-border/40 text-right;
+    @apply py-2.5 px-4 text-xs font-black uppercase tracking-widest text-sf-muted border-b border-sf-border/40 text-right;
   }
   .table-compact td {
-    @apply py-2 px-4 text-xs font-bold text-sf-text border-b border-sf-border/10;
+    @apply py-2 px-4 text-sm font-semibold text-sf-text border-b border-sf-border/10;
   }
   
   /* Focus row highlight for comfortable horizontal scanning */

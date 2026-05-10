@@ -141,6 +141,34 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                 }
               </div>
             </section>
+
+            <!-- System Taxes -->
+            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
+              <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
+                <h3 class="text-lg font-display font-bold text-sf-text">الضرائب المتاحة في النظام</h3>
+                <button (click)="openModal('tax')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 hover:bg-sf-primary/10 px-3 py-1.5 rounded-lg transition-all">
+                  <ng-icon name="heroPlus"></ng-icon>
+                  إضافة ضريبة جديدة
+                </button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (s of getSettingsByType('tax'); track s._id) {
+                  <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border group hover:border-sf-primary/30 transition-all">
+                    <div class="flex items-center gap-3">
+                      <div class="w-2 h-2 rounded-full bg-sf-danger animate-pulse"></div>
+                      <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 font-mono-numbers">
+                      <span class="text-sm font-black text-sf-danger">{{ s.value }}%</span>
+                      <button (click)="deleteSetting(s._id)" class="opacity-0 group-hover:opacity-100 p-1 text-sf-muted hover:text-sf-danger transition-all">
+                        <ng-icon name="heroXMark"></ng-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
           </div>
 
           <!-- TAB 2: REGIONAL PREFERENCES -->
@@ -504,6 +532,8 @@ export class SettingsComponent implements OnInit {
         return 'إضافة نسبة تحصيل جديدة';
       case 'invoiceType':
         return 'إضافة نوع سداد / فاتورة جديد';
+      case 'tax':
+        return 'إضافة ضريبة جديدة في النظام';
       default:
         return 'إضافة إعداد جديد';
     }
@@ -517,6 +547,8 @@ export class SettingsComponent implements OnInit {
         return 'مثال: الدفعة الأولى';
       case 'invoiceType':
         return 'مثال: شيك بنكي';
+      case 'tax':
+        return 'مثال: ضريبة القيمة المضافة';
       default:
         return 'أدخل الاسم المعروض';
     }
@@ -530,6 +562,8 @@ export class SettingsComponent implements OnInit {
         return 'مثال: 10 (القيمة بالنسبة المئوية)';
       case 'invoiceType':
         return 'مثال: bank_check';
+      case 'tax':
+        return 'مثال: 14 (أدخل النسبة المئوية للضريبة)';
       default:
         return 'أدخل القيمة البرمجية';
     }

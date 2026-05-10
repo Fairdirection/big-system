@@ -5,6 +5,12 @@ export interface Team {
     _id: string;
     name: string;
     code: string;
+    seniorityLevel?: string;
+    managerId?: {
+      _id: string;
+      name: string;
+      code: string;
+    };
   };
   memberIds: {
     _id: string;

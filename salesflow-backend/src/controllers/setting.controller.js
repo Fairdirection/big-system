@@ -36,7 +36,6 @@ const deleteSetting = async (req, res, next) => {
   try {
     const setting = await Setting.findById(req.params.id);
     if (!setting) throw new Error('Setting not found');
-    if (setting.isDefault) throw new Error('Cannot delete default setting');
     
     setting.isActive = false;
     await setting.save();

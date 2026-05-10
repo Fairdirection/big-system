@@ -33,6 +33,8 @@ export interface Sale {
   withholdingTax?: number;
   invoiceAmount?: number;
   invoiceStatus: string;
+  vatPercentage?: number;
+  withholdingTaxPercentage?: number;
   expectedCollectionDate?: Date;
   sellers: Seller[];
   quarterId?: string;

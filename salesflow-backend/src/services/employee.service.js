@@ -38,17 +38,64 @@ const createEmployee = async (data) => {
 
   // 4. If sales dept + team assigned: create history record + update team
   if (data.department === 'Sales' && data.currentTeamId) {
-    const quarterId = getQuarterId(new Date(data.teamJoinDate));
+    const quarterId = getQuarterId(new Date(data.teamJoinDate || new Date()));
     await EmployeeTeamHistory.create({
       employeeId: employee._id,
       teamId: data.currentTeamId,
-      joinDate: data.teamJoinDate,
+      joinDate: data.teamJoinDate || new Date(),
       quarterId
     });
-    await Team.findByIdAndUpdate(
+    const team = await Team.findByIdAndUpdate(
       data.currentTeamId,
       { $addToSet: { memberIds: employee._id } }
     );
+    if (team) {
+      employee.managerId = team.teamLeaderId;
+      await employee.save();
+    }
+  }
+
+  // Handle SalesManager managed teams
+  if (data.department === 'Sales' && data.seniorityLevel === 'SalesManager' && data.managedTeamIds) {
+    const today = new Date();
+    const quarterId = getQuarterId(today);
+
+    // Find or create a Team led by this Sales Manager
+    let salesManagerTeam = await Team.findOne({ teamLeaderId: employee._id, isActive: true });
+    if (!salesManagerTeam) {
+      salesManagerTeam = await Team.create({
+        name: employee.name,
+        teamLeaderId: employee._id,
+        memberIds: []
+      });
+    }
+
+    const managedTeams = await Team.find({ _id: { $in: data.managedTeamIds }, isActive: true });
+    const teamLeaderIds = managedTeams.map(t => t.teamLeaderId.toString());
+
+    for (const tlId of teamLeaderIds) {
+      const leader = await Employee.findById(tlId);
+      if (leader) {
+        const oldTeamId = leader.currentTeamId ? leader.currentTeamId.toString() : null;
+        if (oldTeamId && oldTeamId !== salesManagerTeam._id.toString()) {
+          await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: tlId } });
+          await EmployeeTeamHistory.findOneAndUpdate(
+            { employeeId: tlId, teamId: oldTeamId, leaveDate: null },
+            { leaveDate: today }
+          );
+        }
+        await Employee.findByIdAndUpdate(tlId, { currentTeamId: salesManagerTeam._id, managerId: employee._id, teamJoinDate: today });
+        await EmployeeTeamHistory.create({
+          employeeId: tlId,
+          teamId: salesManagerTeam._id,
+          joinDate: today,
+          quarterId
+        });
+      }
+    }
+
+    salesManagerTeam.memberIds = teamLeaderIds.map(id => new mongoose.Types.ObjectId(id));
+    await salesManagerTeam.save();
   }
 
   return employee;
@@ -165,6 +212,21 @@ const updateEmployee = async (id, data) => {
     data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, end);
   }
 
+  // Deactivate team if rank changes from SalesManager to something else
+  if (employee.seniorityLevel === 'SalesManager' && data.seniorityLevel && data.seniorityLevel !== 'SalesManager') {
+    const salesManagerTeam = await Team.findOne({ teamLeaderId: employee._id, isActive: true });
+    if (salesManagerTeam) {
+      salesManagerTeam.isActive = false;
+      salesManagerTeam.memberIds = [];
+      await salesManagerTeam.save();
+    }
+  }
+
+  // If seniorityLevel is changed to TeamLeader or SalesManager, they can't be a regular team member
+  if (data.seniorityLevel === 'TeamLeader' || data.seniorityLevel === 'SalesManager') {
+    data.currentTeamId = null;
+  }
+
   // Check if currentTeamId is changing
   if (data.currentTeamId !== undefined) {
     const oldTeamId = employee.currentTeamId ? employee.currentTeamId.toString() : null;
@@ -185,6 +247,10 @@ const updateEmployee = async (id, data) => {
 
       // 2. Push to new team
       if (newTeamId) {
+        const team = await Team.findById(newTeamId);
+        if (team) {
+          data.managerId = team.teamLeaderId;
+        }
         await Team.findByIdAndUpdate(newTeamId, { $addToSet: { memberIds: employee._id } });
         // Close any other open histories
         await EmployeeTeamHistory.updateMany(
@@ -198,8 +264,84 @@ const updateEmployee = async (id, data) => {
           joinDate: data.teamJoinDate || today,
           quarterId
         });
+      } else {
+        // If they are removed from a team, reset their managerId to a placeholder
+        data.managerId = '69f60230c2120b7ce02988dd';
       }
     }
+  }
+
+  // Handle SalesManager managed teams updates
+  if (
+    (data.seniorityLevel === 'SalesManager' || (!data.seniorityLevel && employee.seniorityLevel === 'SalesManager')) &&
+    data.managedTeamIds !== undefined
+  ) {
+    const today = new Date();
+    const quarterId = getQuarterId(today);
+
+    // Find or create a Team led by this Sales Manager
+    let salesManagerTeam = await Team.findOne({ teamLeaderId: employee._id, isActive: true });
+    if (!salesManagerTeam) {
+      salesManagerTeam = await Team.create({
+        name: data.name || employee.name,
+        teamLeaderId: employee._id,
+        memberIds: []
+      });
+    }
+
+    // Fetch selected teams to get their leader IDs
+    const managedTeams = await Team.find({ _id: { $in: data.managedTeamIds }, isActive: true });
+    const teamLeaderIds = managedTeams.map(t => t.teamLeaderId.toString());
+
+    // Find old Team Leaders who reported to this Sales Manager in their team
+    const oldMemberIds = salesManagerTeam.memberIds.map(id => id.toString());
+
+    // Team Leaders to ADD
+    const addedLeaders = teamLeaderIds.filter(id => !oldMemberIds.includes(id));
+    for (const tlId of addedLeaders) {
+      const leader = await Employee.findById(tlId);
+      if (leader) {
+        const oldTeamId = leader.currentTeamId ? leader.currentTeamId.toString() : null;
+        if (oldTeamId && oldTeamId !== salesManagerTeam._id.toString()) {
+          await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: tlId } });
+          await EmployeeTeamHistory.findOneAndUpdate(
+            { employeeId: tlId, teamId: oldTeamId, leaveDate: null },
+            { leaveDate: today }
+          );
+        }
+        await Employee.findByIdAndUpdate(tlId, { currentTeamId: salesManagerTeam._id, managerId: employee._id, teamJoinDate: today });
+        await EmployeeTeamHistory.create({
+          employeeId: tlId,
+          teamId: salesManagerTeam._id,
+          joinDate: today,
+          quarterId
+        });
+      }
+    }
+
+    // Team Leaders to REMOVE
+    const removedLeaders = oldMemberIds.filter(id => !teamLeaderIds.includes(id));
+    const topManager = await Employee.findOne({ department: 'TopManagement', isActive: true });
+    const defaultManagerId = topManager ? topManager._id : employee._id;
+
+    for (const tlId of removedLeaders) {
+      const leader = await Employee.findById(tlId);
+      if (leader) {
+        if (leader.currentTeamId && leader.currentTeamId.toString() === salesManagerTeam._id.toString()) {
+          await Employee.findByIdAndUpdate(tlId, { currentTeamId: null, teamJoinDate: null, managerId: defaultManagerId });
+        } else {
+          await Employee.findByIdAndUpdate(tlId, { managerId: defaultManagerId });
+        }
+        await EmployeeTeamHistory.findOneAndUpdate(
+          { employeeId: tlId, teamId: salesManagerTeam._id, leaveDate: null },
+          { leaveDate: today }
+        );
+      }
+    }
+
+    salesManagerTeam.name = data.name || employee.name;
+    salesManagerTeam.memberIds = teamLeaderIds.map(id => new mongoose.Types.ObjectId(id));
+    await salesManagerTeam.save();
   }
 
   return await Employee.findByIdAndUpdate(id, data, { new: true }).populate('currentTeamId managerId');

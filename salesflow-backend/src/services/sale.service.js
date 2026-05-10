@@ -52,7 +52,9 @@ const createSale = async (data) => {
     const commissionResults = calculateCommission({
       unitValue: data.unitValue,
       contractCommissionPercentage: data.contractCommissionPercentage,
-      developerCollectionPercentage: data.developerCollectionPercentage
+      developerCollectionPercentage: data.developerCollectionPercentage,
+      vatPercentage: data.vatPercentage,
+      withholdingTaxPercentage: data.withholdingTaxPercentage
     });
 
     // 4. Calculate seller shares
@@ -144,16 +146,20 @@ const updateSale = async (id, data) => {
     if (!sale) throw new Error('Sale not found');
 
     // If financial inputs changed, recalculate
-    if (data.unitValue || data.contractCommissionPercentage || data.developerCollectionPercentage || data.contractDate || data.sellers) {
+    if (data.unitValue || data.contractCommissionPercentage || data.developerCollectionPercentage || data.vatPercentage || data.withholdingTaxPercentage || data.contractDate || data.sellers) {
       
       const unitValue = data.unitValue || sale.unitValue;
       const contractCommissionPercentage = data.contractCommissionPercentage || sale.contractCommissionPercentage;
       const developerCollectionPercentage = data.developerCollectionPercentage || sale.developerCollectionPercentage;
+      const vatPercentage = data.vatPercentage !== undefined ? data.vatPercentage : sale.vatPercentage;
+      const withholdingTaxPercentage = data.withholdingTaxPercentage !== undefined ? data.withholdingTaxPercentage : sale.withholdingTaxPercentage;
       
       const commissionResults = calculateCommission({
         unitValue,
         contractCommissionPercentage,
-        developerCollectionPercentage
+        developerCollectionPercentage,
+        vatPercentage,
+        withholdingTaxPercentage
       });
       
       Object.assign(data, commissionResults);
@@ -229,11 +235,15 @@ const getCommissionPreview = async (id, query) => {
   const unitValue = Number(query.unitValue) || sale.unitValue;
   const contractCommissionPercentage = Number(query.contractCommissionPercentage) || sale.contractCommissionPercentage;
   const developerCollectionPercentage = Number(query.developerCollectionPercentage) || sale.developerCollectionPercentage;
+  const vatPercentage = Number(query.vatPercentage) || sale.vatPercentage || 14;
+  const withholdingTaxPercentage = Number(query.withholdingTaxPercentage) || sale.withholdingTaxPercentage || 5;
 
   const commissionResults = calculateCommission({
     unitValue,
     contractCommissionPercentage,
-    developerCollectionPercentage
+    developerCollectionPercentage,
+    vatPercentage,
+    withholdingTaxPercentage
   });
 
   const sellersWithDetails = sale.sellers.map(s => ({

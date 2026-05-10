@@ -8,6 +8,7 @@ import { Claim } from '@core/models/claim.model';
 import { CelebrationService } from '@core/services/celebration.service';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
+import { InputComponent } from '@shared/components/input/input.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { 
   heroChevronRight, 
@@ -27,7 +28,7 @@ import {
 @Component({
   selector: 'app-claim-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, InputComponent],
   providers: [
     provideIcons({ 
       heroChevronRight, 
@@ -203,9 +204,7 @@ import {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <!-- Commission Due -->
                   <div class="space-y-2">
-                    <label class="text-xs font-bold text-sf-muted uppercase tracking-widest mr-1">العمولة المستحقة (EGP)</label>
-                    <input type="number" formControlName="commissionDue" 
-                           class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-sf-primary/30 transition-all outline-none">
+                    <app-input type="number" formControlName="commissionDue" label="العمولة المستحقة (EGP)" [isAccounting]="true"></app-input>
                   </div>
 
                   <!-- Expected Collection Date -->
@@ -292,12 +291,7 @@ import {
               </div>
 
               <div class="space-y-2">
-                <label class="text-xs font-bold text-sf-muted uppercase tracking-widest mr-1">المبلغ الفعلي المستلم</label>
-                <div class="relative">
-                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-sf-muted">EGP</span>
-                  <input type="number" formControlName="collectedAmount" 
-                         class="w-full pr-4 pl-12 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-sf-success/30 transition-all outline-none text-left">
-                </div>
+                <app-input type="number" formControlName="collectedAmount" label="المبلغ الفعلي المستلم" [isAccounting]="true"></app-input>
               </div>
 
               <div class="space-y-2">

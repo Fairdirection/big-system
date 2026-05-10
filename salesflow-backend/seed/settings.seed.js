@@ -19,16 +19,20 @@ const defaultSettings = [
   { type: 'collectionPercentage', value: '50', label: 'نصف التحصيل (50%)', isDefault: true, sortOrder: 2 },
   { type: 'collectionPercentage', value: '33.33', label: 'ثلث التحصيل (33.3%)', isDefault: true, sortOrder: 3 },
   { type: 'collectionPercentage', value: '25', label: 'ربع التحصيل (25%)', isDefault: true, sortOrder: 4 },
+
+  // Default Taxes
+  { type: 'tax', value: '14', label: 'ضريبة القيمة المضافة', isDefault: true, sortOrder: 1 },
+  { type: 'tax', value: '5', label: 'ضريبة الخصم من المنبع (خدمات عقارية)', isDefault: true, sortOrder: 2 },
+  { type: 'tax', value: '1', label: 'ضريبة الخصم والتحصيل (توريدات وتجارة)', isDefault: true, sortOrder: 3 },
 ];
 
 const seedSettings = async () => {
   try {
     for (const setting of defaultSettings) {
-      await Setting.findOneAndUpdate(
-        { type: setting.type, value: setting.value },
-        setting,
-        { upsert: true, new: true }
-      );
+      const exists = await Setting.findOne({ type: setting.type, value: setting.value });
+      if (!exists) {
+        await Setting.create(setting);
+      }
     }
     console.log('Settings seeded successfully');
   } catch (error) {

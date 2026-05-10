@@ -4,7 +4,7 @@ const settingSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['saleSource', 'invoiceType', 'collectionPercentage']
+    enum: ['saleSource', 'invoiceType', 'collectionPercentage', 'tax']
   },
   value:     { type: String, required: true },             // actual stored value
   label:     { type: String, required: true },             // display label
