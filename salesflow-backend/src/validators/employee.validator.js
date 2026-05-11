@@ -19,6 +19,7 @@ const createEmployeeSchema = Joi.object({
   currentTeamId: Joi.string().length(24).allow(null, '').optional(),
   teamJoinDate: Joi.date().allow(null).optional(),
   managedTeamIds: Joi.array().items(Joi.string().length(24)).optional().allow(null),
+  teamMemberIds: Joi.array().items(Joi.string().length(24)).optional().allow(null),
 
   hireDate: Joi.date().required(),
   endDate: Joi.date().optional().allow(null),
@@ -45,6 +46,7 @@ const updateEmployeeSchema = Joi.object({
   currentTeamId: Joi.string().length(24).allow(null, '').optional(),
   teamJoinDate: Joi.date().allow(null).optional(),
   managedTeamIds: Joi.array().items(Joi.string().length(24)).optional().allow(null),
+  teamMemberIds: Joi.array().items(Joi.string().length(24)).optional().allow(null),
 
   hireDate: Joi.date().optional(),
   endDate: Joi.date().optional().allow(null),

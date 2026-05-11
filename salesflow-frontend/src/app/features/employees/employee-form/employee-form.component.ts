@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -99,7 +99,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                          errorMessage="المسمى الوظيفي مطلوب"
                          hint="المسمى المعتمد في العقد"></app-input>
             </div>
-            <div class="space-y-2" *ngIf="form.get('department')?.value === 'Sales'">
+            <div class="space-y-2" *ngIf="department() === 'Sales'">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستوى الوظيفي</label>
               <select formControlName="seniorityLevel" class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text h-[42px] focus:ring-2 focus:ring-sf-primary/50 outline-none">
                 <option value="Fresh">مبتدئ (Fresh)</option>
@@ -115,12 +115,12 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2" *ngIf="form.get('department')?.value === 'Sales'">
+            <div class="space-y-2" *ngIf="department() === 'Sales'">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف الربعي (ج.م)</label>
               <app-input type="number" formControlName="target" placeholder="0.00" [isAccounting]="true"
                          [hint]="getTargetHint()"></app-input>
             </div>
-            <div class="space-y-2" [class.md:col-span-2]="form.get('department')?.value !== 'Sales'">
+            <div class="space-y-2" [class.md:col-span-2]="department() !== 'Sales'">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">تاريخ التعيين</label>
               <app-input type="date" formControlName="hireDate"
                          [hasError]="isInvalid('hireDate')"
@@ -154,7 +154,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
         </section>
 
         <!-- Organizational Assignment (Teams) -->
-        <section *ngIf="form.get('department')?.value === 'Sales'" class="space-y-6 animate-fade-in">
+        <section *ngIf="department() === 'Sales'" class="space-y-6 animate-fade-in">
           <div class="flex items-center gap-3 pb-4 border-b border-sf-border/30">
             <h3 class="text-lg font-display font-bold text-sf-text">إسناد الفريق وإدارة المبيعات</h3>
           </div>
@@ -169,6 +169,53 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                 </option>
               </select>
               <p class="text-[10px] text-sf-muted mr-1">الفريق الذي سينضم إليه مسؤول المبيعات الحالي</p>
+            </div>
+
+            <!-- Team Leader's Sales Manager Dropdown -->
+            <div *ngIf="seniorityLevel() === 'TeamLeader'" class="space-y-2 md:col-span-2">
+              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">مدير المبيعات المشرف (المدير المباشر)</label>
+              <select formControlName="managerId" class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text h-[42px] focus:ring-2 focus:ring-sf-primary/50 outline-none">
+                <option *ngIf="salesManagers().length === 0" value="69f60230c2120b7ce02988dd">المدير العام الافتراضي (أدهم)</option>
+                <option *ngFor="let mgr of salesManagers()" [value]="mgr._id">
+                  {{ mgr.name }} (كود: {{ mgr.code || 'بدون كود' }})
+                </option>
+              </select>
+              <p class="text-[10px] text-sf-muted mr-1">مدير المبيعات الذي يتبعه قائد الفريق الحالي</p>
+            </div>
+
+            <!-- Team Leader's Team Members Multi-select Cards -->
+            <div *ngIf="seniorityLevel() === 'TeamLeader'" class="space-y-4 col-span-full">
+              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">أعضاء الفريق (مسؤولو المبيعات النشطون)</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div *ngFor="let member of unassignedSellers()" (click)="toggleTeamMember(member._id)"
+                     class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
+                     [class.bg-sf-primary/10]="isTeamMemberSelected(member._id)"
+                     [class.border-sf-primary/50]="isTeamMemberSelected(member._id)"
+                     [class.border-sf-border]="!isTeamMemberSelected(member._id)"
+                     [class.bg-sf-surface]="!isTeamMemberSelected(member._id)">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
+                      {{ member.name.charAt(0) }}
+                    </div>
+                    <div>
+                      <span class="text-xs font-bold text-sf-text block">{{ member.name }}</span>
+                      <span class="text-[9px] text-sf-muted block">الرتبة: {{ member.seniorityLevel }} (كود: {{ member.code || 'بدون كود' }})</span>
+                      <span class="text-[10px] font-bold block mt-1" [class.text-sf-primary]="member.currentTeamId" [class.text-sf-muted]="!member.currentTeamId">
+                        الفريق الحالي: {{ getEmployeeTeamName(member) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
+                       [class.bg-sf-primary]="isTeamMemberSelected(member._id)"
+                       [class.border-sf-primary]="isTeamMemberSelected(member._id)"
+                       [class.border-sf-border]="!isTeamMemberSelected(member._id)">
+                    <ng-icon *ngIf="isTeamMemberSelected(member._id)" name="heroCheck" class="text-white text-xs"></ng-icon>
+                  </div>
+                </div>
+                <div *ngIf="unassignedSellers().length === 0" class="col-span-full py-8 text-center border-2 border-dashed border-sf-border rounded-2xl bg-sf-surface/20">
+                  <p class="text-xs font-bold text-sf-muted uppercase tracking-widest">لا يوجد مسؤولو مبيعات متاحين للإضافة حالياً</p>
+                </div>
+              </div>
             </div>
 
             <!-- Sales Manager Managed Teams Multi-select Cards -->
@@ -228,6 +275,7 @@ export class EmployeeFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private employeeService = inject(EmployeeService);
   private teamService = inject(TeamService);
+  private cdr = inject(ChangeDetectorRef);
 
   form!: FormGroup;
   isSubmitting = signal(false);
@@ -237,18 +285,32 @@ export class EmployeeFormComponent implements OnInit {
   employeeId: string | null = null;
 
   teams = signal<any[]>([]);
+  salesEmployees = signal<any[]>([]);
+  department = signal('Sales');
+  seniorityLevel = signal('Fresh');
+
+  salesManagers = computed(() => {
+    return this.salesEmployees().filter(emp => emp.seniorityLevel === 'SalesManager');
+  });
+
+  currentTeamLeaderMembers = computed(() => {
+    const tlTeam = this.teams().find(t => t.teamLeaderId?._id === this.employeeId);
+    return tlTeam ? tlTeam.memberIds || [] : [];
+  });
+
+  unassignedSellers = computed(() => {
+    return this.salesEmployees().filter(emp => 
+      ['Fresh', 'BA', 'BC', 'Senior', 'SV'].includes(emp.seniorityLevel) && emp.isActive
+    );
+  });
 
   isRegularSeller = computed(() => {
-    const dept = this.form?.get('department')?.value;
-    const seniority = this.form?.get('seniorityLevel')?.value;
-    if (dept !== 'Sales') return false;
-    return ['Fresh', 'BA', 'BC', 'Senior', 'SV'].includes(seniority);
+    if (this.department() !== 'Sales') return false;
+    return ['Fresh', 'BA', 'BC', 'Senior', 'SV'].includes(this.seniorityLevel());
   });
 
   isSalesManager = computed(() => {
-    const dept = this.form?.get('department')?.value;
-    const seniority = this.form?.get('seniorityLevel')?.value;
-    return dept === 'Sales' && seniority === 'SalesManager';
+    return this.department() === 'Sales' && this.seniorityLevel() === 'SalesManager';
   });
 
   regularTeams = computed(() => {
@@ -259,6 +321,26 @@ export class EmployeeFormComponent implements OnInit {
     this.initForm();
     this.checkEditMode();
     this.loadTeams();
+    this.loadSalesEmployees();
+  }
+
+  loadSalesEmployees() {
+    this.employeeService.getSalesEmployees().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.salesEmployees.set(res.data);
+          // Auto-assign first Sales Manager to TeamLeader if adding new
+          if (!this.isEditMode() && this.form.get('seniorityLevel')?.value === 'TeamLeader') {
+            const managers = this.salesManagers();
+            if (managers.length > 0) {
+              this.form.get('managerId')?.setValue(managers[0]._id);
+            }
+          }
+          this.cdr.markForCheck();
+        }
+      },
+      error: (err) => console.error('Error loading sales employees:', err)
+    });
   }
 
   loadTeams() {
@@ -267,10 +349,21 @@ export class EmployeeFormComponent implements OnInit {
         if (res.success) {
           this.teams.set(res.data);
           this.syncSalesManagerTeams();
+          this.syncTeamLeaderMembers();
+          this.cdr.markForCheck();
         }
       },
       error: (err) => console.error('Error loading teams:', err)
     });
+  }
+
+  getEmployeeTeamName(emp: any): string {
+    if (!emp.currentTeamId) return 'بدون فريق';
+    if (typeof emp.currentTeamId === 'object') {
+      return emp.currentTeamId.name || 'بدون فريق';
+    }
+    const team = this.teams().find(t => t._id === emp.currentTeamId);
+    return team ? team.name : 'بدون فريق';
   }
 
   syncSalesManagerTeams() {
@@ -305,6 +398,35 @@ export class EmployeeFormComponent implements OnInit {
     this.form.get('managedTeamIds')?.markAsDirty();
   }
 
+  syncTeamLeaderMembers() {
+    const dept = this.form?.get('department')?.value;
+    const seniority = this.form?.get('seniorityLevel')?.value;
+    if (this.isEditMode() && dept === 'Sales' && seniority === 'TeamLeader') {
+      const tlTeam = this.teams().find(t => t.teamLeaderId?._id === this.employeeId);
+      if (tlTeam) {
+        const memberIds = tlTeam.memberIds.map((m: any) => m._id || m);
+        this.form.patchValue({ teamMemberIds: memberIds });
+      }
+    }
+  }
+
+  isTeamMemberSelected(memberId: string): boolean {
+    const selected = this.form.get('teamMemberIds')?.value || [];
+    return selected.includes(memberId);
+  }
+
+  toggleTeamMember(memberId: string) {
+    const selected = [...(this.form.get('teamMemberIds')?.value || [])];
+    const index = selected.indexOf(memberId);
+    if (index > -1) {
+      selected.splice(index, 1);
+    } else {
+      selected.push(memberId);
+    }
+    this.form.get('teamMemberIds')?.setValue(selected);
+    this.form.get('teamMemberIds')?.markAsDirty();
+  }
+
   private checkEditMode() {
     this.employeeId = this.route.snapshot.paramMap.get('id');
     if (this.employeeId) {
@@ -324,9 +446,13 @@ export class EmployeeFormComponent implements OnInit {
             email: emp.email,
             phone: emp.phone,
             code: emp.code,
-            currentTeamId: emp.currentTeamId?._id || emp.currentTeamId || null
+            currentTeamId: emp.currentTeamId?._id || emp.currentTeamId || null,
+            managerId: emp.managerId?._id || emp.managerId || '69f60230c2120b7ce02988dd'
           });
+          this.department.set(emp.department || 'Sales');
+          this.seniorityLevel.set(emp.seniorityLevel || 'Fresh');
           this.syncSalesManagerTeams();
+          this.syncTeamLeaderMembers();
           this.isLoading.set(false);
         },
         error: () => {
@@ -351,11 +477,16 @@ export class EmployeeFormComponent implements OnInit {
       code: [''],
       managerId: ['69f60230c2120b7ce02988dd'], // Placeholder manager (Adham)
       currentTeamId: [null],
-      managedTeamIds: [[]]
+      managedTeamIds: [[]],
+      teamMemberIds: [[]]
     });
+
+    this.department.set(this.form.get('department')?.value || 'Sales');
+    this.seniorityLevel.set(this.form.get('seniorityLevel')?.value || 'Fresh');
 
     // Handle conditional seniority level
     this.form.get('department')?.valueChanges.subscribe(dept => {
+      this.department.set(dept || '');
       if (dept !== 'Sales') {
         this.form.get('seniorityLevel')?.setValue(null);
         this.form.get('target')?.setValue(0);
@@ -364,10 +495,22 @@ export class EmployeeFormComponent implements OnInit {
       } else {
         this.form.get('seniorityLevel')?.setValue('Fresh');
       }
+      this.cdr.markForCheck();
     });
 
-    this.form.get('seniorityLevel')?.valueChanges.subscribe(() => {
+    this.form.get('seniorityLevel')?.valueChanges.subscribe(val => {
+      this.seniorityLevel.set(val || '');
       this.syncSalesManagerTeams();
+      this.syncTeamLeaderMembers();
+
+      // If changed to TeamLeader and managerId is still Adham, set to first SalesManager if available
+      if (val === 'TeamLeader' && this.form.get('managerId')?.value === '69f60230c2120b7ce02988dd') {
+        const managers = this.salesManagers();
+        if (managers.length > 0) {
+          this.form.get('managerId')?.setValue(managers[0]._id);
+        }
+      }
+      this.cdr.markForCheck();
     });
   }
 
@@ -399,14 +542,21 @@ export class EmployeeFormComponent implements OnInit {
     if (data.department !== 'Sales') {
       delete data.currentTeamId;
       delete data.managedTeamIds;
+      delete data.teamMemberIds;
     } else {
       if (this.isRegularSeller()) {
         delete data.managedTeamIds;
+        delete data.teamMemberIds;
       } else if (this.isSalesManager()) {
         delete data.currentTeamId;
+        delete data.teamMemberIds;
+      } else if (this.form.get('seniorityLevel')?.value === 'TeamLeader') {
+        delete data.currentTeamId;
+        delete data.managedTeamIds;
       } else {
         delete data.currentTeamId;
         delete data.managedTeamIds;
+        delete data.teamMemberIds;
       }
     }
     
@@ -434,7 +584,24 @@ export class EmployeeFormComponent implements OnInit {
             this.errorMessage.set('هذه البيانات مسجلة مسبقاً.');
           }
         } else if (err.status === 400) {
-          this.errorMessage.set('يرجى التأكد من صحة جميع البيانات المدخلة.');
+          const validationErrors = err.error?.errors;
+          if (validationErrors && validationErrors.length > 0) {
+            const msgs = validationErrors.map((e: any) => {
+              let fieldArabic = e.field;
+              if (e.field === 'teamMemberIds') fieldArabic = 'أعضاء الفريق';
+              if (e.field === 'managerId') fieldArabic = 'مدير المبيعات المشرف';
+              if (e.field === 'nationalId') fieldArabic = 'الرقم القومي';
+              if (e.field === 'email') fieldArabic = 'البريد الإلكتروني';
+              if (e.field === 'phone') fieldArabic = 'رقم الهاتف';
+              if (e.field === 'name') fieldArabic = 'الاسم';
+              if (e.field === 'jobTitle') fieldArabic = 'المسمى الوظيفي';
+              if (e.field === 'target') fieldArabic = 'المستهدف';
+              return `(${fieldArabic}: ${e.message})`;
+            }).join('، ');
+            this.errorMessage.set(`يرجى التأكد من صحة البيانات: ${msgs}`);
+          } else {
+            this.errorMessage.set(err.error?.message || 'يرجى التأكد من صحة جميع البيانات المدخلة.');
+          }
         } else {
           this.errorMessage.set('حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.');
         }

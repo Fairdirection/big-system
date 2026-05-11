@@ -217,8 +217,23 @@ export class TeamFormComponent implements OnInit {
           : e.currentTeamId.toString();
       }
 
-      // Allow if they have no team, OR if they are already in the team we are editing!
-      const isAvailable = !empTeamId || (currentId && empTeamId === currentId.toString());
+      // Determine availability
+      let isAvailable = false;
+      if (leaderObj && leaderObj.seniorityLevel === 'SalesManager' && e.seniorityLevel === 'TeamLeader') {
+        // For Team Leaders being assigned to a Sales Manager's team:
+        // They are available if they do not report to another Sales Manager
+        const candidateManagerId = e.managerId && typeof e.managerId === 'object' && (e.managerId as any)._id
+          ? (e.managerId as any)._id.toString()
+          : e.managerId?.toString();
+        
+        const isManagedByOther = candidateManagerId 
+          ? (candidateManagerId !== '69f60230c2120b7ce02988dd' && candidateManagerId !== leaderId)
+          : false;
+        isAvailable = !isManagedByOther;
+      } else {
+        // Standard members
+        isAvailable = !empTeamId || (currentId ? empTeamId === currentId.toString() : false);
+      }
 
       return isEligibleRole && isAvailable;
     });

@@ -123,14 +123,14 @@ const getDashboardStats = async (quarterId) => {
 
     let hasTeam = false;
     if (isTL) {
-      const team = teams.find(t => t.teamLeaderId.toString() === empIdStr);
-      const teamMembers = team ? (team.memberIds || []).filter(m => m.toString() !== empIdStr) : [];
+      const team = teams.find(t => t.teamLeaderId && t.teamLeaderId.toString() === empIdStr);
+      const teamMembers = team ? (team.memberIds || []).filter(m => m && m.toString() !== empIdStr) : [];
       hasTeam = team && teamMembers.length > 0;
     } else if (isSM) {
-      const reports = salesEmployees.filter(e => e.managerId.toString() === empIdStr && e.seniorityLevel === 'TeamLeader');
+      const reports = salesEmployees.filter(e => e.managerId && e.managerId.toString() === empIdStr && e.seniorityLevel === 'TeamLeader');
       hasTeam = reports.some(leader => {
-        const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
-        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+        const leaderTeam = teams.find(t => t.teamLeaderId && t.teamLeaderId.toString() === leader._id.toString());
+        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m && m.toString() !== leader._id.toString()) : [];
         return leaderTeam && leaderTeamMembers.length > 0;
       });
     }
@@ -215,14 +215,14 @@ const getDashboardStats = async (quarterId) => {
 
       let hasTeam = false;
       if (isTL) {
-        const leaderTeam = teams.find(t => t.teamLeaderId.toString() === mIdStr);
-        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== mIdStr) : [];
+        const leaderTeam = teams.find(t => t.teamLeaderId && t.teamLeaderId.toString() === mIdStr);
+        const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m && m.toString() !== mIdStr) : [];
         hasTeam = leaderTeam && leaderTeamMembers.length > 0;
       } else if (isSM) {
-        const reports = salesEmployees.filter(e => e.managerId.toString() === mIdStr && e.seniorityLevel === 'TeamLeader');
+        const reports = salesEmployees.filter(e => e.managerId && e.managerId.toString() === mIdStr && e.seniorityLevel === 'TeamLeader');
         hasTeam = reports.some(leader => {
-          const leaderTeam = teams.find(t => t.teamLeaderId.toString() === leader._id.toString());
-          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m.toString() !== leader._id.toString()) : [];
+          const leaderTeam = teams.find(t => t.teamLeaderId && t.teamLeaderId.toString() === leader._id.toString());
+          const leaderTeamMembers = leaderTeam ? (leaderTeam.memberIds || []).filter(m => m && m.toString() !== leader._id.toString()) : [];
           return leaderTeam && leaderTeamMembers.length > 0;
         });
       }

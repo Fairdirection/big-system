@@ -19,6 +19,7 @@ export interface Employee {
   target: number;
   seniorityLevel?: string;
   currentTeamId?: any;
+  managerId?: any;
   currentSeniorityDays?: number;
   dynamicQuarterDays?: number;
   createdAt: string;

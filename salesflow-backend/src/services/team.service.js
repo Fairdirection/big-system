@@ -184,6 +184,10 @@ const deleteTeam = async (id) => {
 
   const today = new Date();
 
+  // Find default manager to reassign released employees
+  const topManager = await Employee.findOne({ department: 'TopManagement', isActive: true });
+  const defaultManagerId = topManager ? topManager._id : null;
+
   // 1. Find all employees who think they are in this team (Safety fallback)
   const stuckEmployees = await Employee.find({ currentTeamId: id });
   const stuckIds = stuckEmployees.map(e => e._id.toString());
@@ -195,13 +199,28 @@ const deleteTeam = async (id) => {
   console.log(`Deleting team ${id}. Releasing ${uniqueStaff.length} staff members.`);
 
   for (const staffId of uniqueStaff) {
-    // Clear employee status
-    await Employee.findByIdAndUpdate(staffId, {
-      $set: { 
-        currentTeamId: null,
-        teamJoinDate: null 
+    const emp = await Employee.findById(staffId);
+    if (emp) {
+      const updates = {};
+
+      // If they are currently assigned to this specific team, reassign currentTeamId
+      if (emp.currentTeamId && emp.currentTeamId.toString() === id.toString()) {
+        // Check if they are a Team Leader of another active team
+        const ledTeam = await Team.findOne({ teamLeaderId: staffId, isActive: true, _id: { $ne: id } });
+        
+        updates.currentTeamId = ledTeam ? ledTeam._id : null;
+        updates.teamJoinDate = ledTeam ? ledTeam.createdAt : null;
       }
-    });
+
+      // If their manager is the teamLeader of the deleted team, reset their managerId
+      if (emp.managerId && team.teamLeaderId && emp.managerId.toString() === team.teamLeaderId.toString()) {
+        updates.managerId = defaultManagerId;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await Employee.findByIdAndUpdate(staffId, { $set: updates });
+      }
+    }
 
     // Close their history for this team
     await EmployeeTeamHistory.findOneAndUpdate(
