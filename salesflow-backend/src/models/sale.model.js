@@ -33,6 +33,11 @@ const saleSchema = new mongoose.Schema({
   incentivePercentage:           { type: Number, default: 0 },
   vatPercentage:                 { type: Number, default: 14 },
   withholdingTaxPercentage:      { type: Number, default: 5 },
+  appliedTaxes: [{
+    label: { type: String, required: true },
+    value: { type: Number, required: true },
+    type:  { type: String, enum: ['add', 'deduct'], required: true }
+  }],
 
   // Commission calculated
   collectedCommissionPercentage: { type: Number },   // = contractCommission% × devCollection%

@@ -1,3 +1,9 @@
+export interface AppliedTax {
+  label: string;
+  value: number;
+  type: 'add' | 'deduct';
+}
+
 export interface Seller {
   employeeId: string;
   employeeName?: string;
@@ -35,6 +41,7 @@ export interface Sale {
   invoiceStatus: string;
   vatPercentage?: number;
   withholdingTaxPercentage?: number;
+  appliedTaxes?: AppliedTax[];
   expectedCollectionDate?: Date;
   sellers: Seller[];
   quarterId?: string;

@@ -248,7 +248,11 @@ const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {
   const histories = await EmployeeTeamHistory.find({
     employeeId,
     teamId,
-    quarterId
+    joinDate: { $lte: qEnd },
+    $or: [
+      { leaveDate: null },
+      { leaveDate: { $gte: qStart } }
+    ]
   }).lean();
 
   let teamWorkingDays = 0;
@@ -388,8 +392,17 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
   let totalAdjustedTarget = 0;
   let totalAchieved = 0;
 
+  const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
+
   // 1. Find all members who have team history in this team during this quarter
-  const histories = await EmployeeTeamHistory.find({ teamId: team._id, quarterId });
+  const histories = await EmployeeTeamHistory.find({
+    teamId: team._id,
+    joinDate: { $lte: qEnd },
+    $or: [
+      { leaveDate: null },
+      { leaveDate: { $gte: qStart } }
+    ]
+  });
   
   // Get unique member IDs from histories and merge with current memberIds
   const historyMemberIds = histories.map(h => h.employeeId.toString());
@@ -478,8 +491,17 @@ const getTeamsWithPerformance = async (quarterId) => {
     let totalAchieved = 0;
     const membersPerformance = [];
 
+    const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
+
     // 1. Find all members who have team history in this team during this quarter
-    const histories = await EmployeeTeamHistory.find({ teamId: team._id, quarterId });
+    const histories = await EmployeeTeamHistory.find({
+      teamId: team._id,
+      joinDate: { $lte: qEnd },
+      $or: [
+        { leaveDate: null },
+        { leaveDate: { $gte: qStart } }
+      ]
+    });
     
     // Get unique member IDs from histories and merge with current memberIds
     const historyMemberIds = histories.map(h => h.employeeId.toString());

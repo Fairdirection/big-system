@@ -23,8 +23,8 @@ const createEmployeeSchema = Joi.object({
 
   hireDate: Joi.date().required(),
   endDate: Joi.date().optional().allow(null),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required()
+  email: Joi.string().email().optional().allow(null, ''),
+  phone: Joi.string().optional().allow(null, '')
 });
 
 const updateEmployeeSchema = Joi.object({
@@ -50,8 +50,8 @@ const updateEmployeeSchema = Joi.object({
 
   hireDate: Joi.date().optional(),
   endDate: Joi.date().optional().allow(null),
-  email: Joi.string().email().optional(),
-  phone: Joi.string().optional(),
+  email: Joi.string().email().optional().allow(null, ''),
+  phone: Joi.string().optional().allow(null, ''),
   isActive: Joi.boolean().optional()
 });
 

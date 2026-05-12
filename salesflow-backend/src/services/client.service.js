@@ -9,8 +9,14 @@ const createClient = async (data) => {
 
 const getClients = async (query) => {
   const { search, isActive, page, limit } = query;
-  const filter = {};
-  if (isActive !== undefined) filter.isActive = isActive === 'true';
+  const filter = { isActive: true };
+  if (isActive !== undefined) {
+    if (isActive === 'all') {
+      delete filter.isActive;
+    } else {
+      filter.isActive = isActive === 'true';
+    }
+  }
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: 'i' } },

@@ -552,6 +552,19 @@ import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, 
                     <span class="text-sf-muted font-bold text-xs block">قيمة ضريبة الخصم</span>
                     <span class="text-sf-danger font-black text-base font-mono">{{ form.get('withholdingTax')?.value | currencyEgp }}</span>
                   </div>
+                  @if (form.get('appliedTaxes')?.value?.length > 0) {
+                    <div class="col-span-2 mt-2 pt-3 border-t border-sf-border/20 space-y-2 text-right">
+                      <span class="text-xs font-bold text-sf-primary uppercase block">الضرائب المحددة تفصيلاً:</span>
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (at of form.get('appliedTaxes')?.value; track $index) {
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold"
+                                [class]="at.type === 'add' ? 'bg-sf-success/10 text-sf-success' : 'bg-sf-danger/10 text-sf-danger'">
+                            <span>{{ at.label }} ({{ at.value }}%)</span>
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -861,8 +874,9 @@ export class SaleFormComponent implements OnInit {
             developerCollectionPercentage: sale.developerCollectionPercentage,
             contractCommissionPercentage: sale.contractCommissionPercentage,
             collectedCommissionPercentage: sale.collectedCommissionPercentage,
-            vatPercentage: sale.vatPercentage || 14,
-            withholdingTaxPercentage: sale.withholdingTaxPercentage || 5,
+            vatPercentage: sale.vatPercentage !== undefined ? sale.vatPercentage : 14,
+            withholdingTaxPercentage: sale.withholdingTaxPercentage !== undefined ? sale.withholdingTaxPercentage : 5,
+            appliedTaxes: sale.appliedTaxes || [],
             grossCommissionWithVAT: sale.grossCommissionWithVAT,
             netRevenue: sale.netRevenue,
             withholdingTax: sale.withholdingTax,
@@ -896,6 +910,7 @@ export class SaleFormComponent implements OnInit {
       
       vatPercentage: [14, [Validators.required, Validators.min(0), Validators.max(100)]],
       withholdingTaxPercentage: [5, [Validators.required, Validators.min(0), Validators.max(100)]],
+      appliedTaxes: [[]],
       
       grossCommissionWithVAT: [0, [Validators.required, Validators.min(0)]],
       netRevenue: [0, [Validators.required, Validators.min(0)]],
@@ -925,7 +940,26 @@ export class SaleFormComponent implements OnInit {
     this.employeeService.getEmployees().subscribe(res => this.employees.set(res.data));
     this.settingService.getSettingsByType('saleSource').subscribe(res => this.sources.set(res.data));
     this.settingService.getSettingsByType('collectionPercentage').subscribe(res => this.collections.set(res.data));
-    this.settingService.getSettingsByType('tax').subscribe(res => this.taxes.set(res.data));
+    this.settingService.getSettingsByType('tax').subscribe(res => {
+      this.taxes.set(res.data);
+      if (!this.saleId && res.data) {
+        const defaultTaxes = res.data.filter((t: any) => t.isDefault || Number(t.value) === 14 || Number(t.value) === 5);
+        const applied = defaultTaxes.map((t: any) => {
+          const isDeduct = t.label.includes('خصم') || t.label.includes('منبع') || t.label.includes('أرباح');
+          return {
+            label: t.label,
+            value: Number(t.value),
+            type: isDeduct ? 'deduct' : 'add'
+          };
+        });
+        this.form.get('appliedTaxes')?.setValue(applied);
+        
+        const totalVat = applied.filter((t: any) => t.type === 'add').reduce((sum: number, t: any) => sum + Number(t.value), 0);
+        const totalWht = applied.filter((t: any) => t.type === 'deduct').reduce((sum: number, t: any) => sum + Number(t.value), 0);
+        this.form.get('vatPercentage')?.setValue(totalVat);
+        this.form.get('withholdingTaxPercentage')?.setValue(totalWht);
+      }
+    });
   }
 
   get sellers() { return this.form.get('sellers') as FormArray; }
@@ -952,27 +986,35 @@ export class SaleFormComponent implements OnInit {
   }
 
   isTaxChecked(tax: any): boolean {
-    const label = tax.label || '';
-    const isDeduct = label.includes('خصم') || label.includes('منبع') || label.includes('أرباح');
-    if (isDeduct) {
-      return Number(this.form.get('withholdingTaxPercentage')?.value) === Number(tax.value);
-    } else {
-      return Number(this.form.get('vatPercentage')?.value) === Number(tax.value);
-    }
+    const list = this.form.get('appliedTaxes')?.value || [];
+    return list.some((t: any) => t.label === tax.label && Number(t.value) === Number(tax.value));
   }
 
   toggleTax(tax: any) {
     const label = tax.label || '';
     const isDeduct = label.includes('خصم') || label.includes('منبع') || label.includes('أرباح');
-    const targetControl = isDeduct ? 'withholdingTaxPercentage' : 'vatPercentage';
-    const currentValue = Number(this.form.get(targetControl)?.value);
-    const taxValue = Number(tax.value);
+    const type = isDeduct ? 'deduct' : 'add';
+    
+    let list = [...(this.form.get('appliedTaxes')?.value || [])];
+    const index = list.findIndex((t: any) => t.label === tax.label && Number(t.value) === Number(tax.value));
 
-    if (currentValue === taxValue) {
-      this.form.get(targetControl)?.setValue(0);
+    if (index > -1) {
+      list.splice(index, 1);
     } else {
-      this.form.get(targetControl)?.setValue(taxValue);
+      list.push({
+        label: tax.label,
+        value: Number(tax.value),
+        type: type
+      });
     }
+
+    this.form.get('appliedTaxes')?.setValue(list);
+
+    const totalVat = list.filter((t: any) => t.type === 'add').reduce((sum: number, t: any) => sum + Number(t.value), 0);
+    const totalWht = list.filter((t: any) => t.type === 'deduct').reduce((sum: number, t: any) => sum + Number(t.value), 0);
+
+    this.form.get('vatPercentage')?.setValue(totalVat);
+    this.form.get('withholdingTaxPercentage')?.setValue(totalWht);
   }
 
   calculatedGross() {

@@ -1,5 +1,11 @@
 const Joi = require('joi');
 
+const appliedTaxSchema = Joi.object({
+  label: Joi.string().required(),
+  value: Joi.number().min(0).max(100).required(),
+  type: Joi.string().valid('add', 'deduct').required()
+});
+
 const sellerSchema = Joi.object({
   employeeId: Joi.string().length(24).required(),
   sharePercentage: Joi.number().min(0).max(100).required(),
@@ -25,6 +31,7 @@ const createSaleSchema = Joi.object({
   incentivePercentage: Joi.number().min(0).default(0),
   vatPercentage: Joi.number().min(0).max(100).optional().default(14),
   withholdingTaxPercentage: Joi.number().min(0).max(100).optional().default(5),
+  appliedTaxes: Joi.array().items(appliedTaxSchema).optional(),
 
   collectedCommissionPercentage: Joi.number().min(0).optional(),
   grossCommissionWithVAT: Joi.number().min(0).optional(),
@@ -66,6 +73,7 @@ const updateSaleSchema = Joi.object({
   incentivePercentage: Joi.number().min(0).optional(),
   vatPercentage: Joi.number().min(0).max(100).optional(),
   withholdingTaxPercentage: Joi.number().min(0).max(100).optional(),
+  appliedTaxes: Joi.array().items(appliedTaxSchema).optional(),
 
   collectedCommissionPercentage: Joi.number().min(0).optional(),
   grossCommissionWithVAT: Joi.number().min(0).optional(),

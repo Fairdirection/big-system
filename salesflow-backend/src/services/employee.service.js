@@ -8,6 +8,13 @@ const { getQuarterId, getQuarterBounds, calculateEmployeeQuarterDays, calculateW
 const { paginate } = require('../utils/pagination.utils');
 
 const createEmployee = async (data) => {
+  if (data.email === undefined || data.email === null || data.email === '') {
+    data.email = '';
+  }
+  if (data.phone === undefined || data.phone === null || data.phone === '') {
+    data.phone = '';
+  }
+
   // 1. Format code if provided, otherwise generate
   let code = data.code;
   if (code) {
@@ -232,6 +239,13 @@ const getEmployeeById = async (id) => {
 };
 
 const updateEmployee = async (id, data) => {
+  if (data.email === '' || data.email === null) {
+    data.email = '';
+  }
+  if (data.phone === '' || data.phone === null) {
+    data.phone = '';
+  }
+
   const employee = await Employee.findById(id);
   if (!employee) throw new Error('Employee not found');
 
@@ -306,8 +320,9 @@ const updateEmployee = async (id, data) => {
           quarterId
         });
       } else {
-        // If they are removed from a team, reset their managerId to a placeholder
-        data.managerId = '69f60230c2120b7ce02988dd';
+        // If they are removed from a team, reset their managerId to a placeholder/topManager
+        const topManager = await Employee.findOne({ department: 'TopManagement', isActive: true });
+        data.managerId = topManager ? topManager._id : '69f60230c2120b7ce02988dd';
       }
     }
   }
@@ -409,10 +424,12 @@ const updateEmployee = async (id, data) => {
 
     // Members to REMOVE
     const removedMembers = oldMemberIds.filter(id => !newMemberIds.includes(id));
+    const topManager = await Employee.findOne({ department: 'TopManagement', isActive: true });
+    const defaultManagerId = topManager ? topManager._id : '69f60230c2120b7ce02988dd';
     for (const mId of removedMembers) {
       const m = await Employee.findById(mId);
       if (m) {
-        await Employee.findByIdAndUpdate(mId, { currentTeamId: null, managerId: '69f60230c2120b7ce02988dd' });
+        await Employee.findByIdAndUpdate(mId, { currentTeamId: null, managerId: defaultManagerId });
         await EmployeeTeamHistory.findOneAndUpdate(
           { employeeId: mId, teamId: team._id, leaveDate: null },
           { leaveDate: today }
@@ -651,7 +668,11 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
   // Find all history records for this employee during this quarter
   const histories = await EmployeeTeamHistory.find({
     employeeId: empId,
-    quarterId
+    joinDate: { $lte: qEnd },
+    $or: [
+      { leaveDate: null },
+      { leaveDate: { $gte: qStart } }
+    ]
   }).lean();
 
   if (histories.length > 0) {
@@ -920,16 +941,79 @@ const updateHistoryRecord = async (historyId, data) => {
   const history = await EmployeeTeamHistory.findById(historyId);
   if (!history) throw new Error('History record not found');
 
+  const oldTeamId = history.teamId ? history.teamId.toString() : null;
+
   if (data.joinDate) history.joinDate = new Date(data.joinDate);
   if (data.leaveDate !== undefined) {
     history.leaveDate = data.leaveDate ? new Date(data.leaveDate) : null;
   }
+  if (data.teamId) {
+    history.teamId = data.teamId;
+  }
+
+  const newTeamId = history.teamId ? history.teamId.toString() : null;
+  const newLeaveDate = history.leaveDate;
 
   // Recalculate duration
   const end = history.leaveDate || new Date();
   history.workingDaysInTeam = calculateWorkingDays(history.joinDate, end);
 
   await history.save();
+
+  // Sync with Employee and Team collections!
+  const employeeId = history.employeeId;
+  const employee = await Employee.findById(employeeId);
+
+  if (employee) {
+    // Case A: The history record was updated to be ACTIVE (leaveDate is now null)
+    if (!newLeaveDate) {
+      // 1. Close any OTHER active history records for this employee
+      const otherActiveHistories = await EmployeeTeamHistory.find({ 
+        employeeId, 
+        _id: { $ne: historyId }, 
+        leaveDate: null 
+      });
+      for (const ah of otherActiveHistories) {
+        ah.leaveDate = history.joinDate;
+        ah.workingDaysInTeam = calculateWorkingDays(ah.joinDate, history.joinDate);
+        await ah.save();
+        if (ah.teamId) {
+          await Team.findByIdAndUpdate(ah.teamId, { $pull: { memberIds: employeeId } });
+        }
+      }
+
+      // 2. Set employee's current team
+      employee.currentTeamId = history.teamId || null;
+      employee.teamJoinDate = history.joinDate;
+      await employee.save();
+
+      // 3. Update team memberships
+      if (oldTeamId && oldTeamId !== newTeamId) {
+        await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: employeeId } });
+      }
+      if (newTeamId) {
+        await Team.findByIdAndUpdate(newTeamId, { $addToSet: { memberIds: employeeId } });
+      }
+    } 
+    // Case B: The history record was updated to be INACTIVE (leaveDate is now NOT null)
+    else {
+      // If the employee's currentTeamId is currently pointing to this team, clear it!
+      if (employee.currentTeamId?.toString() === oldTeamId || employee.currentTeamId?.toString() === newTeamId) {
+        employee.currentTeamId = null;
+        employee.teamJoinDate = null;
+        await employee.save();
+      }
+
+      // Pull from the teams
+      if (oldTeamId) {
+        await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: employeeId } });
+      }
+      if (newTeamId) {
+        await Team.findByIdAndUpdate(newTeamId, { $pull: { memberIds: employeeId } });
+      }
+    }
+  }
+
   return history;
 };
 
@@ -941,6 +1025,40 @@ const addHistoryRecord = async (employeeId, { teamId, joinDate, leaveDate }) => 
   const lDate = leaveDate ? new Date(leaveDate) : null;
   const quarterId = getQuarterId(jDate);
 
+  // If this record is active (lDate is null):
+  if (!lDate) {
+    // 1. Close any existing active history records for this employee
+    const activeHistories = await EmployeeTeamHistory.find({ employeeId, leaveDate: null });
+    for (const ah of activeHistories) {
+      ah.leaveDate = jDate;
+      ah.workingDaysInTeam = calculateWorkingDays(ah.joinDate, jDate);
+      await ah.save();
+      if (ah.teamId) {
+        await Team.findByIdAndUpdate(ah.teamId, { $pull: { memberIds: employeeId } });
+      }
+    }
+
+    // 2. Set employee's current team
+    employee.currentTeamId = teamId || null;
+    employee.teamJoinDate = jDate;
+    await employee.save();
+
+    // 3. Add to team members
+    if (teamId) {
+      await Team.findByIdAndUpdate(teamId, { $addToSet: { memberIds: employeeId } });
+    }
+  } else {
+    // If it has a leaveDate, we just create the history record.
+    if (employee.currentTeamId?.toString() === teamId?.toString()) {
+      employee.currentTeamId = null;
+      employee.teamJoinDate = null;
+      await employee.save();
+      if (teamId) {
+        await Team.findByIdAndUpdate(teamId, { $pull: { memberIds: employeeId } });
+      }
+    }
+  }
+
   const history = await EmployeeTeamHistory.create({
     employeeId,
     teamId: teamId || null,
@@ -948,15 +1066,6 @@ const addHistoryRecord = async (employeeId, { teamId, joinDate, leaveDate }) => 
     leaveDate: lDate,
     quarterId
   });
-
-  // If this history record is active (no leaveDate), update employee currentTeamId and Team memberIds
-  if (!lDate && teamId) {
-    employee.currentTeamId = teamId;
-    employee.teamJoinDate = jDate;
-    await employee.save();
-
-    await Team.findByIdAndUpdate(teamId, { $addToSet: { memberIds: employeeId } });
-  }
 
   return history;
 };

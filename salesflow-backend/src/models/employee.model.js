@@ -26,8 +26,8 @@ const employeeSchema = new mongoose.Schema({
   hireDate:   { type: Date, required: true },
   endDate:    { type: Date, default: null },
   managerId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
-  email:      { type: String, required: true, unique: true, lowercase: true },
-  phone:      { type: String, required: true },
+  email:      { type: String, required: false, lowercase: true, default: "" },
+  phone:      { type: String, required: false, default: "" },
 
   // Computed/cached
   totalWorkingDays:           { type: Number, default: 0 },

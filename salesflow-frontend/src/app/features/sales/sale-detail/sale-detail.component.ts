@@ -131,6 +131,19 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
                 <span class="text-sm font-medium text-sf-muted">إجمالي العمولة (شامل القيمة المضافة)</span>
                 <span class="text-lg font-black text-sf-primary">{{ sale()?.grossCommissionWithVAT | currencyEgp }}</span>
               </div>
+              @if (sale()?.appliedTaxes && sale()!.appliedTaxes!.length > 0) {
+                <div class="py-3 border-b border-sf-border/20 space-y-2 text-right">
+                  <span class="text-xs font-bold text-sf-muted uppercase tracking-widest block mb-1">الضرائب والرسوم المطبقة بالتفصيل:</span>
+                  <div class="flex flex-wrap gap-1.5 justify-end">
+                    @for (tax of sale()?.appliedTaxes; track $index) {
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold"
+                            [class]="tax.type === 'add' ? 'bg-sf-success/10 text-sf-success' : 'bg-sf-danger/10 text-sf-danger'">
+                        <span>{{ tax.label }} ({{ tax.value }}%)</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
               <div class="flex justify-between items-center py-3 px-4 bg-sf-bg rounded-xl mt-4 font-financial">
                 <span class="text-xs font-bold text-sf-muted uppercase tracking-widest">صافي ربح الشركة (Revenue)</span>
                 <span class="text-xl font-display font-black text-sf-success">{{ sale()?.netRevenue | currencyEgp }}</span>

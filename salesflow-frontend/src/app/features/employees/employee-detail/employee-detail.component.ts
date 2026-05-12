@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '@core/services/employee.service';
@@ -332,12 +332,22 @@ export class EmployeeDetailComponent implements OnInit {
   history = signal<any[]>([]);
   sales = signal<any[]>([]);
 
+  constructor() {
+    effect(() => {
+      const qId = this.themeService.currentQuarter();
+      const emp = this.employee();
+      if (emp) {
+        this.loadStats(emp._id, qId);
+        this.loadSales(emp._id, qId);
+      }
+    });
+  }
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.loadEmployee(params['id']);
         this.loadHistory(params['id']);
-        this.loadSales(params['id']);
       }
     });
   }
@@ -346,13 +356,11 @@ export class EmployeeDetailComponent implements OnInit {
     this.employeeService.getEmployee(id).subscribe({
       next: (res: ApiResponse<Employee>) => {
         this.employee.set(res.data);
-        this.loadStats(id);
       }
     });
   }
 
-  loadStats(id: string) {
-    const quarterId = 'Q2-2026'; // Should be dynamic
+  loadStats(id: string, quarterId: string) {
     this.employeeService.getTargetProgress(id, quarterId).subscribe({
       next: (res: ApiResponse<any>) => {
         if (res.success) this.stats.set(res.data);
@@ -368,8 +376,8 @@ export class EmployeeDetailComponent implements OnInit {
     });
   }
 
-  loadSales(id: string) {
-    this.saleService.getSales({ employeeId: id, limit: 100 }).subscribe({
+  loadSales(id: string, quarterId: string) {
+    this.saleService.getSales({ employeeId: id, quarterId, limit: 100 }).subscribe({
       next: (res) => {
         if (res.success) this.sales.set(res.data);
       }

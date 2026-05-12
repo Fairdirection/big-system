@@ -147,7 +147,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">رقم الهاتف</label>
               <app-input formControlName="phone" placeholder="01XXXXXXXXX"
                          [hasError]="isInvalid('phone')"
-                         errorMessage="رقم الهاتف مطلوب"
+                         errorMessage="يرجى إدخال رقم هاتف صحيح"
                          hint="يفضل رقم الواتساب للتواصل"></app-input>
             </div>
           </div>
@@ -175,7 +175,9 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
             <div *ngIf="seniorityLevel() === 'TeamLeader'" class="space-y-2 md:col-span-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">مدير المبيعات المشرف (المدير المباشر)</label>
               <select formControlName="managerId" class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text h-[42px] focus:ring-2 focus:ring-sf-primary/50 outline-none">
-                <option *ngIf="salesManagers().length === 0" value="69f60230c2120b7ce02988dd">المدير العام الافتراضي (أدهم)</option>
+                <option *ngIf="salesManagers().length === 0" [value]="ceoEmployee()?._id || '69f60230c2120b7ce02988dd'">
+                  المدير العام ({{ ceoEmployee()?.name || 'الإدارة العليا' }})
+                </option>
                 <option *ngFor="let mgr of salesManagers()" [value]="mgr._id">
                   {{ mgr.name }} (كود: {{ mgr.code || 'بدون كود' }})
                 </option>
@@ -286,6 +288,7 @@ export class EmployeeFormComponent implements OnInit {
 
   teams = signal<any[]>([]);
   salesEmployees = signal<any[]>([]);
+  ceoEmployee = signal<any | null>(null);
   department = signal('Sales');
   seniorityLevel = signal('Fresh');
 
@@ -319,9 +322,27 @@ export class EmployeeFormComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
+    this.loadCeo();
     this.checkEditMode();
     this.loadTeams();
     this.loadSalesEmployees();
+  }
+
+  loadCeo() {
+    this.employeeService.getEmployees({ department: 'TopManagement', isActive: 'true' }).subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          const ceo = res.data[0];
+          this.ceoEmployee.set(ceo);
+          const currentManagerId = this.form.get('managerId')?.value;
+          if (currentManagerId === '69f60230c2120b7ce02988dd' || !currentManagerId) {
+            this.form.get('managerId')?.setValue(ceo._id);
+          }
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error loading CEO:', err)
+    });
   }
 
   loadSalesEmployees() {
@@ -334,6 +355,8 @@ export class EmployeeFormComponent implements OnInit {
             const managers = this.salesManagers();
             if (managers.length > 0) {
               this.form.get('managerId')?.setValue(managers[0]._id);
+            } else if (this.ceoEmployee()) {
+              this.form.get('managerId')?.setValue(this.ceoEmployee()._id);
             }
           }
           this.cdr.markForCheck();
@@ -447,7 +470,7 @@ export class EmployeeFormComponent implements OnInit {
             phone: emp.phone,
             code: emp.code,
             currentTeamId: emp.currentTeamId?._id || emp.currentTeamId || null,
-            managerId: emp.managerId?._id || emp.managerId || '69f60230c2120b7ce02988dd'
+            managerId: emp.managerId?._id || emp.managerId || this.ceoEmployee()?._id || '69f60230c2120b7ce02988dd'
           });
           this.department.set(emp.department || 'Sales');
           this.seniorityLevel.set(emp.seniorityLevel || 'Fresh');
@@ -472,10 +495,10 @@ export class EmployeeFormComponent implements OnInit {
       seniorityLevel: ['Fresh'],
       target: [0],
       hireDate: [new Date().toISOString().split('T')[0], [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required]],
+      email: ['', [Validators.email]],
+      phone: [''],
       code: [''],
-      managerId: ['69f60230c2120b7ce02988dd'], // Placeholder manager (Adham)
+      managerId: [this.ceoEmployee()?._id || '69f60230c2120b7ce02988dd'], // General Manager / CEO
       currentTeamId: [null],
       managedTeamIds: [[]],
       teamMemberIds: [[]]
@@ -503,8 +526,9 @@ export class EmployeeFormComponent implements OnInit {
       this.syncSalesManagerTeams();
       this.syncTeamLeaderMembers();
 
-      // If changed to TeamLeader and managerId is still Adham, set to first SalesManager if available
-      if (val === 'TeamLeader' && this.form.get('managerId')?.value === '69f60230c2120b7ce02988dd') {
+      // If changed to TeamLeader and managerId is still General Manager/CEO, set to first SalesManager if available
+      const currentMgr = this.form.get('managerId')?.value;
+      if (val === 'TeamLeader' && (currentMgr === '69f60230c2120b7ce02988dd' || currentMgr === this.ceoEmployee()?._id)) {
         const managers = this.salesManagers();
         if (managers.length > 0) {
           this.form.get('managerId')?.setValue(managers[0]._id);

@@ -48,6 +48,16 @@ const createSale = async (data) => {
     const client = await Client.findById(data.clientId).session(session);
     if (!client) throw new Error('Client not found');
 
+    // 2.5 Aggregate custom taxes into total percentages for compatible calculations
+    if (data.appliedTaxes && Array.isArray(data.appliedTaxes)) {
+      data.vatPercentage = data.appliedTaxes
+        .filter(t => t.type === 'add')
+        .reduce((sum, t) => sum + (Number(t.value) || 0), 0);
+      data.withholdingTaxPercentage = data.appliedTaxes
+        .filter(t => t.type === 'deduct')
+        .reduce((sum, t) => sum + (Number(t.value) || 0), 0);
+    }
+
     // 3. Calculate full commission chain
     const commissionResults = calculateCommission({
       unitValue: data.unitValue,
@@ -146,8 +156,18 @@ const updateSale = async (id, data) => {
     if (!sale) throw new Error('Sale not found');
 
     // If financial inputs changed, recalculate
-    if (data.unitValue || data.contractCommissionPercentage || data.developerCollectionPercentage || data.vatPercentage || data.withholdingTaxPercentage || data.contractDate || data.sellers) {
+    if (data.unitValue || data.contractCommissionPercentage || data.developerCollectionPercentage || data.vatPercentage || data.withholdingTaxPercentage || data.contractDate || data.sellers || data.appliedTaxes) {
       
+      const appliedTaxes = data.appliedTaxes !== undefined ? data.appliedTaxes : sale.appliedTaxes;
+      if (appliedTaxes && Array.isArray(appliedTaxes)) {
+        data.vatPercentage = appliedTaxes
+          .filter(t => t.type === 'add')
+          .reduce((sum, t) => sum + (Number(t.value) || 0), 0);
+        data.withholdingTaxPercentage = appliedTaxes
+          .filter(t => t.type === 'deduct')
+          .reduce((sum, t) => sum + (Number(t.value) || 0), 0);
+      }
+
       const unitValue = data.unitValue || sale.unitValue;
       const contractCommissionPercentage = data.contractCommissionPercentage || sale.contractCommissionPercentage;
       const developerCollectionPercentage = data.developerCollectionPercentage || sale.developerCollectionPercentage;
