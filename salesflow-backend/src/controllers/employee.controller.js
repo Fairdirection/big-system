@@ -3,7 +3,7 @@ const { sendSuccess } = require('../utils/response.utils');
 
 const createEmployee = async (req, res, next) => {
   try {
-    const employee = await employeeService.createEmployee(req.body);
+    const employee = await employeeService.createEmployee(req.body, req.query.quarterId);
     return sendSuccess(res, employee, 201);
   } catch (error) {
     next(error);
@@ -21,7 +21,7 @@ const getEmployees = async (req, res, next) => {
 
 const getEmployee = async (req, res, next) => {
   try {
-    const employee = await employeeService.getEmployeeById(req.params.id);
+    const employee = await employeeService.getEmployeeById(req.params.id, req.query.quarterId);
     if (!employee) {
       const err = new Error('Employee not found');
       err.status = 404;
@@ -35,7 +35,7 @@ const getEmployee = async (req, res, next) => {
 
 const updateEmployee = async (req, res, next) => {
   try {
-    const employee = await employeeService.updateEmployee(req.params.id, req.body);
+    const employee = await employeeService.updateEmployee(req.params.id, req.body, req.query.quarterId);
     return sendSuccess(res, employee);
   } catch (error) {
     next(error);

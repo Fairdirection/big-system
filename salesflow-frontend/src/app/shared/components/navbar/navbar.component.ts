@@ -1,21 +1,20 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { AuthService } from '@core/services/auth.service';
 import { ThemeService } from '@core/services/theme.service';
-import { formatQuarter } from '@core/utils/quarter.utils';
 import { LayoutService } from '@core/services/layout.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroBars3, heroXMark, heroMoon, heroSun } from '@ng-icons/heroicons/outline';
+import { heroBars3, heroXMark, heroMoon, heroSun, heroCalendar } from '@ng-icons/heroicons/outline';
+import { formatQuarter } from '@core/utils/quarter.utils';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, FormsModule],
+  imports: [CommonModule, NgIconComponent],
   templateUrl: './navbar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provideIcons({ heroBars3, heroXMark, heroMoon, heroSun })
+    provideIcons({ heroBars3, heroXMark, heroMoon, heroSun, heroCalendar })
   ]
 })
 export class NavbarComponent {
@@ -25,9 +24,6 @@ export class NavbarComponent {
 
   currentUser = this.auth.currentUser;
   isDark = this.theme.isDark;
-  currentQuarter = this.theme.currentQuarter;
-  availableQuarters = this.theme.availableQuarters;
-  loading = this.theme.loading;
   mobileMenuOpen = this.layout.mobileMenuOpen;
 
   toggleTheme() { 
@@ -35,9 +31,9 @@ export class NavbarComponent {
     this.theme.toggle(); 
   }
   toggleMobileMenu() { this.layout.toggleMobileMenu(); }
-  onQuarterChange(e: Event) {
-    const val = (e.target as HTMLSelectElement).value;
-    this.theme.setQuarter(val);
+
+  onQuarterChange(event: any) {
+    this.theme.setQuarter(event.target.value);
   }
 
   formatQ(q: string) {

@@ -87,6 +87,13 @@ const getDashboardStats = async (quarterId) => {
     Employee.find({ department: 'Sales', isActive: true }),
     Team.find({ isActive: true }).lean()
   ]);
+
+  const QuarterlyTarget = require('../models/quarterly-target.model');
+  const customTargets = await QuarterlyTarget.find({ quarterId }).lean();
+  const customTargetMap = customTargets.reduce((acc, ct) => {
+    acc[ct.employeeId.toString()] = ct.target;
+    return acc;
+  }, {});
   
   // Fetch all history for all sales employees in this quarter once
   const allHistory = await EmployeeTeamHistory.find({ 
@@ -136,7 +143,8 @@ const getDashboardStats = async (quarterId) => {
     }
 
     if (!hasTeam) {
-      const adjustedTarget = (emp.target / 90) * actualWorkingDays;
+      const empTarget = customTargetMap[empIdStr] !== undefined ? customTargetMap[empIdStr] : emp.target;
+      const adjustedTarget = (empTarget / 90) * actualWorkingDays;
       totalTargets += adjustedTarget || 0;
     }
   }
@@ -229,7 +237,8 @@ const getDashboardStats = async (quarterId) => {
 
       let adjustedTarget = 0;
       if (!hasTeam) {
-        adjustedTarget = (emp.target / 90) * workingDays;
+        const empTarget = customTargetMap[mIdStr] !== undefined ? customTargetMap[mIdStr] : emp.target;
+        adjustedTarget = (empTarget / 90) * workingDays;
       }
 
       let memberAchieved = 0;

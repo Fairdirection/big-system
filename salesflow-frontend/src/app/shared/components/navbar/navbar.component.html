@@ -12,27 +12,19 @@
     </div>
     <span class="font-display font-black text-sf-text text-xl tracking-tighter">فير دايركشن</span>
   </div>
-
-  <!-- Quarter Selector -->
-  <div class="hidden sm:flex items-center gap-3 px-4 py-2 rounded-2xl bg-sf-bg border border-sf-border/50 shadow-inner relative group">
-    <span class="text-[10px] font-black text-sf-muted uppercase tracking-widest hidden lg:inline">الفترة</span>
-    <select class="bg-transparent text-sf-primary text-xs font-bold outline-none cursor-pointer"
-            [ngModel]="currentQuarter()"
-            (ngModelChange)="theme.setQuarter($event)">
-      @for (q of availableQuarters(); track q) {
-        <option [value]="q" class="bg-sf-surface text-sf-text" [selected]="q === currentQuarter()">
-          {{ formatQ(q) }}
-        </option>
+  <!-- Global Quarter Selector -->
+  <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-sf-bg/60 border border-sf-border/40 shadow-sm hover:border-sf-primary/40 transition-all">
+    <ng-icon name="heroCalendar" class="text-sf-primary text-base sm:text-lg"></ng-icon>
+    <div class="hidden sm:block text-right">
+      <p class="text-[8px] font-black text-sf-muted leading-tight">الربع المالي</p>
+    </div>
+    <select [value]="theme.currentQuarter()" 
+            (change)="onQuarterChange($event)" 
+            class="bg-transparent text-sf-text text-xs font-black outline-none border-none cursor-pointer focus:ring-0 pr-1 py-0 select-custom font-sans dir-rtl text-right">
+      @for (q of theme.availableQuarters(); track q) {
+        <option [value]="q" class="bg-sf-surface text-sf-text font-semibold text-xs">{{ formatQ(q) }}</option>
       }
     </select>
-
-    <!-- Loading Indicator -->
-    <div *ngIf="loading()" class="absolute -left-1 -top-1">
-      <span class="relative flex h-3 w-3">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sf-primary opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-3 w-3 bg-sf-primary"></span>
-      </span>
-    </div>
   </div>
 
   <div class="flex-1"></div>

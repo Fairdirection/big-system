@@ -31,16 +31,22 @@ export class EmployeeService {
     return this.http.get<PaginatedResponse<Employee>>(this.base, { params });
   }
 
-  getEmployee(id: string) {
-    return this.http.get<ApiResponse<Employee>>(`${this.base}/${id}`);
+  getEmployee(id: string, quarterId?: string) {
+    const params: Record<string, string> = {};
+    if (quarterId) params['quarterId'] = quarterId;
+    return this.http.get<ApiResponse<Employee>>(`${this.base}/${id}`, { params });
   }
 
-  createEmployee(data: Partial<Employee>) {
-    return this.http.post<ApiResponse<Employee>>(this.base, data);
+  createEmployee(data: Partial<Employee>, quarterId?: string) {
+    const params: Record<string, string> = {};
+    if (quarterId) params['quarterId'] = quarterId;
+    return this.http.post<ApiResponse<Employee>>(this.base, data, { params });
   }
 
-  updateEmployee(id: string, data: Partial<Employee>) {
-    return this.http.patch<ApiResponse<Employee>>(`${this.base}/${id}`, data);
+  updateEmployee(id: string, data: Partial<Employee>, quarterId?: string) {
+    const params: Record<string, string> = {};
+    if (quarterId) params['quarterId'] = quarterId;
+    return this.http.patch<ApiResponse<Employee>>(`${this.base}/${id}`, data, { params });
   }
 
   deleteEmployee(id: string) {

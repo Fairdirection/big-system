@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '@core/services/employee.service';
 import { TeamService } from '@core/services/team.service';
+import { ThemeService } from '@core/services/theme.service';
 import { InputComponent } from '@shared/components/input/input.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
@@ -126,6 +127,19 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                          [hasError]="isInvalid('hireDate')"
                          errorMessage="تاريخ التعيين مطلوب"
                          hint="تاريخ بدء العمل الفعلي"></app-input>
+            </div>
+          </div>
+
+          <div *ngIf="isEditMode()" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-sf-border/30 animate-fade-in">
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-sf-surface border border-sf-border">
+              <input type="checkbox" formControlName="isActive" id="isActiveCheck"
+                     class="w-5 h-5 rounded-lg border-sf-border text-sf-primary focus:ring-sf-primary cursor-pointer">
+              <label for="isActiveCheck" class="text-sm font-bold text-sf-text cursor-pointer">الموظف على رأس العمل (نشط)</label>
+            </div>
+            <div *ngIf="!form.get('isActive')?.value" class="space-y-2 animate-fade-in">
+              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">تاريخ انتهاء العمل (المغادرة)</label>
+              <app-input type="date" formControlName="endDate"
+                         hint="آخر يوم عمل فعلي للموظف"></app-input>
             </div>
           </div>
         </section>
@@ -278,6 +292,7 @@ export class EmployeeFormComponent implements OnInit {
   private employeeService = inject(EmployeeService);
   private teamService = inject(TeamService);
   private cdr = inject(ChangeDetectorRef);
+  private themeService = inject(ThemeService);
 
   form!: FormGroup;
   isSubmitting = signal(false);
@@ -455,7 +470,7 @@ export class EmployeeFormComponent implements OnInit {
     if (this.employeeId) {
       this.isEditMode.set(true);
       this.isLoading.set(true);
-      this.employeeService.getEmployee(this.employeeId).subscribe({
+      this.employeeService.getEmployee(this.employeeId, this.themeService.currentQuarter()).subscribe({
         next: (res) => {
           const emp = res.data;
           this.form.patchValue({
@@ -466,6 +481,8 @@ export class EmployeeFormComponent implements OnInit {
             seniorityLevel: emp.seniorityLevel,
             target: emp.target,
             hireDate: emp.hireDate ? new Date(emp.hireDate).toISOString().split('T')[0] : '',
+            isActive: emp.isActive !== false,
+            endDate: emp.endDate ? new Date(emp.endDate).toISOString().split('T')[0] : '',
             email: emp.email,
             phone: emp.phone,
             code: emp.code,
@@ -495,6 +512,8 @@ export class EmployeeFormComponent implements OnInit {
       seniorityLevel: ['Fresh'],
       target: [0],
       hireDate: [new Date().toISOString().split('T')[0], [Validators.required]],
+      isActive: [true],
+      endDate: [''],
       email: ['', [Validators.email]],
       phone: [''],
       code: [''],
@@ -502,6 +521,13 @@ export class EmployeeFormComponent implements OnInit {
       currentTeamId: [null],
       managedTeamIds: [[]],
       teamMemberIds: [[]]
+    });
+
+    this.form.get('isActive')?.valueChanges.subscribe(active => {
+      if (!active && !this.form.get('endDate')?.value) {
+        this.form.get('endDate')?.setValue(new Date().toISOString().split('T')[0]);
+      }
+      this.cdr.markForCheck();
     });
 
     this.department.set(this.form.get('department')?.value || 'Sales');
@@ -583,10 +609,14 @@ export class EmployeeFormComponent implements OnInit {
         delete data.teamMemberIds;
       }
     }
+
+    if (!data.endDate || data.isActive) {
+      data.endDate = null;
+    }
     
     const obs = this.isEditMode() 
-      ? this.employeeService.updateEmployee(this.employeeId!, data)
-      : this.employeeService.createEmployee(data);
+      ? this.employeeService.updateEmployee(this.employeeId!, data, this.themeService.currentQuarter())
+      : this.employeeService.createEmployee(data, this.themeService.currentQuarter());
 
     obs.subscribe({
       next: () => {

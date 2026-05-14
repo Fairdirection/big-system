@@ -2,7 +2,24 @@ const employeeService = require('../services/employee.service');
 const teamService = require('../services/team.service');
 const Employee = require('../models/employee.model');
 const Team = require('../models/team.model');
+const QuarterlyTarget = require('../models/quarterly-target.model');
+const { clearDashboardCache } = require('../services/dashboard.service');
 const { sendSuccess } = require('../utils/response.utils');
+
+const getQuarterlyOverrides = async (req, res, next) => {
+  try {
+    const { quarterId } = req.query;
+    if (!quarterId) {
+      const err = new Error('quarterId is required');
+      err.status = 400;
+      throw err;
+    }
+    const overrides = await QuarterlyTarget.find({ quarterId }).lean();
+    return sendSuccess(res, overrides);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getEmployeeTarget = async (req, res, next) => {
   try {
@@ -44,6 +61,8 @@ const getTargetSummary = async (req, res, next) => {
           employeeId: emp._id,
           employeeName: emp.name,
           teamName: emp.currentTeamId ? emp.currentTeamId.name : null,
+          fullTarget: progress.fullTarget,
+          hasCustomTarget: progress.hasCustomTarget || false,
           adjustedTarget: progress.adjustedTarget,
           achievedSales: progress.achievedSalesValue,
           achievementPercentage: progress.achievementPercentage,
@@ -82,8 +101,48 @@ const getTargetSummary = async (req, res, next) => {
   }
 };
 
+const updateQuarterlyTarget = async (req, res, next) => {
+  try {
+    const { id: employeeId } = req.params;
+    const { quarterId, target } = req.body;
+
+    if (!quarterId) {
+      const err = new Error('quarterId is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const mongoose = require('mongoose');
+    const empId = new mongoose.Types.ObjectId(employeeId);
+
+    if (target === undefined || target === null) {
+      await QuarterlyTarget.deleteOne({ employeeId: empId, quarterId });
+    } else {
+      const targetNum = Number(target);
+      if (isNaN(targetNum) || targetNum < 0) {
+        const err = new Error('target must be a positive number');
+        err.status = 400;
+        throw err;
+      }
+
+      await QuarterlyTarget.findOneAndUpdate(
+        { employeeId: empId, quarterId },
+        { target: targetNum },
+        { upsert: true, new: true }
+      );
+    }
+
+    clearDashboardCache();
+    return sendSuccess(res, { success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
+  getQuarterlyOverrides,
   getEmployeeTarget,
   getTeamTarget,
-  getTargetSummary
+  getTargetSummary,
+  updateQuarterlyTarget
 };

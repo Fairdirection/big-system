@@ -297,6 +297,13 @@ const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {
   const employeeService = require('./employee.service');
   const memberProgress = await employeeService.getTargetProgress(employeeId, quarterId);
 
+  const QuarterlyTarget = require('../models/quarterly-target.model');
+  const customTargetRecord = await QuarterlyTarget.findOne({
+    employeeId: employee._id,
+    quarterId
+  });
+  const baseQuarterlyTarget = customTargetRecord ? customTargetRecord.target : employee.target;
+
   let adjustedTarget;
   let achievedSalesValue = 0;
   let achievedCommission = 0;
@@ -310,7 +317,7 @@ const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {
     salesList = memberProgress.sales || [];
     clientsCount = memberProgress.clientsCount || 0;
   } else {
-    adjustedTarget = (employee.target / 90) * teamWorkingDays;
+    adjustedTarget = (baseQuarterlyTarget / 90) * teamWorkingDays;
 
     // Now, fetch only the sales achieved by this seller during their tenure in this team!
     const salesQuery = {
@@ -370,7 +377,7 @@ const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {
     employeeId: employee._id,
     name: employee.name,
     code: employee.code,
-    fullTarget: employee.target,
+    fullTarget: baseQuarterlyTarget,
     actualWorkingDays: teamWorkingDays,
     adjustedTarget: Math.round(adjustedTarget),
     achieved: Math.round(achievedSalesValue),
@@ -471,50 +478,171 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
 };
 
 const getTeamsWithPerformance = async (quarterId) => {
-  const teams = await Team.find({ isActive: true })
-    .populate({
-      path: 'teamLeaderId',
-      populate: {
-        path: 'managerId',
-        select: 'name code'
-      }
-    })
-    .populate('memberIds')
-    .lean();
-  
-  const employeeService = require('./employee.service');
+  const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
 
-  const results = [];
-
-  for (const team of teams) {
-    let totalAdjustedTarget = 0;
-    let totalAchieved = 0;
-    const membersPerformance = [];
-
-    const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
-
-    // 1. Find all members who have team history in this team during this quarter
-    const histories = await EmployeeTeamHistory.find({
-      teamId: team._id,
+  const [teams, allHistories, allQuarterlyTargets, allSales, allEmployees] = await Promise.all([
+    Team.find({ isActive: true })
+      .populate({
+        path: 'teamLeaderId',
+        populate: {
+          path: 'managerId',
+          select: 'name code'
+        }
+      })
+      .populate('memberIds')
+      .lean(),
+    EmployeeTeamHistory.find({
       joinDate: { $lte: qEnd },
       $or: [
         { leaveDate: null },
         { leaveDate: { $gte: qStart } }
       ]
-    });
-    
-    // Get unique member IDs from histories and merge with current memberIds
-    const historyMemberIds = histories.map(h => h.employeeId.toString());
+    }).lean(),
+    mongoose.model('QuarterlyTarget').find({ quarterId }).lean(),
+    Sale.find({
+      status: { $in: ['confirmed', 'claimed', 'collected'] },
+      isActive: true
+    }).lean(),
+    Employee.find({ department: 'Sales' }).lean()
+  ]);
+
+  const empMap = new Map(allEmployees.map(e => [e._id.toString(), e]));
+  const targetMap = new Map(allQuarterlyTargets.map(t => [t.employeeId.toString(), t.target]));
+
+  const historyByEmp = new Map();
+  for (const h of allHistories) {
+    const empId = h.employeeId.toString();
+    if (!historyByEmp.has(empId)) historyByEmp.set(empId, []);
+    historyByEmp.get(empId).push(h);
+  }
+
+  const salesByEmp = new Map();
+  for (const s of allSales) {
+    const contractDate = new Date(s.contractDate);
+    if (contractDate >= qStart && contractDate <= qEnd) {
+      for (const seller of (s.sellers || [])) {
+        const selId = seller.employeeId?._id ? seller.employeeId._id.toString() : seller.employeeId?.toString();
+        if (selId) {
+          if (!salesByEmp.has(selId)) salesByEmp.set(selId, []);
+          salesByEmp.get(selId).push({ sale: s, seller });
+        }
+      }
+    }
+  }
+
+  const getMemberTeamPerf = (empIdStr, teamIdStr) => {
+    const emp = empMap.get(empIdStr);
+    if (!emp) return null;
+
+    const baseQuarterlyTarget = targetMap.get(empIdStr) ?? emp.target ?? 0;
+    const histories = historyByEmp.get(empIdStr) || [];
+
+    let teamWorkingDays = 0;
+    const intervals = [];
+
+    const teamHistories = histories.filter(h => h.teamId && h.teamId.toString() === teamIdStr);
+
+    if (teamHistories.length > 0) {
+      for (const h of teamHistories) {
+        const joinDateObj = new Date(h.joinDate);
+        joinDateObj.setHours(0, 0, 0, 0);
+        const effStart = new Date(Math.max(qStart.getTime(), joinDateObj.getTime()));
+
+        const leaveDate = h.leaveDate ? new Date(h.leaveDate) : (emp.isActive ? qEnd : (emp.endDate || new Date()));
+        const leaveDateObj = new Date(leaveDate);
+        leaveDateObj.setHours(23, 59, 59, 999);
+        const effEnd = new Date(Math.min(qEnd.getTime(), leaveDateObj.getTime()));
+
+        if (effEnd >= effStart) {
+          const days = calculateWorkingDays(effStart, effEnd);
+          teamWorkingDays += days;
+          intervals.push({ start: effStart, end: effEnd });
+        }
+      }
+    } else if (emp.currentTeamId && emp.currentTeamId.toString() === teamIdStr) {
+      const joinDateObj = new Date(emp.teamJoinDate || emp.createdAt);
+      joinDateObj.setHours(0, 0, 0, 0);
+      const effStart = new Date(Math.max(qStart.getTime(), joinDateObj.getTime()));
+
+      const endDate = emp.isActive ? qEnd : (emp.endDate || new Date());
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      const effEnd = new Date(Math.min(qEnd.getTime(), endDateObj.getTime()));
+
+      if (effEnd >= effStart) {
+        const days = calculateWorkingDays(effStart, effEnd);
+        teamWorkingDays += days;
+        intervals.push({ start: effStart, end: effEnd });
+      }
+    } else {
+      return null;
+    }
+
+    const adjustedTarget = (baseQuarterlyTarget / 90) * teamWorkingDays;
+    let achievedSalesValue = 0;
+
+    const empSales = salesByEmp.get(empIdStr) || [];
+    for (const { sale } of empSales) {
+      const cDate = new Date(sale.contractDate);
+      const inInterval = intervals.some(interval => cDate >= interval.start && cDate <= interval.end);
+      if (inInterval) {
+        achievedSalesValue += (sale.unitValue || 0);
+      }
+    }
+
+    const achievementPercentage = adjustedTarget > 0 ? (achievedSalesValue / adjustedTarget) * 100 : 0;
+
+    return {
+      employeeId: emp._id,
+      name: emp.name,
+      code: emp.code,
+      adjustedTarget: Math.round(adjustedTarget),
+      achieved: Math.round(achievedSalesValue),
+      achievedSalesValue: Math.round(achievedSalesValue),
+      achievementPercentage: Math.round(achievementPercentage * 10) / 10
+    };
+  };
+
+  const getLeaderPersonalPerf = (leaderIdStr) => {
+    const emp = empMap.get(leaderIdStr);
+    if (!emp) return null;
+
+    let achievedSalesValue = 0;
+    const empSales = salesByEmp.get(leaderIdStr) || [];
+    for (const { sale } of empSales) {
+      const cDate = new Date(sale.contractDate);
+      if (cDate >= qStart && cDate <= qEnd) {
+        achievedSalesValue += (sale.unitValue || 0);
+      }
+    }
+
+    return {
+      achievedSalesValue: Math.round(achievedSalesValue),
+      achievementPercentage: 0
+    };
+  };
+
+  const resultsMap = new Map();
+  const teamLeaderPerfMap = new Map();
+
+  // Pass 1: Teams led by TeamLeaders (or anything not SalesManager)
+  for (const team of teams) {
+    if (team.teamLeaderId?.seniorityLevel === 'SalesManager') continue;
+
+    let totalAdjustedTarget = 0;
+    let totalAchieved = 0;
+    const membersPerformance = [];
+
+    const teamHistories = allHistories.filter(h => h.teamId && h.teamId.toString() === team._id.toString());
+    const historyMemberIds = teamHistories.map(h => h.employeeId.toString());
     const currentMemberIds = (team.memberIds || []).map(m => m._id ? m._id.toString() : m.toString());
     const uniqueMemberIds = [...new Set([...historyMemberIds, ...currentMemberIds])];
 
     for (const memberId of uniqueMemberIds) {
       if (!mongoose.isValidObjectId(memberId)) continue;
-      
-      // Skip the team leader (processed separately below)
       if (team.teamLeaderId && team.teamLeaderId._id.toString() === memberId) continue;
 
-      const memberPerf = await getTeamMemberPerformance(memberId, team._id, quarterId);
+      const memberPerf = getMemberTeamPerf(memberId, team._id.toString());
       if (!memberPerf) continue;
 
       totalAdjustedTarget += memberPerf.adjustedTarget || 0;
@@ -530,39 +658,118 @@ const getTeamsWithPerformance = async (quarterId) => {
       });
     }
 
-    // 2. Process team leader (personal progress only)
     if (team.teamLeaderId) {
-      const leaderProg = await employeeService.getPersonalTargetProgressOnly(team.teamLeaderId, quarterId);
-
-      // Since they lead a team, their personal target is 0. Only their personal sales achievements count.
-      leaderProg.adjustedTarget = 0;
-      leaderProg.fullTarget = 0;
-
-      totalAdjustedTarget += leaderProg.adjustedTarget || 0;
-      totalAchieved += leaderProg.achievedSalesValue || 0;
-
-      membersPerformance.push({
-        employeeId: team.teamLeaderId._id,
-        name: team.teamLeaderId.name + ' (قائد)',
-        code: team.teamLeaderId.code,
-        adjustedTarget: Math.round(leaderProg.adjustedTarget),
-        achieved: Math.round(leaderProg.achievedSalesValue),
-        achievementPercentage: leaderProg.achievementPercentage
-      });
+      const leaderProg = getLeaderPersonalPerf(team.teamLeaderId._id.toString());
+      if (leaderProg) {
+        totalAchieved += leaderProg.achievedSalesValue || 0;
+        membersPerformance.push({
+          employeeId: team.teamLeaderId._id,
+          name: team.teamLeaderId.name + ' (قائد)',
+          code: team.teamLeaderId.code,
+          adjustedTarget: 0,
+          achieved: Math.round(leaderProg.achievedSalesValue),
+          achievementPercentage: 0
+        });
+      }
     }
 
-    results.push({
+    const overallAchPct = totalAdjustedTarget > 0 ? Math.round((totalAchieved / totalAdjustedTarget) * 1000) / 10 : 0;
+    teamLeaderPerfMap.set(team.teamLeaderId?._id?.toString(), {
+      adjustedTarget: totalAdjustedTarget,
+      achieved: totalAchieved,
+      achievementPercentage: overallAchPct
+    });
+
+    resultsMap.set(team._id.toString(), {
       ...team,
       performance: {
         totalAdjustedTarget: Math.round(totalAdjustedTarget),
         totalAchieved: Math.round(totalAchieved),
-        overallAchievementPercentage: totalAdjustedTarget > 0 ? Math.round((totalAchieved / totalAdjustedTarget) * 1000) / 10 : 0,
+        overallAchievementPercentage: overallAchPct,
         membersPerformance
       }
     });
   }
 
-  return results;
+  // Pass 2: Teams led by SalesManagers
+  for (const team of teams) {
+    if (team.teamLeaderId?.seniorityLevel !== 'SalesManager') continue;
+
+    let totalAdjustedTarget = 0;
+    let totalAchieved = 0;
+    const membersPerformance = [];
+
+    const teamHistories = allHistories.filter(h => h.teamId && h.teamId.toString() === team._id.toString());
+    const historyMemberIds = teamHistories.map(h => h.employeeId.toString());
+    const currentMemberIds = (team.memberIds || []).map(m => m._id ? m._id.toString() : m.toString());
+    const uniqueMemberIds = [...new Set([...historyMemberIds, ...currentMemberIds])];
+
+    for (const memberId of uniqueMemberIds) {
+      if (!mongoose.isValidObjectId(memberId)) continue;
+      if (team.teamLeaderId && team.teamLeaderId._id.toString() === memberId) continue;
+
+      const emp = empMap.get(memberId);
+      if (!emp) continue;
+
+      if (emp.seniorityLevel === 'TeamLeader') {
+        const tlPerf = teamLeaderPerfMap.get(memberId);
+        if (tlPerf && tlPerf.adjustedTarget > 0) {
+          totalAdjustedTarget += tlPerf.adjustedTarget;
+          totalAchieved += tlPerf.achieved;
+          membersPerformance.push({
+            employeeId: emp._id,
+            name: emp.name,
+            code: emp.code,
+            adjustedTarget: tlPerf.adjustedTarget,
+            achieved: tlPerf.achieved,
+            achievementPercentage: tlPerf.achievementPercentage
+          });
+        } else {
+          const memberPerf = getMemberTeamPerf(memberId, team._id.toString());
+          if (memberPerf) {
+            totalAdjustedTarget += memberPerf.adjustedTarget;
+            totalAchieved += memberPerf.achievedSalesValue;
+            membersPerformance.push(memberPerf);
+          }
+        }
+      } else {
+        const memberPerf = getMemberTeamPerf(memberId, team._id.toString());
+        if (memberPerf) {
+          totalAdjustedTarget += memberPerf.adjustedTarget;
+          totalAchieved += memberPerf.achievedSalesValue;
+          membersPerformance.push(memberPerf);
+        }
+      }
+    }
+
+    if (team.teamLeaderId) {
+      const leaderProg = getLeaderPersonalPerf(team.teamLeaderId._id.toString());
+      if (leaderProg) {
+        totalAchieved += leaderProg.achievedSalesValue || 0;
+        membersPerformance.push({
+          employeeId: team.teamLeaderId._id,
+          name: team.teamLeaderId.name + ' (قائد)',
+          code: team.teamLeaderId.code,
+          adjustedTarget: 0,
+          achieved: Math.round(leaderProg.achievedSalesValue),
+          achievementPercentage: 0
+        });
+      }
+    }
+
+    const overallAchPct = totalAdjustedTarget > 0 ? Math.round((totalAchieved / totalAdjustedTarget) * 1000) / 10 : 0;
+    resultsMap.set(team._id.toString(), {
+      ...team,
+      performance: {
+        totalAdjustedTarget: Math.round(totalAdjustedTarget),
+        totalAchieved: Math.round(totalAchieved),
+        overallAchievementPercentage: overallAchPct,
+        membersPerformance
+      }
+    });
+  }
+
+  return teams.map(t => resultsMap.get(t._id.toString()));
 };
 
 const reassignMembers = async (oldTeamId, { membersReassignment }) => {

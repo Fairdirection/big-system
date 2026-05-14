@@ -7,12 +7,15 @@ const { generateCode } = require('../utils/code-generator');
 const { getQuarterId, getQuarterBounds, calculateEmployeeQuarterDays, calculateWorkingDays } = require('../utils/quarter.utils');
 const { paginate } = require('../utils/pagination.utils');
 
-const createEmployee = async (data) => {
+const createEmployee = async (data, reqQuarterId) => {
   if (data.email === undefined || data.email === null || data.email === '') {
     data.email = '';
   }
   if (data.phone === undefined || data.phone === null || data.phone === '') {
     data.phone = '';
+  }
+  if (data.endDate === '') {
+    data.endDate = null;
   }
 
   // 1. Format code if provided, otherwise generate
@@ -42,6 +45,15 @@ const createEmployee = async (data) => {
       ? calculateEmployeeQuarterDays([{ joinDate: data.teamJoinDate }], getQuarterId(new Date()))
       : 0
   });
+
+  if (reqQuarterId && data.target !== undefined) {
+    const QuarterlyTarget = require('../models/quarterly-target.model');
+    await QuarterlyTarget.findOneAndUpdate(
+      { employeeId: employee._id, quarterId: reqQuarterId },
+      { target: Number(data.target) },
+      { upsert: true, new: true }
+    );
+  }
 
   // 4. If sales dept + team assigned: create history record + update team
   if (data.department === 'Sales' && data.currentTeamId) {
@@ -185,15 +197,24 @@ const getEmployees = async (query) => {
   
   // Enrich with dynamic quarterly target progress if they are in Sales and requested
   if (paginatedResult && paginatedResult.data && includePerformance === 'true') {
-    const currentQuarter = getQuarterId(new Date());
+    const currentQuarter = query.quarterId || getQuarterId(new Date());
     const enrichedDocs = [];
     for (const emp of paginatedResult.data) {
       const empObj = emp.toObject ? emp.toObject() : emp;
+      if (empObj.isActive === false && !empObj.endDate) {
+        empObj.endDate = empObj.updatedAt || new Date();
+      }
+
       if (empObj.department === 'Sales') {
         try {
-          const progress = await getTargetProgress(empObj._id.toString(), currentQuarter);
-          // Override static target with dynamic adjusted target!
-          empObj.target = progress.adjustedTarget;
+          const QuarterlyTarget = require('../models/quarterly-target.model');
+          const customTarget = await QuarterlyTarget.findOne({ employeeId: empObj._id, quarterId: currentQuarter });
+          if (customTarget && customTarget.target !== undefined && customTarget.target !== null) {
+            empObj.target = customTarget.target;
+            empObj.hasCustomTarget = true;
+          }
+          const progress = await getTargetProgress(empObj._id, currentQuarter);
+          empObj.adjustedTarget = progress.adjustedTarget;
           empObj.fullTarget = progress.fullTarget;
           empObj.achievedSales = progress.achievedSales;
           empObj.achievementPercentage = progress.achievementPercentage;
@@ -210,23 +231,32 @@ const getEmployees = async (query) => {
   return paginatedResult;
 };
 
-const getEmployeeById = async (id) => {
+const getEmployeeById = async (id, reqQuarterId) => {
   const employee = await Employee.findById(id).populate('currentTeamId managerId').lean();
   if (employee) {
+    if (employee.isActive === false && !employee.endDate) {
+      employee.endDate = employee.updatedAt || new Date();
+    }
     // 1. Total seniority since hire
     const end = employee.endDate || (employee.isActive ? new Date() : new Date());
     employee.currentSeniorityDays = calculateWorkingDays(employee.hireDate, end);
 
     // 2. Days worked in current quarter across all teams (until today)
-    const currentQuarter = getQuarterId(new Date());
+    const currentQuarter = reqQuarterId || getQuarterId(new Date());
     const history = await EmployeeTeamHistory.find({ employeeId: id });
     employee.dynamicQuarterDays = calculateEmployeeQuarterDays(history, currentQuarter, true);
 
     // 3. Attach dynamic target progress
     if (employee.department === 'Sales') {
       try {
+        const QuarterlyTarget = require('../models/quarterly-target.model');
+        const customTarget = await QuarterlyTarget.findOne({ employeeId: new mongoose.Types.ObjectId(id), quarterId: currentQuarter });
+        if (customTarget && customTarget.target !== undefined && customTarget.target !== null) {
+          employee.target = customTarget.target;
+          employee.hasCustomTarget = true;
+        }
         const progress = await getTargetProgress(id, currentQuarter);
-        employee.target = progress.adjustedTarget;
+        employee.adjustedTarget = progress.adjustedTarget;
         employee.fullTarget = progress.fullTarget;
         employee.achievedSales = progress.achievedSales;
         employee.achievementPercentage = progress.achievementPercentage;
@@ -238,16 +268,29 @@ const getEmployeeById = async (id) => {
   return employee;
 };
 
-const updateEmployee = async (id, data) => {
+const updateEmployee = async (id, data, reqQuarterId) => {
   if (data.email === '' || data.email === null) {
     data.email = '';
   }
   if (data.phone === '' || data.phone === null) {
     data.phone = '';
   }
+  if (data.endDate === '') {
+    data.endDate = null;
+  }
 
   const employee = await Employee.findById(id);
   if (!employee) throw new Error('Employee not found');
+
+  if (reqQuarterId && data.target !== undefined) {
+    const QuarterlyTarget = require('../models/quarterly-target.model');
+    await QuarterlyTarget.findOneAndUpdate(
+      { employeeId: new mongoose.Types.ObjectId(id), quarterId: reqQuarterId },
+      { target: Number(data.target) },
+      { upsert: true, new: true }
+    );
+    delete data.target;
+  }
 
   // Format code if provided
   if (data.code) {
@@ -261,9 +304,48 @@ const updateEmployee = async (id, data) => {
     }
   }
 
-  // Recalculate working days if hireDate or endDate changed
-  if (data.hireDate || data.endDate || data.isActive === false) {
-    const end = data.endDate ? new Date(data.endDate) : (data.isActive === false ? new Date() : new Date());
+  // Handle account deactivation / termination
+  if (data.isActive === false) {
+    const today = new Date();
+    data.endDate = data.endDate || today;
+    data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, data.endDate);
+
+    // If they belong to a team, pull them out and close their history
+    if (employee.currentTeamId) {
+      const oldTeamId = employee.currentTeamId.toString();
+      await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: employee._id } });
+      await EmployeeTeamHistory.findOneAndUpdate(
+        { employeeId: employee._id, teamId: oldTeamId, leaveDate: null },
+        { leaveDate: data.endDate }
+      );
+      data.currentTeamId = null;
+    }
+
+    // If they lead a team (TeamLeader), deactivate their team and remove members
+    if (employee.seniorityLevel === 'TeamLeader') {
+      const tlTeam = await Team.findOne({ teamLeaderId: employee._id, isActive: true });
+      if (tlTeam) {
+        tlTeam.isActive = false;
+        tlTeam.memberIds = [];
+        await tlTeam.save();
+      }
+    }
+
+    // If they are a SalesManager, deactivate their managed team
+    if (employee.seniorityLevel === 'SalesManager') {
+      const smTeam = await Team.findOne({ teamLeaderId: employee._id, isActive: true });
+      if (smTeam) {
+        smTeam.isActive = false;
+        smTeam.memberIds = [];
+        await smTeam.save();
+      }
+    }
+  } else if (data.isActive === true && employee.isActive === false) {
+    // Reactivating account
+    data.endDate = null;
+    data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, new Date());
+  } else if (data.hireDate || data.endDate) {
+    const end = data.endDate ? new Date(data.endDate) : new Date();
     data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, end);
   }
 
@@ -712,7 +794,14 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
     }
   }
 
-  const adjustedTarget = (employee.target / 90) * actualWorkingDays;
+  const QuarterlyTarget = require('../models/quarterly-target.model');
+  const customTargetRecord = await QuarterlyTarget.findOne({
+    employeeId: empId,
+    quarterId
+  });
+  const baseQuarterlyTarget = customTargetRecord ? customTargetRecord.target : employee.target;
+
+  const adjustedTarget = (baseQuarterlyTarget / 90) * actualWorkingDays;
   
   const salesQuery = {
     status: { $in: ['confirmed', 'claimed', 'collected'] },
@@ -739,7 +828,8 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
       employeeName: employee.name,
       code: employee.code,
       quarterId,
-      fullTarget: employee.target,
+      fullTarget: baseQuarterlyTarget,
+      hasCustomTarget: !!customTargetRecord,
       actualWorkingDays: 0,
       adjustedTarget: 0,
       achievedSales: 0,
@@ -747,7 +837,7 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
       achievedCommission: 0,
       clientsCount: 0,
       achievementPercentage: 0,
-      gap: employee.target,
+      gap: baseQuarterlyTarget,
       sales: []
     };
   }
@@ -770,7 +860,7 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
     }
   });
 
-  const targetToUse = adjustedTarget > 0 ? adjustedTarget : employee.target;
+  const targetToUse = adjustedTarget > 0 ? adjustedTarget : baseQuarterlyTarget;
   const achievementPercentage = targetToUse > 0 ? (achievedSalesValue / targetToUse) * 100 : 0;
   const gap = Math.max(0, targetToUse - achievedSalesValue);
 
@@ -779,7 +869,8 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
     employeeName: employee.name,
     code: employee.code,
     quarterId,
-    fullTarget: employee.target,
+    fullTarget: baseQuarterlyTarget,
+    hasCustomTarget: !!customTargetRecord,
     actualWorkingDays,
     adjustedTarget: Math.round(adjustedTarget),
     achievedSales: Math.round(achievedSalesValue),

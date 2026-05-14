@@ -35,18 +35,18 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
             <ng-icon name="heroChevronRight" class="text-xl"></ng-icon>
           </button>
           
-          <div class="flex items-center gap-5">
-            <div class="w-20 h-20 rounded-3xl bg-sf-primary/10 flex items-center justify-center text-sf-primary text-3xl font-display font-black shadow-premium">
+          <div class="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-sf-primary/10 flex items-center justify-center text-sf-primary text-2xl sm:text-3xl font-display font-black shadow-premium shrink-0">
               {{ emp.name.charAt(0) }}
             </div>
-            <div>
-              <div class="flex items-center gap-3 mb-1">
-                <h1 class="text-3xl font-display font-black text-sf-text tracking-tight">{{ emp.name }}</h1>
-                <span class="badge" [class.badge-success]="emp.isActive" [class.badge-error]="!emp.isActive">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                <h1 class="text-2xl sm:text-3xl font-display font-black text-sf-text tracking-tight truncate leading-tight">{{ emp.name }}</h1>
+                <span class="badge shrink-0" [class.badge-success]="emp.isActive" [class.badge-error]="!emp.isActive">
                   {{ emp.isActive ? 'نشط' : 'غير نشط' }}
                 </span>
               </div>
-              <p class="text-sf-muted font-bold flex items-center gap-2">
+              <p class="text-xs sm:text-sm text-sf-muted font-bold flex items-center gap-2 truncate">
                 <span class="text-sf-primary">{{ emp.jobTitle }}</span>
                 <span class="opacity-30">•</span>
                 <span>{{ emp.department }}</span>
@@ -55,25 +55,25 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button [routerLink]="['edit']" class="btn btn-secondary h-12 px-6">
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <button [routerLink]="['edit']" class="btn btn-secondary h-11 sm:h-12 px-4 sm:px-6 flex-1 sm:flex-initial text-xs sm:text-sm">
             <ng-icon name="heroPencil"></ng-icon>
             <span>تعديل الملف</span>
           </button>
           
           @if (emp.isActive) {
-            <button (click)="toggleActivation()" class="btn btn-secondary h-12 px-6">
+            <button (click)="toggleActivation()" class="btn btn-secondary h-11 sm:h-12 px-4 sm:px-6 flex-1 sm:flex-initial text-xs sm:text-sm">
               <ng-icon name="heroXMark"></ng-icon>
               <span>تعطيل الحساب</span>
             </button>
           } @else {
-            <button (click)="toggleActivation()" class="btn btn-primary h-12 px-6">
+            <button (click)="toggleActivation()" class="btn btn-primary h-11 sm:h-12 px-4 sm:px-6 flex-1 sm:flex-initial text-xs sm:text-sm">
               <ng-icon name="heroCheck"></ng-icon>
               <span>تفعيل الحساب</span>
             </button>
           }
 
-          <button (click)="deleteEmployee()" class="btn btn-danger h-12 px-6 flex items-center gap-2">
+          <button (click)="deleteEmployee()" class="btn btn-danger h-11 sm:h-12 px-4 sm:px-6 flex-1 sm:flex-initial text-xs sm:text-sm flex items-center justify-center gap-2">
             <ng-icon name="heroTrash"></ng-icon>
             <span>حذف الموظف</span>
           </button>
@@ -84,161 +84,177 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
         <!-- Main Stats & Info -->
         <div class="lg:col-span-2 space-y-8">
           <!-- Quick Stats -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-              <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">المستهدف المعدل</p>
-              <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.adjustedTarget || stats()?.fullTarget || emp.target) | currencyEgp }}</h4>
+          @if (emp.department === 'Sales') {
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">المستهدف المعدل</p>
+                <div class="flex items-end justify-between relative z-10">
+                  <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.adjustedTarget || stats()?.fullTarget || emp.target) | currencyEgp }}</h4>
+                  <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
+                    <ng-icon name="heroChartBar"></ng-icon>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">إجمالي المبيعات</p>
+                <div class="flex items-end justify-between relative z-10">
+                  <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievedSales || 0) | currencyEgp }}</h4>
+                  <div class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success">
+                    <ng-icon name="heroTrophy"></ng-icon>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">نسبة الإنجاز</p>
+                <div class="flex items-end justify-between relative z-10">
+                  <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievementPercentage || 0) | number:'1.0-1' }}%</h4>
+                  <div class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent">
+                    <ng-icon name="heroChartBar"></ng-icon>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-warning/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">العملاء النشطين</p>
+                <div class="flex items-end justify-between relative z-10">
+                  <h4 class="text-2xl font-display font-black text-sf-text">{{ stats()?.clientsCount || 0 }}</h4>
+                  <div class="w-10 h-10 rounded-xl bg-sf-warning/10 flex items-center justify-center text-sf-warning">
+                    <ng-icon name="heroUsers"></ng-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prorated Target Explanation Banner -->
+            @if (stats()?.adjustedTarget && stats()?.adjustedTarget !== stats()?.fullTarget) {
+              <div class="glass-card p-5 rounded-2xl border-r-4 border-r-sf-primary border-sf-border bg-sf-surface/60 flex items-center gap-4 shadow-md">
                 <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
-                  <ng-icon name="heroChartBar"></ng-icon>
+                  <ng-icon name="heroClock"></ng-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs font-black text-sf-text mb-0.5">تم تعديل المستهدف بما يتناسب مع أيام العمل</p>
+                  <p class="text-[10px] font-semibold text-sf-muted leading-relaxed">المستهدف الكامل للربع: {{ stats()?.fullTarget | currencyEgp }} • أيام العمل النشطة: {{ stats()?.actualWorkingDays }} يوم من أصل 90 يوم.</p>
                 </div>
               </div>
-            </div>
-
-            <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-              <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">إجمالي المبيعات</p>
-              <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievedSales || 0) | currencyEgp }}</h4>
-                <div class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success">
-                  <ng-icon name="heroTrophy"></ng-icon>
-                </div>
-              </div>
-            </div>
-
-            <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-              <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">نسبة الإنجاز</p>
-              <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-2xl font-display font-black text-sf-text">{{ (stats()?.achievementPercentage || 0) | number:'1.0-1' }}%</h4>
-                <div class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent">
-                  <ng-icon name="heroChartBar"></ng-icon>
-                </div>
-              </div>
-            </div>
-
-            <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-24 h-24 bg-sf-warning/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-              <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">العملاء النشطين</p>
-              <div class="flex items-end justify-between relative z-10">
-                <h4 class="text-2xl font-display font-black text-sf-text">{{ stats()?.clientsCount || 0 }}</h4>
-                <div class="w-10 h-10 rounded-xl bg-sf-warning/10 flex items-center justify-center text-sf-warning">
-                  <ng-icon name="heroUsers"></ng-icon>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Prorated Target Explanation Banner -->
-          @if (stats()?.adjustedTarget && stats()?.adjustedTarget !== stats()?.fullTarget) {
-            <div class="glass-card p-5 rounded-2xl border-r-4 border-r-sf-primary border-sf-border bg-sf-surface/60 flex items-center gap-4 shadow-md">
-              <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
-                <ng-icon name="heroClock"></ng-icon>
-              </div>
-              <div class="flex-1">
-                <p class="text-xs font-black text-sf-text mb-0.5">تم تعديل المستهدف بما يتناسب مع أيام العمل</p>
-                <p class="text-[10px] font-semibold text-sf-muted leading-relaxed">المستهدف الكامل للربع: {{ stats()?.fullTarget | currencyEgp }} • أيام العمل النشطة: {{ stats()?.actualWorkingDays }} يوم من أصل 90 يوم.</p>
-              </div>
-            </div>
+            }
           }
 
           <!-- Profile Details -->
           <div class="glass-card p-8 rounded-3xl border border-sf-border shadow-xl">
             <h3 class="text-xl font-display font-black text-sf-text mb-8">معلومات الموظف</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-              <div class="flex items-center gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group">
-                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-8 gap-x-12">
+              <div class="flex items-center gap-4 sm:gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors shrink-0">
                   <ng-icon name="heroIdentification" class="text-xl"></ng-icon>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-0.5">كود الموظف</p>
-                  <p class="text-sm font-bold text-sf-text">{{ emp.code }}</p>
+                  <p class="text-sm font-bold text-sf-text truncate">{{ emp.code }}</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group">
-                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors">
+              <div class="flex items-center gap-4 sm:gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors shrink-0">
                   <ng-icon name="heroEnvelope" class="text-xl"></ng-icon>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-0.5">البريد الإلكتروني</p>
-                  <p class="text-sm font-bold text-sf-text">{{ emp.email }}</p>
+                  <p class="text-sm font-bold text-sf-text truncate select-all" [title]="emp.email">{{ emp.email }}</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group">
-                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors">
+              <div class="flex items-center gap-4 sm:gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors shrink-0">
                   <ng-icon name="heroPhone" class="text-xl"></ng-icon>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-0.5">رقم الهاتف</p>
-                  <p class="text-sm font-bold text-sf-text">{{ emp.phone }}</p>
+                  <p class="text-sm font-bold text-sf-text truncate select-all">{{ emp.phone }}</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group">
-                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors">
+              <div class="flex items-center gap-4 sm:gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-primary/30 transition-colors group min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-sf-primary/5 flex items-center justify-center text-sf-primary group-hover:bg-sf-primary/10 transition-colors shrink-0">
                   <ng-icon name="heroCalendar" class="text-xl"></ng-icon>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-0.5">تاريخ التعيين</p>
-                  <p class="text-sm font-bold text-sf-text">{{ emp.hireDate | date:'longDate' }}</p>
+                  <p class="text-sm font-bold text-sf-text truncate">{{ emp.hireDate | date:'longDate' }}</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Sales Activity Section -->
-          <div class="glass-card p-8 rounded-3xl border border-sf-border shadow-xl">
-            <div class="flex items-center justify-between mb-8">
-              <h3 class="text-xl font-display font-black text-sf-text">سجل المبيعات</h3>
-              <span class="px-4 py-1.5 rounded-full bg-sf-primary/10 text-sf-primary text-xs font-black">{{ sales().length }} مبيعة</span>
-            </div>
-
-            <div class="space-y-4">
-              @for (sale of sales(); track sale._id) {
-                <div class="group p-5 rounded-2xl bg-sf-surface border border-sf-border hover:border-sf-primary/40 transition-all hover:shadow-lg">
-                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-4">
-                      <div class="w-12 h-12 rounded-xl bg-white border border-sf-border flex items-center justify-center text-sf-primary text-lg shadow-sm">
-                        <ng-icon name="heroBuildingOffice"></ng-icon>
-                      </div>
-                      <div>
-                        <div class="flex items-center gap-2 mb-0.5">
-                          <p class="text-sm font-black text-sf-text">{{ sale.projectName }}</p>
-                          <span class="text-[10px] font-bold text-sf-muted px-2 py-0.5 rounded-full bg-sf-surface border border-sf-border">الوحدة: {{ sale.unitNumber }}</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-[10px] font-bold text-sf-muted">
-                          <span class="flex items-center gap-1"><ng-icon name="heroUsers"></ng-icon> {{ sale.clientName }}</span>
-                          <span class="opacity-30">•</span>
-                          <span class="flex items-center gap-1"><ng-icon name="heroCalendar"></ng-icon> {{ sale.contractDate | date:'shortDate' }}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex items-center justify-between md:justify-end gap-6 md:min-w-[150px]">
-                      <div class="text-left md:text-right">
-                        <p class="text-[10px] font-black text-sf-muted uppercase tracking-tighter mb-0.5">قيمة الوحدة</p>
-                        <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | currencyEgp }}</p>
-                      </div>
-                      <span class="badge h-8 px-4" 
-                            [class.badge-success]="sale.status === 'collected' || sale.status === 'confirmed'"
-                            [class.badge-warning]="sale.status === 'claimed'"
-                            [class.badge-secondary]="sale.status === 'draft'">
-                        {{ sale.status === 'confirmed' ? 'مؤكد' : 
-                           sale.status === 'collected' ? 'مُحصل' : 
-                           sale.status === 'claimed' ? 'قيد المطالبة' : 'مسودة' }}
-                      </span>
-                    </div>
+              @if (!emp.isActive) {
+                <div class="flex items-center gap-4 sm:gap-5 p-4 rounded-2xl bg-sf-surface border border-sf-border/40 hover:border-sf-danger/30 transition-colors group min-w-0">
+                  <div class="w-12 h-12 rounded-xl bg-sf-danger/5 flex items-center justify-center text-sf-danger group-hover:bg-sf-danger/10 transition-colors shrink-0">
+                    <ng-icon name="heroClock" class="text-xl"></ng-icon>
                   </div>
-                </div>
-              } @empty {
-                <div class="text-center py-12 bg-sf-surface/50 rounded-3xl border border-dashed border-sf-border">
-                  <p class="text-sf-muted font-bold">لا توجد مبيعات مسجلة لهذا الموظف حتى الآن</p>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-0.5">تاريخ انتهاء العمل</p>
+                    <p class="text-sm font-bold text-sf-text truncate">{{ (emp.endDate || emp.updatedAt || emp.hireDate) | date:'longDate' }}</p>
+                  </div>
                 </div>
               }
             </div>
           </div>
+
+          <!-- Sales Activity Section -->
+          @if (emp.department === 'Sales') {
+            <div class="glass-card p-8 rounded-3xl border border-sf-border shadow-xl">
+              <div class="flex items-center justify-between mb-8">
+                <h3 class="text-xl font-display font-black text-sf-text">سجل المبيعات</h3>
+                <span class="px-4 py-1.5 rounded-full bg-sf-primary/10 text-sf-primary text-xs font-black">{{ sales().length }} مبيعة</span>
+              </div>
+
+              <div class="space-y-4">
+                @for (sale of sales(); track sale._id) {
+                  <div class="group p-5 rounded-2xl bg-sf-surface border border-sf-border hover:border-sf-primary/40 transition-all hover:shadow-lg">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0 w-full">
+                      <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-12 h-12 rounded-xl bg-white border border-sf-border flex items-center justify-center text-sf-primary text-lg shadow-sm shrink-0">
+                          <ng-icon name="heroBuildingOffice"></ng-icon>
+                        </div>
+                        <div class="min-w-0">
+                          <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <p class="text-sm font-black text-sf-text truncate max-w-[150px] sm:max-w-[280px] md:max-w-none">{{ sale.projectName }}</p>
+                            <span class="text-[10px] font-bold text-sf-muted px-2 py-0.5 rounded-full bg-sf-surface border border-sf-border shrink-0">الوحدة: {{ sale.unitNumber }}</span>
+                          </div>
+                          <div class="flex items-center gap-3 text-[10px] font-bold text-sf-muted truncate">
+                            <span class="flex items-center gap-1 truncate"><ng-icon name="heroUsers" class="shrink-0"></ng-icon> {{ sale.clientName }}</span>
+                            <span class="opacity-30 shrink-0">•</span>
+                            <span class="flex items-center gap-1 shrink-0"><ng-icon name="heroCalendar" class="shrink-0"></ng-icon> {{ sale.contractDate | date:'shortDate' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center justify-between md:justify-end gap-6 md:min-w-[180px] border-t md:border-t-0 pt-3 md:pt-0 border-sf-border/30">
+                        <div class="text-right">
+                          <p class="text-[10px] font-black text-sf-muted uppercase tracking-tighter mb-0.5">قيمة الوحدة</p>
+                          <p class="text-sm font-black text-sf-primary">{{ sale.unitValue | currencyEgp }}</p>
+                        </div>
+                        <span class="badge h-8 px-4 shrink-0" 
+                              [class.badge-success]="sale.status === 'collected' || sale.status === 'confirmed'"
+                              [class.badge-warning]="sale.status === 'claimed'"
+                              [class.badge-secondary]="sale.status === 'draft'">
+                          {{ sale.status === 'confirmed' ? 'مؤكد' : 
+                             sale.status === 'collected' ? 'مُحصل' : 
+                             sale.status === 'claimed' ? 'قيد المطالبة' : 'مسودة' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="text-center py-12 bg-sf-surface/50 rounded-3xl border border-dashed border-sf-border">
+                    <p class="text-sf-muted font-bold">لا توجد مبيعات مسجلة لهذا الموظف حتى الآن</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </div>
 
         <!-- Sidebar: Career History -->
@@ -337,6 +353,11 @@ export class EmployeeDetailComponent implements OnInit {
       const qId = this.themeService.currentQuarter();
       const emp = this.employee();
       if (emp) {
+        this.employeeService.getEmployee(emp._id, qId).subscribe({
+          next: (res: ApiResponse<Employee>) => {
+            this.employee.set(res.data);
+          }
+        });
         this.loadStats(emp._id, qId);
         this.loadSales(emp._id, qId);
       }
@@ -353,7 +374,7 @@ export class EmployeeDetailComponent implements OnInit {
   }
 
   loadEmployee(id: string) {
-    this.employeeService.getEmployee(id).subscribe({
+    this.employeeService.getEmployee(id, this.themeService.currentQuarter()).subscribe({
       next: (res: ApiResponse<Employee>) => {
         this.employee.set(res.data);
       }

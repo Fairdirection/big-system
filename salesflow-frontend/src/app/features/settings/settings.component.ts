@@ -3,22 +3,32 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SettingService, Setting } from '@core/services/setting.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark } from '@ng-icons/heroicons/outline';
+import { 
+  heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
+  heroBriefcase, heroClock
+} from '@ng-icons/heroicons/outline';
+import { ThemeService } from '@core/services/theme.service';
+import { formatQuarter } from '@core/utils/quarter.utils';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [CommonModule, NgIconComponent, ReactiveFormsModule],
   providers: [
-    provideIcons({ heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark })
+    provideIcons({ 
+      heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
+      heroBriefcase, heroClock
+    })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fade-in pb-20">
       <!-- Header -->
-      <header>
-        <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">إعدادات النظام</h1>
-        <p class="text-sf-muted font-medium mt-1">الإعدادات العامة، قيم القوائم المنسدلة، وتفضيلات الأمان واللغة.</p>
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">إعدادات النظام</h1>
+          <p class="text-sf-muted font-medium mt-1">تخصيص لوحة التحكم وقيم القوائم المنسدلة وتفضيلات الأمان واللغة بكل سهولة.</p>
+        </div>
       </header>
 
       <!-- Toast Notification -->
@@ -28,27 +38,29 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- Sidebar Tabs -->
-        <div class="lg:col-span-1 space-y-2">
+        <!-- Sidebar Tabs: Fully scrollable and responsive for mobile viewports -->
+        <div class="lg:col-span-1 flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none border-b border-sf-border/30 lg:border-b-0">
           <button (click)="activeTab.set('lists')"
                   [class]="activeTab() === 'lists' ? 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-sm font-bold transition-all text-right' : 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-sm font-bold transition-all text-right'">
-            <ng-icon name="heroSwatch"></ng-icon>
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
+            <ng-icon name="heroSwatch" class="text-lg"></ng-icon>
             قيم القوائم
           </button>
+          
           <button (click)="activeTab.set('regional')"
                   [class]="activeTab() === 'regional' ? 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-sm font-bold transition-all text-right' : 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-sm font-bold transition-all text-right'">
-            <ng-icon name="heroGlobeAlt"></ng-icon>
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
+            <ng-icon name="heroGlobeAlt" class="text-lg"></ng-icon>
             اللغة والمنطقة
           </button>
+          
           <button (click)="activeTab.set('security')"
                   [class]="activeTab() === 'security' ? 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-sm font-bold transition-all text-right' : 
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-sm font-bold transition-all text-right'">
-            <ng-icon name="heroShieldCheck"></ng-icon>
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
+            <ng-icon name="heroShieldCheck" class="text-lg"></ng-icon>
             الأمان والمصادقة
           </button>
         </div>
@@ -56,124 +68,202 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
         <!-- Content Area -->
         <div class="lg:col-span-3 space-y-8">
           
-          <!-- TAB 1: DROPDOWN VALUES -->
-          <div *ngIf="activeTab() === 'lists'" class="space-y-8 animate-fade-in">
-            <!-- Sale Sources -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
-              <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
-                <h3 class="text-lg font-display font-bold text-sf-text">مصادر المبيعات</h3>
-                <button (click)="openModal('saleSource')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 hover:bg-sf-primary/10 px-3 py-1.5 rounded-lg transition-all">
-                  <ng-icon name="heroPlus"></ng-icon>
-                  إضافة مصدر
-                </button>
-              </div>
+          <!-- TAB 1: DROPDOWN VALUES LISTS (Organized with premium nested segmented controls) -->
+          <div *ngIf="activeTab() === 'lists'" class="space-y-6 animate-fade-in">
+            <!-- Segmented Switcher for Nested Lists -->
+            <div class="flex items-center gap-1.5 p-1 bg-sf-surface border border-sf-border rounded-2xl overflow-x-auto scrollbar-none shadow-inner">
+              <button (click)="activeListSubTab.set('saleSource')"
+                      [class]="activeListSubTab() === 'saleSource' ? 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 bg-sf-primary text-white rounded-xl text-xs font-bold shadow-glow-sm whitespace-nowrap' : 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 text-sf-muted hover:text-sf-text rounded-xl text-xs font-bold transition-all whitespace-nowrap'">
+                <div class="flex items-center justify-center gap-2">
+                  <ng-icon name="heroSwatch"></ng-icon>
+                  مصادر المبيعات
+                </div>
+              </button>
               
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for (s of getSettingsByType('saleSource'); track s._id) {
-                  <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border group hover:border-sf-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                      <div class="w-2 h-2 rounded-full bg-sf-primary"></div>
-                      <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-sf-muted uppercase">{{ s.value }}</span>
-                      <button (click)="deleteSetting(s._id)" class="opacity-0 group-hover:opacity-100 p-1 text-sf-muted hover:text-sf-danger transition-all">
-                        <ng-icon name="heroXMark"></ng-icon>
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </section>
+              <button (click)="activeListSubTab.set('collectionPercentage')"
+                      [class]="activeListSubTab() === 'collectionPercentage' ? 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 bg-sf-primary text-white rounded-xl text-xs font-bold shadow-glow-sm whitespace-nowrap' : 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 text-sf-muted hover:text-sf-text rounded-xl text-xs font-bold transition-all whitespace-nowrap'">
+                <div class="flex items-center justify-center gap-2">
+                  <ng-icon name="heroSwatch"></ng-icon>
+                  نسب التحصيل
+                </div>
+              </button>
 
-            <!-- Collection Percentages -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
-              <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
-                <h3 class="text-lg font-display font-bold text-sf-text">نسب التحصيل</h3>
-                <button (click)="openModal('collectionPercentage')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 hover:bg-sf-primary/10 px-3 py-1.5 rounded-lg transition-all">
-                  <ng-icon name="heroPlus"></ng-icon>
-                  إضافة نسبة
-                </button>
-              </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for (s of getSettingsByType('collectionPercentage'); track s._id) {
-                  <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border group hover:border-sf-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                      <div class="w-2 h-2 rounded-full bg-sf-info"></div>
-                      <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-sf-muted uppercase">{{ s.value }}%</span>
-                      <button (click)="deleteSetting(s._id)" class="opacity-0 group-hover:opacity-100 p-1 text-sf-muted hover:text-sf-danger transition-all">
-                        <ng-icon name="heroXMark"></ng-icon>
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </section>
+              <button (click)="activeListSubTab.set('invoiceType')"
+                      [class]="activeListSubTab() === 'invoiceType' ? 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 bg-sf-primary text-white rounded-xl text-xs font-bold shadow-glow-sm whitespace-nowrap' : 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 text-sf-muted hover:text-sf-text rounded-xl text-xs font-bold transition-all whitespace-nowrap'">
+                <div class="flex items-center justify-center gap-2">
+                  <ng-icon name="heroSwatch"></ng-icon>
+                  طرق السداد
+                </div>
+              </button>
 
-            <!-- Invoice Types -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
-              <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
-                <h3 class="text-lg font-display font-bold text-sf-text">أنواع الفواتير وطرق السداد</h3>
-                <button (click)="openModal('invoiceType')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 hover:bg-sf-primary/10 px-3 py-1.5 rounded-lg transition-all">
-                  <ng-icon name="heroPlus"></ng-icon>
-                  إضافة نوع
-                </button>
-              </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for (s of getSettingsByType('invoiceType'); track s._id) {
-                  <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border group hover:border-sf-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                      <div class="w-2 h-2 rounded-full bg-sf-warning"></div>
-                      <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-sf-muted uppercase">{{ s.value }}</span>
-                      <button (click)="deleteSetting(s._id)" class="opacity-0 group-hover:opacity-100 p-1 text-sf-muted hover:text-sf-danger transition-all">
-                        <ng-icon name="heroXMark"></ng-icon>
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </section>
+              <button (click)="activeListSubTab.set('tax')"
+                      [class]="activeListSubTab() === 'tax' ? 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 bg-sf-primary text-white rounded-xl text-xs font-bold shadow-glow-sm whitespace-nowrap' : 
+                      'flex-1 min-w-[120px] sm:min-w-0 px-4 py-3 text-sf-muted hover:text-sf-text rounded-xl text-xs font-bold transition-all whitespace-nowrap'">
+                <div class="flex items-center justify-center gap-2">
+                  <ng-icon name="heroBriefcase"></ng-icon>
+                  الضرائب
+                </div>
+              </button>
+            </div>
 
-            <!-- System Taxes -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
-              <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
-                <h3 class="text-lg font-display font-bold text-sf-text">الضرائب المتاحة في النظام</h3>
-                <button (click)="openModal('tax')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 hover:bg-sf-primary/10 px-3 py-1.5 rounded-lg transition-all">
-                  <ng-icon name="heroPlus"></ng-icon>
-                  إضافة ضريبة جديدة
-                </button>
-              </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for (s of getSettingsByType('tax'); track s._id) {
-                  <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border group hover:border-sf-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                      <div class="w-2 h-2 rounded-full bg-sf-danger animate-pulse"></div>
-                      <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
-                    </div>
-                    <div class="flex items-center gap-3 font-mono-numbers">
-                      <span class="text-sm font-black text-sf-danger">{{ s.value }}%</span>
-                      <button (click)="deleteSetting(s._id)" class="opacity-0 group-hover:opacity-100 p-1 text-sf-muted hover:text-sf-danger transition-all">
-                        <ng-icon name="heroXMark"></ng-icon>
-                      </button>
-                    </div>
+            <!-- Subtab Content Display -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right animate-fade-in">
+              <!-- Sale Sources Container -->
+              <div *ngIf="activeListSubTab() === 'saleSource'" class="space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
+                  <div>
+                    <h3 class="text-lg font-display font-bold text-sf-text">مصادر المبيعات</h3>
+                    <p class="text-xs text-sf-muted mt-1">تحديد القنوات التسويقية ومصادر جلب العملاء الجدد.</p>
                   </div>
-                }
+                  <button (click)="openModal('saleSource')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 bg-sf-primary/5 hover:bg-sf-primary/10 px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                    <ng-icon name="heroPlus" class="text-sm"></ng-icon>
+                    إضافة مصدر
+                  </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  @for (s of getSettingsByType('saleSource'); track s._id) {
+                    <div class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-sf-primary"></div>
+                        <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-sf-muted uppercase tracking-wider bg-sf-surface border border-sf-border px-2 py-0.5 rounded-md">{{ s.value }}</span>
+                        <button (click)="deleteSetting(s._id)" class="opacity-100 lg:opacity-0 group-hover:opacity-100 p-1.5 text-sf-muted hover:text-sf-danger hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark"></ng-icon>
+                        </button>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-sf-muted">
+                      <ng-icon name="heroSwatch" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-semibold">لا يوجد مصادر مضافة بعد.</p>
+                    </div>
+                  }
+                </div>
               </div>
-            </section>
+
+              <!-- Collection Percentages Container -->
+              <div *ngIf="activeListSubTab() === 'collectionPercentage'" class="space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
+                  <div>
+                    <h3 class="text-lg font-display font-bold text-sf-text">نسب التحصيل</h3>
+                    <p class="text-xs text-sf-muted mt-1">النسب المئوية المستقطعة أو المعتمدة لتحصيل العمولات والمستحقات.</p>
+                  </div>
+                  <button (click)="openModal('collectionPercentage')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 bg-sf-primary/5 hover:bg-sf-primary/10 px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                    <ng-icon name="heroPlus" class="text-sm"></ng-icon>
+                    إضافة نسبة
+                  </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  @for (s of getSettingsByType('collectionPercentage'); track s._id) {
+                    <div class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-sf-info"></div>
+                        <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-sf-info font-mono">{{ s.value }}%</span>
+                        <button (click)="deleteSetting(s._id)" class="opacity-100 lg:opacity-0 group-hover:opacity-100 p-1.5 text-sf-muted hover:text-sf-danger hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark"></ng-icon>
+                        </button>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-sf-muted">
+                      <ng-icon name="heroSwatch" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-semibold">لا يوجد نسب تحصيل مضافة بعد.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Invoice/Payment Types Container -->
+              <div *ngIf="activeListSubTab() === 'invoiceType'" class="space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
+                  <div>
+                    <h3 class="text-lg font-display font-bold text-sf-text">طرق السداد المتاحة</h3>
+                    <p class="text-xs text-sf-muted mt-1">تحديد خيارات سداد الدفعات وأنواع عقود الفواتير المقبولة.</p>
+                  </div>
+                  <button (click)="openModal('invoiceType')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 bg-sf-primary/5 hover:bg-sf-primary/10 px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                    <ng-icon name="heroPlus" class="text-sm"></ng-icon>
+                    إضافة طريقة سداد
+                  </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  @for (s of getSettingsByType('invoiceType'); track s._id) {
+                    <div class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-sf-warning"></div>
+                        <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-sf-muted uppercase tracking-wider bg-sf-surface border border-sf-border px-2 py-0.5 rounded-md font-mono">{{ s.value }}</span>
+                        <button (click)="deleteSetting(s._id)" class="opacity-100 lg:opacity-0 group-hover:opacity-100 p-1.5 text-sf-muted hover:text-sf-danger hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark"></ng-icon>
+                        </button>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-sf-muted">
+                      <ng-icon name="heroSwatch" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-semibold">لا يوجد طرق سداد مضافة بعد.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- System Taxes Container -->
+              <div *ngIf="activeListSubTab() === 'tax'" class="space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-sf-border/30">
+                  <div>
+                    <h3 class="text-lg font-display font-bold text-sf-text">الضرائب المتاحة في النظام</h3>
+                    <p class="text-xs text-sf-muted mt-1">معدلات ونسب الضرائب المطبقة على عقود ومبيعات النظام.</p>
+                  </div>
+                  <button (click)="openModal('tax')" class="text-xs font-black text-sf-primary uppercase tracking-widest flex items-center gap-2 bg-sf-primary/5 hover:bg-sf-primary/10 px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                    <ng-icon name="heroPlus" class="text-sm"></ng-icon>
+                    إضافة ضريبة
+                  </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  @for (s of getSettingsByType('tax'); track s._id) {
+                    <div class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-sf-danger"></div>
+                        <span class="text-sm font-semibold text-sf-text">{{ s.label }}</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-sf-danger font-mono">{{ s.value }}%</span>
+                        <button (click)="deleteSetting(s._id)" class="opacity-100 lg:opacity-0 group-hover:opacity-100 p-1.5 text-sf-muted hover:text-sf-danger hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark"></ng-icon>
+                        </button>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-sf-muted">
+                      <ng-icon name="heroBriefcase" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-semibold">لا يوجد قيم ضرائب مضافة بعد.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- TAB 2: REGIONAL PREFERENCES -->
           <div *ngIf="activeTab() === 'regional'" class="space-y-8 animate-fade-in">
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
+            <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
               <div class="pb-4 border-b border-sf-border/30">
                 <h3 class="text-lg font-display font-bold text-sf-text">تفضيلات اللغة والمنطقة</h3>
                 <p class="text-xs text-sf-muted mt-1">تخصيص لغة النظام والعملة الافتراضية وصيغ العرض المفضلة لديك.</p>
@@ -184,7 +274,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <!-- Language Selection -->
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">اللغة المفضلة</label>
-                    <select formControlName="language" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                    <select formControlName="language" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                       <option value="ar">العربية (الأصلية)</option>
                       <option value="en">English (الإنجليزية)</option>
                     </select>
@@ -193,7 +283,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <!-- Currency Symbol -->
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">رمز العملة الافتراضي</label>
-                    <select formControlName="currency" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                    <select formControlName="currency" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                       <option value="EGP">جنيه مصري (EGP)</option>
                       <option value="USD">دولار أمريكي (USD)</option>
                     </select>
@@ -202,7 +292,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <!-- Timezone -->
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المنطقة الزمنية</label>
-                    <select formControlName="timezone" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                    <select formControlName="timezone" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                       <option value="Africa/Cairo">توقيت القاهرة (UTC+02:00)</option>
                       <option value="Asia/Riyadh">توقيت مكة المكرمة (UTC+03:00)</option>
                       <option value="UTC">التوقيت العالمي الموحد (UTC)</option>
@@ -212,9 +302,19 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <!-- Date Format -->
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">صيغة عرض التاريخ</label>
-                    <select formControlName="dateFormat" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                    <select formControlName="dateFormat" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                       <option value="YYYY-MM-DD">YYYY-MM-DD (2026-05-07)</option>
                       <option value="DD/MM/YYYY">DD/MM/YYYY (07/05/2026)</option>
+                    </select>
+                  </div>
+
+                  <!-- Active Quarter Selection -->
+                  <div class="space-y-2">
+                    <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الربع المالي النشط (المستهدف)</label>
+                    <select [value]="themeService.currentQuarter()" (change)="onQuarterChange($event)" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
+                      @for (q of themeService.availableQuarters(); track q) {
+                        <option [value]="q" [selected]="q === themeService.currentQuarter()">{{ formatQ(q) }}</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -232,7 +332,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
           <!-- TAB 3: SECURITY & AUTHENTICATION -->
           <div *ngIf="activeTab() === 'security'" class="space-y-8 animate-fade-in">
             <!-- Password Change -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
+            <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
               <div class="pb-4 border-b border-sf-border/30">
                 <h3 class="text-lg font-display font-bold text-sf-text">تغيير كلمة المرور</h3>
                 <p class="text-xs text-sf-muted mt-1">تأكد من استخدام كلمة مرور قوية وغير مكررة لحماية حسابك.</p>
@@ -243,17 +343,17 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">كلمة المرور الحالية</label>
                     <input type="password" formControlName="currentPassword" placeholder="••••••••"
-                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                   </div>
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">كلمة المرور الجديدة</label>
                     <input type="password" formControlName="newPassword" placeholder="••••••••"
-                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                   </div>
                   <div class="space-y-2">
                     <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">تأكيد كلمة المرور</label>
                     <input type="password" formControlName="confirmPassword" placeholder="••••••••"
-                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                           class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
                   </div>
                 </div>
 
@@ -267,7 +367,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
             </section>
 
             <!-- Advanced Security Toggles -->
-            <section class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
+            <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
               <div class="pb-4 border-b border-sf-border/30">
                 <h3 class="text-lg font-display font-bold text-sf-text">إعدادات الأمان المتقدمة</h3>
               </div>
@@ -291,7 +391,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                     <h4 class="text-sm font-bold text-sf-text">مدة بقاء الجلسة نشطة (Session Timeout)</h4>
                     <p class="text-xs text-sf-muted">يتم تسجيل الخروج تلقائياً في حال عدم وجود أي نشاط خلال الفترة المحددة.</p>
                   </div>
-                  <select (change)="updateSessionTimeout($event)" class="px-4 py-2 bg-sf-bg border border-sf-border rounded-xl text-xs font-semibold focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all">
+                  <select (change)="updateSessionTimeout($event)" class="px-4 py-2 bg-sf-bg border border-sf-border rounded-xl text-xs font-semibold focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all text-sf-text">
                     <option value="30">30 دقيقة</option>
                     <option value="60" selected>1 ساعة (الافتراضي)</option>
                     <option value="240">4 ساعات</option>
@@ -309,7 +409,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
                   <div class="space-y-3 mt-4">
                     <div class="flex items-center justify-between p-4 bg-sf-bg/50 rounded-2xl border border-sf-border">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-sf-primary/10 text-sf-primary flex items-center justify-center text-sm font-bold">PC</div>
+                        <div class="w-8 h-8 rounded-full bg-sf-primary/10 text-sf-primary flex items-center justify-center text-xs font-bold">PC</div>
                         <div class="space-y-0.5">
                           <span class="text-xs font-bold text-sf-text">Chrome on Windows (جهازك الحالي)</span>
                           <span class="text-[10px] text-sf-success font-semibold flex items-center gap-1">
@@ -323,7 +423,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
 
                     <div class="flex items-center justify-between p-4 bg-sf-bg/30 rounded-2xl border border-sf-border/50">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-sf-muted/10 text-sf-muted flex items-center justify-center text-sm font-bold">MB</div>
+                        <div class="w-8 h-8 rounded-full bg-sf-muted/10 text-sf-muted flex items-center justify-center text-xs font-bold">MB</div>
                         <div class="space-y-0.5">
                           <span class="text-xs font-bold text-sf-text">Safari on iPhone 15 Pro</span>
                           <span class="text-[10px] text-sf-muted font-semibold">منذ ساعتين</span>
@@ -343,7 +443,7 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
       <!-- Add Setting Modal -->
       <div *ngIf="showModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
         <div class="absolute inset-0 bg-sf-bg/80 backdrop-blur-md" (click)="closeModal()"></div>
-        <div class="glass-card w-full max-w-md p-8 rounded-[2rem] border border-sf-border shadow-2xl relative z-10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 text-right">
+        <div class="glass-card w-full max-w-md p-6 sm:p-8 rounded-[2rem] border border-sf-border shadow-2xl relative z-10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 text-right">
           <h2 class="text-2xl font-display font-bold text-sf-text mb-6">
             {{ getModalTitle() }}
           </h2>
@@ -352,13 +452,13 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الاسم (العرض)</label>
               <input type="text" formControlName="label" [placeholder]="getLabelPlaceholder()"
-                     class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                     class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
             </div>
 
             <div class="space-y-2">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">القيمة (النظام)</label>
               <input type="text" formControlName="value" [placeholder]="getValuePlaceholder()"
-                     class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold">
+                     class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text font-mono">
             </div>
 
             <div class="grid grid-cols-2 gap-4 mt-8">
@@ -381,14 +481,18 @@ import { heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, her
     .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .shadow-glow-purple { box-shadow: 0 0 15px rgba(147, 51, 234, 0.3); }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
   `]
 })
 export class SettingsComponent implements OnInit {
   private settingService = inject(SettingService);
   private fb = inject(FormBuilder);
+  public themeService = inject(ThemeService);
 
   settings = signal<Setting[]>([]);
   activeTab = signal<'lists' | 'regional' | 'security'>('lists');
+  activeListSubTab = signal<'saleSource' | 'collectionPercentage' | 'invoiceType' | 'tax'>('saleSource');
   showModal = signal(false);
   currentType = signal<string>('');
   saveSuccessMessage = signal<string | null>(null);
@@ -567,5 +671,14 @@ export class SettingsComponent implements OnInit {
       default:
         return 'أدخل القيمة البرمجية';
     }
+  }
+
+  onQuarterChange(event: any) {
+    this.themeService.setQuarter(event.target.value);
+    this.showToast('تم تغيير الربع المالي النشط بنجاح!');
+  }
+
+  formatQ(q: string): string {
+    return formatQuarter(q);
   }
 }

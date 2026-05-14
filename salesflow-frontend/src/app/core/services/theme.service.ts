@@ -56,6 +56,9 @@ export class ThemeService {
   }
 
   private loadQuarter(): string {
+    const stored = localStorage.getItem('sf_quarter');
+    if (stored) return stored;
+
     const now = new Date();
     const q = Math.ceil((now.getMonth() + 1) / 3);
     const current = `Q${q}-${now.getFullYear()}`;
