@@ -7,6 +7,7 @@ import { formatQuarter } from '@core/utils/quarter.utils';
 import { ApiResponse } from '@core/models/api-response.model';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { 
   heroChartBar, 
   heroArrowTrendingUp, 
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-target-list',
   standalone: true,
-  imports: [CommonModule, CurrencyEgpPipe, NgIconComponent],
+  imports: [CommonModule, CurrencyEgpPipe, NgIconComponent, TranslateModule],
   providers: [
     provideIcons({ 
       heroChartBar, 
@@ -46,8 +47,8 @@ import {
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">مستهدفات الأداء</h1>
-          <p class="text-sf-muted font-medium mt-1">متابعة تقدم الأفراد والفرق مقابل الأهداف الربعية.</p>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'target.title' | translate }}</h1>
+          <p class="text-sf-muted font-medium mt-1">{{ 'target.subtitle' | translate }}</p>
         </div>
         
         <div class="flex items-center gap-3">
@@ -67,7 +68,7 @@ import {
             <ng-icon name="heroChartBar" class="text-2xl"></ng-icon>
           </div>
           <div>
-            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">إجمالي مستهدف القسم</span>
+            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ 'target.total_dept' | translate }}</span>
             <span class="text-xl font-black text-sf-text">{{ data.totals.totalAdjustedTarget | currencyEgp }}</span>
           </div>
         </div>
@@ -77,7 +78,7 @@ import {
             <ng-icon name="heroArrowTrendingUp" class="text-2xl"></ng-icon>
           </div>
           <div>
-            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">التقدم الإجمالي</span>
+            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ 'target.overall_achievement' | translate }}</span>
             <span class="text-xl font-black text-sf-info">{{ data.totals.overallAchievementPercentage }}%</span>
           </div>
         </div>
@@ -87,7 +88,7 @@ import {
             <ng-icon name="heroUsers" class="text-2xl"></ng-icon>
           </div>
           <div>
-            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">موظفي المبيعات</span>
+            <span class="block text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ 'target.sales_employees' | translate }}</span>
             <span class="text-xl font-black text-sf-text">{{ data.employees.length }}</span>
           </div>
         </div>
@@ -98,7 +99,7 @@ import {
         <div class="p-6 border-b border-sf-border/30 bg-sf-surface/50 flex items-center justify-between">
           <h3 class="text-lg font-display font-bold text-sf-text flex items-center gap-3">
             <ng-icon name="heroUsers" class="text-sf-primary"></ng-icon>
-            تقدم موظفي المبيعات
+            {{ 'target.progress_title' | translate }}
           </h3>
           <span class="text-xs font-bold text-sf-muted uppercase tracking-widest">{{ formatQ(currentQuarter()) }}</span>
         </div>
@@ -114,14 +115,14 @@ import {
                   </div>
                   <div>
                     <h4 class="text-sm font-bold text-sf-text">{{ emp.employeeName }}</h4>
-                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ emp.teamName || 'بدون فريق' }}</span>
+                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ emp.teamName || ('target.no_team' | translate) }}</span>
                   </div>
                 </div>
 
                 <!-- Progress Bar -->
                 <div class="flex-1 w-full">
                   <div class="flex justify-between items-center mb-2">
-                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">نسبة الإنجاز</span>
+                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ 'target.achievement_rate' | translate }}</span>
                     <span class="text-xs font-black text-sf-primary">{{ emp.achievementPercentage }}%</span>
                   </div>
                   <div class="h-2 w-full bg-sf-bg rounded-full overflow-hidden border border-sf-border/50 shadow-inner">
@@ -133,11 +134,11 @@ import {
                 <!-- Stats -->
                 <div class="flex items-center gap-8 w-full md:w-auto md:min-w-[240px] justify-between">
                   <div class="flex flex-col">
-                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">المحقق</span>
+                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ 'target.achieved' | translate }}</span>
                     <span class="text-sm font-black text-sf-text">{{ emp.achievedSales | currencyEgp }}</span>
                   </div>
                   <div class="flex flex-col text-left">
-                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">المستهدف</span>
+                    <span class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ 'target.target' | translate }}</span>
                     <span class="text-sm font-black text-sf-subtle">{{ emp.adjustedTarget | currencyEgp }}</span>
                   </div>
                 </div>
@@ -155,7 +156,7 @@ import {
           } @empty {
             <div class="py-24 text-center opacity-30">
               <ng-icon name="heroChartBar" class="text-5xl mb-3"></ng-icon>
-              <p class="font-bold uppercase tracking-widest text-sm">لا توجد مستهدفات محددة لهذه الفترة</p>
+              <p class="font-bold uppercase tracking-widest text-sm">{{ 'target.no_data' | translate }}</p>
             </div>
           }
         </div>
@@ -166,7 +167,7 @@ import {
         <div class="absolute inset-0 bg-sf-bg/85 backdrop-blur-md" (click)="closeModal()"></div>
         <div class="glass-card w-full max-w-md p-8 rounded-[2rem] border border-sf-border shadow-2xl relative z-10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 text-right">
           <header class="flex items-center justify-between pb-4 border-b border-sf-border/30 mb-6">
-            <h3 class="text-xl font-display font-bold text-sf-text">تعديل المستهدف الربعي</h3>
+            <h3 class="text-xl font-display font-bold text-sf-text">{{ 'target.edit_title' | translate }}</h3>
             <button (click)="closeModal()" class="p-1.5 rounded-lg hover:bg-sf-surface text-sf-muted hover:text-sf-text transition-all">
               <ng-icon name="heroXMark" class="text-lg"></ng-icon>
             </button>
@@ -180,19 +181,19 @@ import {
               </div>
               <div>
                 <h4 class="text-sm font-bold text-sf-text">{{ selectedEmployee()?.employeeName }}</h4>
-                <p class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ selectedEmployee()?.teamName || 'بدون فريق' }}</p>
+                <p class="text-[10px] font-bold text-sf-muted uppercase tracking-tighter">{{ selectedEmployee()?.teamName || ('target.no_team' | translate) }}</p>
               </div>
             </div>
 
             <!-- Input Form Field -->
             <div class="space-y-2">
-              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف المالي الجديد (للفترة {{ formatQ(currentQuarter()) }})</label>
+              <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">{{ 'target.edit_label' | translate }}</label>
               <input type="number" 
                      [value]="editTargetValue()" 
                      (input)="onTargetValueChange($event)"
                      placeholder="مثال: 500000"
                      class="w-full px-4 py-3.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold font-mono-numbers text-sf-text">
-              <p class="text-[10px] text-sf-muted mr-1">اتركه فارغاً للرجوع للمستهدف الافتراضي للموظف.</p>
+              <p class="text-[10px] text-sf-muted mr-1">{{ 'target.edit_hint' | translate }}</p>
             </div>
 
             <!-- Error Message -->
@@ -204,14 +205,14 @@ import {
             <!-- Action Buttons -->
             <div class="grid grid-cols-2 gap-4 mt-8">
               <button type="button" (click)="closeModal()" class="py-4 rounded-2xl bg-sf-surface border border-sf-border text-sf-text font-bold hover:bg-sf-bg transition-all font-semibold">
-                إلغاء
+                {{ 'target.edit_cancel' | translate }}
               </button>
-              <button type="button" 
-                      (click)="saveTarget()" 
+              <button type="button"
+                      (click)="saveTarget()"
                       [disabled]="isSaving()"
                       class="py-4 rounded-2xl bg-sf-primary text-white font-bold shadow-glow-purple hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                 <ng-icon [name]="isSaving() ? 'heroFire' : 'heroCheck'" [class.animate-pulse]="isSaving()"></ng-icon>
-                <span>{{ isSaving() ? 'جاري الحفظ...' : 'تأكيد التعديل' }}</span>
+                <span>{{ isSaving() ? ('common.saving' | translate) : ('target.edit_confirm' | translate) }}</span>
               </button>
             </div>
           </div>
@@ -245,6 +246,7 @@ import {
 export class TargetListComponent {
   private http = inject(HttpClient);
   private themeService = inject(ThemeService);
+  private translate = inject(TranslateService);
 
   summary = signal<any>(null);
   currentQuarter = this.themeService.currentQuarter;
@@ -319,15 +321,15 @@ export class TargetListComponent {
         this.isSaving.set(false);
         if (res.success) {
           this.closeModal();
-          this.showToast('تم تحديث المستهدف الربعي بنجاح!');
+          this.showToast(this.translate.instant('target.updated_success'));
           this.loadSummary(this.currentQuarter());
         } else {
-          this.errorMessage.set(res.message || 'حدث خطأ أثناء حفظ المستهدف');
+          this.errorMessage.set(res.message || this.translate.instant('target.error_save'));
         }
       },
       error: err => {
         this.isSaving.set(false);
-        this.errorMessage.set(err.error?.message || 'حدث خطأ غير متوقع بالخادم');
+        this.errorMessage.set(err.error?.message || this.translate.instant('common.error_generic'));
       }
     });
   }

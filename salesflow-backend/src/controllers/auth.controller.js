@@ -39,4 +39,20 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { login, logout, getMe, changePassword };
+const updateAvatar = async (req, res, next) => {
+  try {
+    const { avatarUrl } = req.body;
+    const User = require('../models/user.model');
+    const updated = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatarUrl: avatarUrl ?? null },
+      { new: true }
+    ).select('-passwordHash');
+    if (!updated) return res.status(404).json({ success: false, message: 'User not found' });
+    return sendSuccess(res, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, logout, getMe, changePassword, updateAvatar };

@@ -21,6 +21,7 @@ const generateClaimForSale = async (sale, session) => {
       projectName:  sale.projectName,
       unitNumber:   sale.unitNumber,
       clientName:   sale.clientName,
+      quarterId:    sale.quarterId,
       commissionDue: sale.invoiceAmount,
       invoiceStatus: sale.invoiceStatus,
       expectedCollectionDate: sale.expectedCollectionDate,
@@ -39,7 +40,7 @@ const generateClaimForSale = async (sale, session) => {
 };
 
 const createSale = async (data) => {
-  return await runInTransaction(async (session) => {
+  const sale = await runInTransaction(async (session) => {
     // 1. Generate code & Detect quarter
     const saleNumber = await generateCode(Sale, 'saleNumber', 'SALE');
     const quarterId = getQuarterId(new Date(data.contractDate));
@@ -102,7 +103,7 @@ const createSale = async (data) => {
       });
     }
 
-    // Auto-generate claim if sale status is created as 'confirmed'
+    // Auto-generate claim if sale is created already confirmed
     if (sale.status === 'confirmed') {
       await generateClaimForSale(sale, session);
     }
@@ -110,6 +111,15 @@ const createSale = async (data) => {
     clearDashboardCache();
     return sale;
   });
+
+  // Fire-and-forget payout recording after the transaction commits
+  if (sale.status === 'collected') {
+    const commissionService = require('./commission.service');
+    commissionService.recordSaleCommissionPayouts(sale._id.toString())
+      .catch(err => console.error('[CommissionPayout] Failed for new sale', sale._id, err.message));
+  }
+
+  return sale;
 };
 
 const getSales = async (query) => {
@@ -151,7 +161,7 @@ const getSaleById = async (id) => {
 };
 
 const updateSale = async (id, data) => {
-  return await runInTransaction(async (session) => {
+  const result = await runInTransaction(async (session) => {
     const sale = await Sale.findById(id).session(session);
     if (!sale) throw new Error('Sale not found');
 
@@ -215,6 +225,15 @@ const updateSale = async (id, data) => {
 
     return updatedSale;
   });
+
+  // Fire-and-forget payout recording after the transaction commits
+  if (data.status === 'collected') {
+    const commissionService = require('./commission.service');
+    commissionService.recordSaleCommissionPayouts(id)
+      .catch(err => console.error('[CommissionPayout] Failed for sale', id, err.message));
+  }
+
+  return result;
 };
 
 const deleteSale = async (id) => {

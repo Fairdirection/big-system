@@ -13,5 +13,6 @@ router.use('/sales',     authMiddleware, require('./sale.routes'));
 router.use('/claims',    authMiddleware, require('./claim.routes'));
 router.use('/dashboard', authMiddleware, require('./dashboard.routes'));
 router.use('/targets',   authMiddleware, require('./target.routes'));
+router.use('/commissions', authMiddleware, require('./commission.routes'));
 
 module.exports = router;

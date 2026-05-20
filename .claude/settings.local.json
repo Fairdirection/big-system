@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FT 2025\\\\Music\\\\full_system\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(grep -E \"\\\\.js$|package\")",
+      "Bash(xargs -I {} basename {})",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FT 2025\\\\Music\\\\full_system\\\\salesflow-frontend\\\\src\" -Recurse)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String -Width 300)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\FT 2025\\\\Music\\\\full_system\\\\salesflow-frontend\\\\src\" -Recurse | ForEach-Object { $_.FullName } | Sort-Object)",
+      "Bash(npx ng *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(cd C:\\\\Users\\\\FT 2025\\\\Music\\\\full_system\\\\salesflow-backend *)",
+      "Bash(npm install *)",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}

@@ -9,6 +9,7 @@ const claimSchema = new mongoose.Schema({
   projectName:  { type: String },
   unitNumber:   { type: String },
   clientName:   { type: String },
+  quarterId:    { type: String, index: true },   // e.g. "Q2-2026"
 
   // Financial
   commissionDue:          { type: Number },

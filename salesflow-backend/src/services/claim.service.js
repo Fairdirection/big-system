@@ -46,6 +46,7 @@ const createClaim = async (data) => {
       projectName:  sale.projectName,
       unitNumber:   sale.unitNumber,
       clientName:   sale.clientName,
+      quarterId:    sale.quarterId,
       commissionDue: sale.invoiceAmount,
       invoiceStatus: sale.invoiceStatus,
       expectedCollectionDate: sale.expectedCollectionDate
@@ -67,9 +68,10 @@ const createClaim = async (data) => {
 };
 
 const getClaims = async (query) => {
-  const { search, status, page, limit } = query;
+  const { search, status, quarterId, page, limit } = query;
   const filter = { isActive: true };
   if (status) filter.status = status;
+  if (quarterId) filter.quarterId = quarterId;
   
   if (search) {
     filter.$or = [
@@ -92,6 +94,8 @@ const getClaimById = async (id) => {
   return await Claim.findById(id).populate('saleId');
 };
 
+const commissionService = require('./commission.service');
+
 const updateClaim = async (id, data) => {
   return await runInTransaction(async (session) => {
     const claim = await Claim.findById(id).session(session);
@@ -101,6 +105,8 @@ const updateClaim = async (id, data) => {
 
     if (data.status === 'collected') {
       await Sale.findByIdAndUpdate(claim.saleId, { status: 'collected' }, { session });
+      // Generate monthly minimum payouts for salespersons
+      await commissionService.recordSaleCommissionPayouts(claim.saleId);
     } else if (data.status && data.status !== 'collected') {
       await Sale.findByIdAndUpdate(claim.saleId, { status: 'claimed' }, { session });
     }

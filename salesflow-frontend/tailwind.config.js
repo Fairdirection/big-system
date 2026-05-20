@@ -30,6 +30,7 @@ module.exports = {
         'sf-warning': 'rgb(var(--sf-warning) / <alpha-value>)',
         'sf-info':    'rgb(var(--sf-info) / <alpha-value>)',
         'sf-error':   'rgb(var(--sf-error) / <alpha-value>)',
+        'sf-danger':  'rgb(var(--sf-error) / <alpha-value>)',  /* alias for sf-error */
 
         // Brand Neon Accents
         'neon': {

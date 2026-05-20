@@ -12,11 +12,12 @@ import { InputComponent } from '@shared/components/input/input.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle, heroXMark } from '@ng-icons/heroicons/outline';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-sale-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputComponent, NgIconComponent, CurrencyEgpPipe],
+  imports: [CommonModule, ReactiveFormsModule, InputComponent, NgIconComponent, CurrencyEgpPipe, TranslateModule],
   providers: [
     provideIcons({ heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, heroExclamationCircle, heroXMark })
   ],
@@ -31,7 +32,7 @@ import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, 
           </button>
           <div>
             <h1 class="text-2xl font-display font-bold text-sf-text">
-              {{ isEditMode() ? 'تعديل بيانات المبيعة' : 'إدخال مبيعة جديدة' }}
+              {{ isEditMode() ? ('sale.form.edit_title' | translate) : ('sale.form.add_title' | translate) }}
             </h1>
             <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest mt-0.5">
               {{ isEditMode() ? 'تحديث السجلات الحالية' : 'إضافة سجل مبيعات جديد' }}
@@ -49,13 +50,27 @@ import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, 
             } @else {
               <ng-icon name="heroCheck"></ng-icon>
             }
-            <span>حفظ النهائي</span>
+            <span>{{ 'sale.form.save_btn' | translate }}</span>
           </button>
         </div>
       </header>
 
       <!-- Progress Stepper Header -->
       <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-md mb-8">
+
+        <!-- Progress bar + step label -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between text-[10px] font-bold text-sf-muted mb-2">
+            <span>الخطوة {{ currentStep() }} من 4</span>
+            <span class="text-sf-primary">{{ stepNames[currentStep() - 1] }}</span>
+          </div>
+          <div class="h-1.5 bg-sf-elevated rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-l from-sf-primary to-sf-secondary rounded-full transition-all duration-500 ease-out"
+                 [style.width.%]="(currentStep() / 4) * 100">
+            </div>
+          </div>
+        </div>
+
         <div class="flex items-center justify-between relative">
           <!-- Connector line -->
           <div class="absolute top-1/2 left-4 right-4 h-0.5 bg-sf-border/50 -translate-y-1/2 z-0"></div>
@@ -349,7 +364,7 @@ import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, 
             @if (sellers.length > 0 && sellerTotalShare() !== 100) {
               <div class="p-3 bg-sf-error/10 border border-sf-error/20 rounded-xl text-sf-error text-xs font-bold flex items-center gap-2">
                 <ng-icon name="heroExclamationCircle"></ng-icon>
-                <span>تنبيه: يجب أن يكون إجمالي نسب المشاركة للبائعين مساويًا لـ 100% تمامًا (الحالي: {{ sellerTotalShare() }}%)</span>
+                <span>{{ 'sale.form.sellers_warning' | translate }}</span>
               </div>
             }
           </section>
@@ -619,7 +634,7 @@ import { heroChevronLeft, heroChevronRight, heroCheck, heroUserPlus, heroTrash, 
             } @else {
               <div class="p-4 bg-sf-error/10 border border-sf-error/20 rounded-2xl text-sf-error text-xs font-bold flex items-center gap-3 mt-6">
                 <ng-icon name="heroExclamationCircle" class="text-lg"></ng-icon>
-                <span>تنبيه: هناك بعض البيانات غير المكتملة أو الخاطئة في الخطوات السابقة، يرجى العودة وتعديلها.</span>
+                <span>{{ 'sale.form.form_warning' | translate }}</span>
               </div>
             }
           </div>
@@ -817,6 +832,9 @@ export class SaleFormComponent implements OnInit {
   private settingService = inject(SettingService);
   private toastService = inject(ToastService);
   private celebrationService = inject(CelebrationService);
+  private translate = inject(TranslateService);
+
+  readonly stepNames = ['البيانات الأساسية', 'توزيع العمولات', 'الحسابات والضرائب', 'المراجعة والتأكيد'];
 
   currentStep = signal(1);
   saleId: string | null = null;
@@ -1233,9 +1251,9 @@ export class SaleFormComponent implements OnInit {
     if (this.form.invalid || this.sellerTotalShare() !== 100) {
       this.form.markAllAsTouched();
       if (this.sellerTotalShare() !== 100) {
-        this.toastService.showWarning('تنبيه: يجب أن يكون مجموع نسب المشاركة للبائعين مساويًا لـ 100% تمامًا.');
+        this.toastService.showWarning(this.translate.instant('sale.form.sellers_warning'));
       } else {
-        this.toastService.showWarning('تنبيه: يرجى التحقق من ملء جميع الحقول المطلوبة بشكل صحيح قبل الحفظ.');
+        this.toastService.showWarning(this.translate.instant('sale.form.form_warning'));
       }
       return;
     }
@@ -1247,7 +1265,7 @@ export class SaleFormComponent implements OnInit {
 
     obs.subscribe({
       next: () => {
-        this.toastService.showSuccess(this.isEditMode() ? 'تم تحديث المبيعة وتعديل الحسابات بنجاح!' : 'تم حفظ المبيعة وتسوية العمولات بنجاح!');
+        this.toastService.showSuccess(this.translate.instant(this.isEditMode() ? 'sale.form.updated_success' : 'sale.form.saved_success'));
         
         if (!this.isEditMode()) {
           // Trigger the gorgeous confetti explosion & synthesized success sound

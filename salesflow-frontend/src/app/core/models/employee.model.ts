@@ -3,6 +3,7 @@ export type Department = 'Sales' | 'Accounting' | 'Operation' | 'HR' | 'Legal' |
 export interface Employee {
   _id: string;
   name: string;
+  avatarUrl?: string | null;
   employeeCode: string;
   department: Department;
   jobTitle: string;
@@ -12,7 +13,7 @@ export interface Employee {
   isActive: boolean;
   hireDate: string;
   terminationDate?: string;
-  endDate?: string;
+  endDate?: string | null;
   userId?: string;
   code: string;
   nationalId?: string;

@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, Input, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, Input, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { SaleService } from '@core/services/sale.service';
 import { ThemeService } from '@core/services/theme.service';
@@ -6,16 +7,19 @@ import { Sale } from '@core/models/sale.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroPlus, heroMagnifyingGlass, heroFunnel, heroChevronRight, heroEllipsisVertical, heroShoppingBag } from '@ng-icons/heroicons/outline';
+import { heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
 import { formatQuarter } from '@core/utils/quarter.utils';
+import { ListToolbarComponent, ToolbarStatusOption, ToolbarSortOption } from '@shared/components/list-toolbar/list-toolbar.component';
+import { PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-sale-list',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, ListToolbarComponent, PaginationComponent, TranslateModule],
   providers: [
-    provideIcons({ heroPlus, heroMagnifyingGlass, heroFunnel, heroChevronRight, heroEllipsisVertical, heroShoppingBag })
+    provideIcons({ heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -23,33 +27,41 @@ import { formatQuarter } from '@core/utils/quarter.utils';
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">تتبع المبيعات</h1>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'sale.list.title' | translate }}</h1>
           <p class="text-sf-muted font-medium mt-1">إدارة وتتبع جميع المبيعات المؤكدة والعمولات للربع الحالي.</p>
         </div>
         <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 shadow-glow-sm">
           <ng-icon name="heroPlus"></ng-icon>
-          <span>مبيعة جديدة</span>
+          <span>{{ 'sale.list.add' | translate }}</span>
         </button>
       </header>
 
-      <!-- Filters & Search -->
-      <div class="flex flex-col md:flex-row items-center gap-4 bg-sf-surface/50 p-4 rounded-2xl border border-sf-border shadow-xl backdrop-blur-md">
-        <div class="relative flex-1 w-full group">
-          <ng-icon name="heroMagnifyingGlass" class="absolute right-4 top-1/2 -translate-y-1/2 text-sf-muted group-focus-within:text-sf-primary transition-colors"></ng-icon>
-          <input type="text" (input)="onSearch($event)" placeholder="بحث برقم المبيعة، المشروع أو العميل..." 
-                 class="w-full pr-11 pl-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 transition-all outline-none">
-          <p class="absolute -bottom-5 right-2 text-[10px] text-sf-muted opacity-0 group-focus-within:opacity-100 transition-opacity">ابحث برقم الوحدة أو اسم المشروع للوصول للمبيعة المطلوبة.</p>
-        </div>
-        
-        <div class="flex items-center gap-3 w-full md:w-auto">
-          <select [value]="currentQuarter()" (change)="onQuarterChange($event)" 
-                  class="px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm font-bold text-sf-text focus:ring-2 focus:ring-sf-primary/50 outline-none w-full md:w-56 cursor-pointer">
-            @for (q of availableQuarters(); track q) {
-              <option [value]="q">{{ formatQ(q) }}</option>
-            }
-          </select>
-        </div>
+      <!-- Quarter selector (global, separate from toolbar) -->
+      <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sf-surface border border-sf-border
+                  shadow-sm self-start w-full sm:w-auto">
+        <ng-icon name="heroCalendar" class="text-sf-primary text-base flex-shrink-0"></ng-icon>
+        <p class="text-[10px] font-black text-sf-muted whitespace-nowrap">الربع المالي</p>
+        <select [value]="currentQuarter()" (change)="onQuarterChange($event)"
+                class="bg-transparent text-sf-text text-sm font-bold outline-none border-none cursor-pointer flex-1">
+          @for (q of availableQuarters(); track q) {
+            <option [value]="q" class="bg-sf-surface">{{ formatQ(q) }}</option>
+          }
+        </select>
       </div>
+
+      <!-- Unified Toolbar: search + status tabs + sort -->
+      <app-list-toolbar
+        placeholder="بحث برقم المبيعة، المشروع أو العميل..."
+        [statusOptions]="statusOptions"
+        [sortOptions]="sortOptions"
+        [activeStatus]="statusFilter()"
+        [activeSort]="sortBy()"
+        [count]="filteredSales().length"
+        [loading]="loading()"
+        (searchChange)="onSearch($event)"
+        (statusChange)="onStatusChange($event)"
+        (sortChange)="onSortChange($event)"
+      />
 
       <!-- Table -->
       <div class="glass-card rounded-2xl border border-sf-border shadow-2xl overflow-hidden">
@@ -98,7 +110,7 @@ import { formatQuarter } from '@core/utils/quarter.utils';
                     </div>
                   </td>
                   <td class="px-6 py-4">
-                    <app-badge [color]="getStatusColor(sale.status)">{{ translateStatus(sale.status) }}</app-badge>
+                    <app-badge [color]="getStatusColor(sale.status)">{{ 'sale.status.' + sale.status | translate }}</app-badge>
                   </td>
                   <td class="px-6 py-4 text-left">
                     <button class="p-2 text-sf-muted hover:text-sf-primary hover:bg-sf-primary/10 rounded-lg transition-all">
@@ -108,13 +120,18 @@ import { formatQuarter } from '@core/utils/quarter.utils';
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="px-6 py-24 text-center">
-                    <div class="flex flex-col items-center justify-center opacity-40">
-                      <div class="w-16 h-16 rounded-full bg-sf-bg flex items-center justify-center mb-4 border border-sf-border shadow-inner">
+                  <td colspan="6" class="px-6 py-20 text-center">
+                    <div class="flex flex-col items-center justify-center gap-3">
+                      <div class="w-16 h-16 rounded-2xl bg-sf-elevated border border-sf-border
+                                  flex items-center justify-center text-sf-subtle">
                         <ng-icon name="heroShoppingBag" class="text-2xl"></ng-icon>
                       </div>
-                      <h3 class="text-lg font-bold">لم يتم العثور على مبيعات</h3>
-                      <p class="text-sm">تأكد من اختيار الربع الصحيح أو حاول البحث بكلمة أخرى.</p>
+                      <div>
+                        <h3 class="text-base font-bold text-sf-text">{{ 'sale.list.no_data' | translate }}</h3>
+                        <p class="text-sm text-sf-muted mt-1">
+                          {{ statusFilter() !== 'all' ? ('sale.list.no_data' | translate) : ('sale.list.no_data' | translate) }}
+                        </p>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -124,25 +141,14 @@ import { formatQuarter } from '@core/utils/quarter.utils';
         </div>
         
         <!-- Pagination -->
-        <div class="px-6 py-4 bg-sf-surface/20 border-t border-sf-border flex items-center justify-between" *ngIf="totalPages() > 1 && !loading()">
-          <span class="text-xs font-bold text-sf-muted uppercase tracking-widest font-financial">
-            عرض {{ (currentPage() - 1) * limit() + 1 }} - {{ getMin(currentPage() * limit(), totalItems()) }} من أصل {{ totalItems() }} مبيعة
-          </span>
-          <div class="flex items-center gap-2">
-            <button (click)="prevPage()" 
-                    [disabled]="currentPage() === 1"
-                    class="p-2 bg-sf-bg border border-sf-border rounded-lg disabled:opacity-30 disabled:hover:text-sf-muted transition-all flex items-center justify-center active:scale-95 cursor-pointer">
-              <ng-icon name="heroChevronRight" class="rotate-180"></ng-icon>
-            </button>
-            <span class="px-3 py-1 bg-sf-primary/10 border border-sf-primary/20 rounded-lg text-xs font-black text-sf-primary font-financial">
-              الصفحة {{ currentPage() }} من {{ totalPages() }}
-            </span>
-            <button (click)="nextPage()" 
-                    [disabled]="currentPage() === totalPages()"
-                    class="p-2 bg-sf-bg border border-sf-border rounded-lg disabled:opacity-30 disabled:hover:text-sf-muted transition-all flex items-center justify-center active:scale-95 cursor-pointer">
-              <ng-icon name="heroChevronRight"></ng-icon>
-            </button>
-          </div>
+        <div class="p-4 border-t border-sf-border/50" *ngIf="!loading()">
+          <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalItems]="totalItems()"
+            [limit]="limit()"
+            (pageChange)="onPageChange($event)"
+          />
         </div>
       </div>
 
@@ -181,44 +187,88 @@ export class SaleListComponent {
 
   private saleService = inject(SaleService);
   private themeService = inject(ThemeService);
+  private destroyRef = inject(DestroyRef);
 
-  currentQuarter = this.themeService.currentQuarter;
+  currentQuarter    = this.themeService.currentQuarter;
   availableQuarters = this.themeService.availableQuarters;
-  
-  sales = signal<Sale[]>([]);
-  loading = signal(true);
-  searchQuery = signal('');
-  
-  // Computed Signal to bind directly to sales (backward-compatible)
-  filteredSales = computed(() => this.sales());
 
-  // Pagination Signals
+  sales        = signal<Sale[]>([]);
+  loading      = signal(true);
+  searchQuery  = signal('');
+  statusFilter = signal('all');
+  sortBy       = signal('newest');
+
+  filteredSales = computed(() => {
+    let list = this.sales();
+    const status = this.statusFilter();
+    const sort   = this.sortBy();
+
+    if (status !== 'all') {
+      list = list.filter(s => s.status === status);
+    }
+    if (sort === 'oldest') {
+      list = [...list].sort((a: any, b: any) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sort === 'highest') {
+      list = [...list].sort((a, b) => (b.grossCommissionWithVAT || 0) - (a.grossCommissionWithVAT || 0));
+    } else if (sort === 'lowest') {
+      list = [...list].sort((a, b) => (a.grossCommissionWithVAT || 0) - (b.grossCommissionWithVAT || 0));
+    }
+    return list;
+  });
+
   currentPage = signal(1);
-  limit = signal(10);
-  totalItems = signal(0);
-  totalPages = signal(1);
+  limit       = signal(10);
+  totalItems  = signal(0);
+  totalPages  = signal(1);
+
+  readonly statusOptions = [
+    { value: 'all',       label: 'الكل' },
+    { value: 'draft',     label: 'مسودة' },
+    { value: 'confirmed', label: 'مؤكدة' },
+    { value: 'claimed',   label: 'تمت المطالبة' },
+    { value: 'collected', label: 'محصلة' },
+  ];
+  readonly sortOptions = [
+    { value: 'newest',  label: 'الأحدث' },
+    { value: 'oldest',  label: 'الأقدم' },
+    { value: 'highest', label: 'أعلى قيمة' },
+    { value: 'lowest',  label: 'أقل قيمة' },
+  ];
 
   constructor() {
-    effect(() => {
-      this.loadSales(this.currentQuarter(), this.employeeId);
-    });
+    effect(() => { this.loadSales(this.currentQuarter(), this.employeeId); });
   }
 
-  onQuarterChange(event: any) {
+  onQuarterChange(event: Event) {
     this.currentPage.set(1);
-    this.themeService.setQuarter(event.target.value);
+    this.themeService.setQuarter((event.target as HTMLSelectElement).value);
+  }
+
+  onSearch(query: string) {
+    this.searchQuery.set(query);
+    this.currentPage.set(1);
+    this.loadSales(this.currentQuarter(), this.employeeId);
+  }
+
+  onStatusChange(status: string) { this.statusFilter.set(status); }
+  onSortChange(sort: string)     { this.sortBy.set(sort); }
+
+  onPageChange(page: number) {
+    this.currentPage.set(page);
+    this.loadSales(this.currentQuarter(), this.employeeId);
   }
 
   loadSales(quarterId: string, employeeId?: string) {
     this.themeService.loading.set(true);
-    this.loading.set(true); // local skeleton
+    this.loading.set(true);
     this.saleService.getSalesByQuarter(
-      quarterId, 
-      employeeId, 
-      this.currentPage(), 
-      this.limit(), 
-      this.searchQuery()
-    ).subscribe({
+      quarterId,
+      employeeId,
+      this.currentPage(),
+      this.limit(),
+      this.searchQuery(),
+    ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.themeService.loading.set(false);
         this.loading.set(false);
@@ -230,36 +280,14 @@ export class SaleListComponent {
           }
         }
       },
-      error: () => {
-        this.themeService.loading.set(false);
-        this.loading.set(false);
-      }
+      error: () => { this.themeService.loading.set(false); this.loading.set(false); },
     });
   }
 
-  onSearch(event: any) {
-    this.searchQuery.set(event.target.value);
-    this.currentPage.set(1); // Go back to first page when search changes
-    this.loadSales(this.currentQuarter(), this.employeeId);
-  }
-
-  nextPage() {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update((p: number) => p + 1);
-      this.loadSales(this.currentQuarter(), this.employeeId);
-    }
-  }
-
-  prevPage() {
-    if (this.currentPage() > 1) {
-      this.currentPage.update((p: number) => p - 1);
-      this.loadSales(this.currentQuarter(), this.employeeId);
-    }
-  }
-
-  getMin(a: number, b: number): number {
-    return Math.min(a, b);
-  }
+  // kept for backward-compat with any template using these directly
+  nextPage() { this.onPageChange(this.currentPage() + 1); }
+  prevPage()  { this.onPageChange(this.currentPage() - 1); }
+  getMin(a: number, b: number) { return Math.min(a, b); }
 
   translateStatus(status: string): string {
     switch (status) {

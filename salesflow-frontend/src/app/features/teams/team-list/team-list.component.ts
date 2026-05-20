@@ -1,21 +1,24 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { TeamService } from '@core/services/team.service';
 import { ThemeService } from '@core/services/theme.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroPlus, heroUserGroup, heroUser, heroTrophy, heroChevronRight, heroMagnifyingGlass, heroChartBar, heroUsers, heroTrash, heroPencilSquare } from '@ng-icons/heroicons/outline';
+import { heroPlus, heroUserGroup, heroUser, heroTrophy, heroChevronRight, heroChartBar, heroUsers, heroTrash, heroPencilSquare } from '@ng-icons/heroicons/outline';
+import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
 import { RouterLink, Router } from '@angular/router';
 import { forkJoin, map, of } from 'rxjs';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { ApiResponse } from '@core/models/api-response.model';
 import { Team } from '@core/models/team.model';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-team-list',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, RouterLink, CurrencyEgpPipe],
+  imports: [CommonModule, NgIconComponent, RouterLink, CurrencyEgpPipe, ListToolbarComponent, TranslateModule],
   providers: [
-    provideIcons({ heroPlus, heroUserGroup, heroUser, heroTrophy, heroChevronRight, heroMagnifyingGlass, heroChartBar, heroUsers, heroTrash, heroPencilSquare })
+    provideIcons({ heroPlus, heroUserGroup, heroUser, heroTrophy, heroChevronRight, heroChartBar, heroUsers, heroTrash, heroPencilSquare })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -23,12 +26,12 @@ import { Team } from '@core/models/team.model';
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">فرق المبيعات</h1>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'team.list.title' | translate }}</h1>
           <p class="text-sf-muted font-medium mt-1">إدارة هيكلة المجموعات ومتابعة أداء قادة الفرق في الربع الحالي.</p>
         </div>
         <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 shadow-glow-sm">
           <ng-icon name="heroPlus"></ng-icon>
-          <span>إنشاء فريق جديد</span>
+          <span>{{ 'team.list.add' | translate }}</span>
         </button>
       </header>
 
@@ -69,14 +72,13 @@ import { Team } from '@core/models/team.model';
         </div>
       </div>
 
-      <!-- Search & Filters -->
-      <div class="flex flex-col md:flex-row items-center gap-4 bg-sf-surface/50 p-4 rounded-2xl border border-sf-border shadow-xl backdrop-blur-md">
-        <div class="relative flex-1 w-full group">
-          <ng-icon name="heroMagnifyingGlass" class="absolute right-4 top-1/2 -translate-y-1/2 text-sf-muted group-focus-within:text-sf-primary transition-colors"></ng-icon>
-          <input type="text" (input)="onSearch($event)" placeholder="بحث باسم الفريق أو اسم القائد..." 
-                 class="w-full pr-11 pl-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 transition-all outline-none">
-        </div>
-      </div>
+      <!-- Toolbar -->
+      <app-list-toolbar
+        placeholder="بحث باسم الفريق أو اسم القائد..."
+        [count]="filteredTeams().length"
+        [loading]="loading()"
+        (searchChange)="onSearch($event)"
+      />
 
       <!-- Teams Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" *ngIf="!loading(); else skeleton">
@@ -167,7 +169,7 @@ import { Team } from '@core/models/team.model';
         } @empty {
           <div class="col-span-full py-32 flex flex-col items-center justify-center text-sf-muted border-2 border-dashed border-sf-border rounded-3xl bg-sf-surface/20">
             <ng-icon name="heroUserGroup" class="text-6xl mb-4 opacity-10"></ng-icon>
-            <h3 class="text-xl font-bold">لم يتم العثور على فرق</h3>
+            <h3 class="text-xl font-bold">{{ 'team.list.no_data' | translate }}</h3>
             <p class="text-sm font-medium">حاول تغيير كلمة البحث أو ابدأ بإنشاء فريق جديد.</p>
           </div>
         }
@@ -219,6 +221,7 @@ export class TeamListComponent implements OnInit {
   private teamService = inject(TeamService);
   private themeService = inject(ThemeService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
   
   teams = signal<Team[]>([]);
   searchTerm = signal('');
@@ -252,16 +255,13 @@ export class TeamListComponent implements OnInit {
 
   ngOnInit() {}
 
-  onSearch(event: Event) {
-    const val = (event.target as HTMLInputElement).value;
-    this.searchTerm.set(val);
-  }
+  onSearch(query: string) { this.searchTerm.set(query); }
 
   loadTeamsWithPerformance(quarterId: string) {
     this.themeService.loading.set(true);
     this.loading.set(true);
 
-    this.teamService.getTeams({ includePerformance: 'true', quarterId }).subscribe({
+    this.teamService.getTeams({ includePerformance: 'true', quarterId }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         if (res.success) {
           this.teams.set(res.data);
@@ -288,7 +288,7 @@ export class TeamListComponent implements OnInit {
     if (!id) return;
 
     this.themeService.loading.set(true);
-    this.teamService.deleteTeam(id).subscribe({
+    this.teamService.deleteTeam(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         if (res.success) {
           this.teams.update(prev => prev.filter(t => t._id !== id));

@@ -1,359 +1,438 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService, DashboardStats } from '@core/services/dashboard.service';
 import { ThemeService } from '@core/services/theme.service';
+import { AuthService } from '@core/services/auth.service';
+import { LanguageService } from '@core/services/language.service';
+import { TranslateModule } from '@ngx-translate/core';
 import { formatQuarter } from '@core/utils/quarter.utils';
 import { ApiResponse } from '@core/models/api-response.model';
 import { StatCardComponent } from '@shared/components/stat-card/stat-card.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
-import { 
-  heroBanknotes, 
-  heroChartBar, 
-  heroShoppingBag, 
+import {
+  heroBanknotes,
+  heroChartBar,
+  heroShoppingBag,
   heroClock,
   heroCheckCircle,
   heroArrowTrendingUp,
   heroInformationCircle,
   heroUsers,
-  heroBriefcase
+  heroBriefcase,
+  heroPlus,
+  heroDocumentText,
+  heroExclamationTriangle,
+  heroChevronLeft,
 } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, StatCardComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, StatCardComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, TranslateModule],
   providers: [
-    provideIcons({ 
-      heroBanknotes, 
-      heroChartBar, 
-      heroShoppingBag, 
-      heroClock,
-      heroCheckCircle,
-      heroArrowTrendingUp,
-      heroInformationCircle,
-      heroUsers,
-      heroBriefcase
+    provideIcons({
+      heroBanknotes, heroChartBar, heroShoppingBag, heroClock,
+      heroCheckCircle, heroArrowTrendingUp, heroInformationCircle,
+      heroUsers, heroBriefcase, heroPlus, heroDocumentText,
+      heroExclamationTriangle, heroChevronLeft,
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="space-y-8 animate-fade-in" *ngIf="stats() as data; else loading">
-      <!-- Header -->
+    <div class="space-y-6 animate-fade-in" *ngIf="stats() as data; else loadingSkeleton">
+
+      <!-- ── Header: Greeting + Quarter ───────────────────────────────── -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">لوحة التحكم</h1>
-            <div class="group relative">
-              <ng-icon name="heroInformationCircle" class="text-sf-muted cursor-help"></ng-icon>
-              <div class="absolute bottom-full right-0 mb-2 w-64 p-2 bg-sf-surface border border-sf-border rounded-lg shadow-xl text-[10px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
-                تعرض هذه اللوحة ملخصاً لأداء الشركة والموظفين والتحصيلات المالية للربع الحالي.
-              </div>
-            </div>
-          </div>
-          <p class="text-sf-muted mt-1 font-medium">مقاييس الأداء في الوقت الفعلي للربع الحالي.</p>
+          <p class="text-xs font-bold text-sf-muted uppercase tracking-widest mb-1">{{ currentDate }}</p>
+          <h1 class="text-2xl sm:text-3xl font-display font-black text-sf-text tracking-tight">
+            {{ greeting }}،
+            <span class="text-sf-primary">{{ (currentUser()?.name ?? 'مرحباً').split(' ')[0] }}</span>
+          </h1>
+          <p class="text-sf-muted font-medium mt-1 text-sm">مقاييس الأداء الفعلي · {{ formatQ(currentQuarter()) }}</p>
         </div>
-        
-        <div class="flex items-center gap-2 px-4 py-2 bg-sf-surface border border-sf-border rounded-xl shadow-sm">
-          <ng-icon name="heroClock" class="text-sf-primary"></ng-icon>
+
+        <!-- Quarter chip -->
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-sf-surface border border-sf-border
+                    rounded-xl shadow-sm self-start sm:self-auto">
+          <ng-icon name="heroClock" class="text-sf-primary text-base"></ng-icon>
           <span class="text-sm font-bold text-sf-text">{{ formatQ(currentQuarter()) }}</span>
         </div>
       </header>
-      
-      <!-- ... rest of template ... -->
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div class="relative group">
+
+      <!-- ── Quick Actions ──────────────────────────────────────────────── -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        @for (action of quickActions; track action.label) {
+          <a [routerLink]="action.link"
+             class="group flex items-center gap-3 p-4 glass-card rounded-2xl border border-sf-border
+                    hover:border-sf-primary/40 hover:bg-sf-primary/5 transition-all duration-200">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                        bg-sf-primary/10 text-sf-primary border border-sf-primary/20
+                        group-hover:bg-sf-primary group-hover:text-white group-hover:border-sf-primary
+                        transition-all duration-200">
+              <ng-icon [name]="action.icon" class="text-base"></ng-icon>
+            </div>
+            <span class="text-xs font-bold text-sf-text leading-tight">{{ action.label }}</span>
+          </a>
+        }
+      </div>
+
+      <!-- ── Needs Attention ────────────────────────────────────────────── -->
+      @if (needsAttention(data).length > 0) {
+        <div class="flex flex-wrap gap-2">
+          @for (item of needsAttention(data); track item.label) {
+            <a [routerLink]="item.link"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold
+                      transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+               [class.bg-sf-warning/10]="item.type === 'warning'"
+               [class.text-sf-warning]="item.type === 'warning'"
+               [class.border-sf-warning/30]="item.type === 'warning'"
+               [class.bg-sf-error/10]="item.type === 'error'"
+               [class.text-sf-error]="item.type === 'error'"
+               [class.border-sf-error/30]="item.type === 'error'">
+              <ng-icon [name]="item.icon" class="text-sm flex-shrink-0"></ng-icon>
+              <span>{{ item.label }}</span>
+              <ng-icon name="heroChevronLeft" class="text-[10px] opacity-60 flex-shrink-0"></ng-icon>
+            </a>
+          }
+        </div>
+      }
+
+      <!-- ── KPI Cards ──────────────────────────────────────────────────── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+        <div [style.animation-delay]="'0ms'">
           <app-stat-card
             title="إجمالي الإيرادات"
+            subtitle="العمولات المستحقة"
             [value]="data.totalRevenue"
             [isCurrency]="true"
             icon="heroBanknotes"
-            trend="+12.5%"
             color="purple"
-          ></app-stat-card>
-          <p class="absolute -bottom-5 right-2 text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity">إجمالي العمولات المستحقة</p>
+            [progress]="data.targetCompletion"
+          />
         </div>
 
-        <div class="relative group">
+        <div [style.animation-delay]="'80ms'">
           <app-stat-card
             title="إجمالي المبيعات"
+            subtitle="عدد الوحدات المباعة"
             [value]="data.totalSales"
             icon="heroShoppingBag"
-            trend="+4.2%"
             color="blue"
-          ></app-stat-card>
-          <p class="absolute -bottom-5 right-2 text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity">عدد الوحدات المباعة</p>
+          />
         </div>
 
-        <div class="relative group">
+        <div [style.animation-delay]="'160ms'">
           <app-stat-card
             title="تحقيق المستهدف"
+            subtitle="النسبة من الهدف الربعي"
             [value]="(data.targetCompletion || 0) + '%'"
             icon="heroArrowTrendingUp"
             color="pink"
-          ></app-stat-card>
-          <p class="absolute -bottom-5 right-2 text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity">النسبة مقارنة بالمستهدف</p>
+          />
         </div>
 
-        <div class="relative group">
+        <div [style.animation-delay]="'240ms'">
           <app-stat-card
             title="حجم المبيعات"
+            subtitle="إجمالي قيمة العقود"
             [value]="data.totalVolume"
             [isCurrency]="true"
             icon="heroBriefcase"
             color="blue"
-          ></app-stat-card>
-          <p class="absolute -bottom-5 right-2 text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity">إجمالي قيمة العقود (Unit Value)</p>
+          />
         </div>
 
-        <div class="relative group">
+        <div [style.animation-delay]="'320ms'">
           <app-stat-card
             title="العملاء النشطون"
+            subtitle="خدموا هذا الربع"
             [value]="data.totalClients"
             icon="heroUsers"
             color="cyan"
-          ></app-stat-card>
-          <p class="absolute -bottom-5 right-2 text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity">عدد العملاء الذين تمت خدمتهم</p>
+          />
         </div>
       </div>
 
-      <!-- Main Visual Analytics Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        <!-- Interactive Analytics Chart Card -->
-        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-sf-border shadow-sm space-y-6 relative overflow-hidden">
+      <!-- ── Analytics Row: Chart + Claims Ring + Target Ring ──────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- Performance Chart (span 2) -->
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-sf-border space-y-4 relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <h3 class="text-lg font-display font-bold text-sf-text">منحنى الأداء المالي التفاعلي</h3>
-              <span class="text-[10px] bg-sf-profit/10 text-sf-profit px-2 py-0.5 rounded-full font-bold">تحديث لحظي</span>
+            <div>
+              <h3 class="text-base font-display font-bold text-sf-text">منحنى الأداء المالي</h3>
+              <p class="text-[10px] text-sf-muted mt-0.5">بيانات الربع الحالي مقسمة شهرياً</p>
             </div>
-            
-            <!-- Metric Toggle Buttons -->
-            <div class="flex items-center gap-1.5 p-1 bg-sf-bg/50 border border-sf-border rounded-xl">
-              <button (click)="chartMetric.set('revenue')" 
+            <div class="flex items-center gap-1 p-1 bg-sf-bg/60 border border-sf-border rounded-xl">
+              <button (click)="chartMetric.set('revenue')"
                       [class.bg-sf-surface]="chartMetric() === 'revenue'"
                       [class.text-sf-primary]="chartMetric() === 'revenue'"
-                      [class.shadow-md]="chartMetric() === 'revenue'"
-                      class="px-3 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
+                      [class.shadow-sm]="chartMetric() === 'revenue'"
+                      class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
                 الإيرادات
               </button>
-              <button (click)="chartMetric.set('volume')" 
+              <button (click)="chartMetric.set('volume')"
                       [class.bg-sf-surface]="chartMetric() === 'volume'"
                       [class.text-sf-primary]="chartMetric() === 'volume'"
-                      [class.shadow-md]="chartMetric() === 'volume'"
-                      class="px-3 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
-                حجم المبيعات
+                      [class.shadow-sm]="chartMetric() === 'volume'"
+                      class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
+                الحجم
               </button>
             </div>
           </div>
 
-          <!-- SVG Chart Area -->
-          <div class="relative h-60 w-full flex items-center justify-center bg-sf-bg/20 rounded-2xl border border-sf-border/30 px-4">
+          <div class="relative h-52 w-full bg-sf-bg/20 rounded-xl border border-sf-border/30">
             @if (chartData().length > 0) {
               <svg class="w-full h-full" viewBox="0 0 500 200" preserveAspectRatio="none">
-                <!-- Definitions for beautiful premium gradients -->
                 <defs>
-                  <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="rgb(var(--sf-primary))" stop-opacity="0.25" />
-                    <stop offset="100%" stop-color="rgb(var(--sf-primary))" stop-opacity="0.00" />
+                  <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgb(var(--sf-primary))" stop-opacity="0.22" />
+                    <stop offset="100%" stop-color="rgb(var(--sf-primary))" stop-opacity="0" />
                   </linearGradient>
-                  <linearGradient id="curve-stroke-gradient" x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id="csg" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stop-color="rgb(var(--sf-primary))" />
                     <stop offset="100%" stop-color="rgb(var(--sf-secondary))" />
                   </linearGradient>
                 </defs>
-
-                <!-- Grid Lines -->
-                <line x1="50" y1="30" x2="450" y2="30" stroke="currentColor" class="text-sf-border/20" stroke-dasharray="4" />
+                <line x1="50" y1="30"  x2="450" y2="30"  stroke="currentColor" class="text-sf-border/20" stroke-dasharray="4" />
                 <line x1="50" y1="100" x2="450" y2="100" stroke="currentColor" class="text-sf-border/20" stroke-dasharray="4" />
                 <line x1="50" y1="170" x2="450" y2="170" stroke="currentColor" class="text-sf-border/30" />
-
-                <!-- Filled Area under the curve -->
-                <path [attr.d]="getChartAreaPoints()" fill="url(#chart-gradient)" class="transition-all duration-500 ease-out" />
-
-                <!-- Smooth Curve Line -->
-                <path [attr.d]="getChartPoints()" fill="none" stroke="url(#curve-stroke-gradient)" stroke-width="4" stroke-linecap="round" class="transition-all duration-500 ease-out filter drop-shadow-[0_4px_8px_rgba(var(--sf-primary),0.3)]" />
-
-                <!-- Data Points (Interactive Hover Targets) -->
+                <path [attr.d]="getChartAreaPoints()" fill="url(#cg)" class="transition-all duration-500" />
+                <path [attr.d]="getChartPoints()" fill="none" stroke="url(#csg)" stroke-width="3.5"
+                      stroke-linecap="round" class="transition-all duration-500" />
                 @for (d of chartData(); track $index; let i = $index) {
-                  @let coords = getPointCoords(i);
-                  <!-- Pulse effect on hover -->
+                  @let c = getPointCoords(i);
                   @if (hoveredIndex() === i) {
-                    <circle [attr.cx]="coords.x" [attr.cy]="coords.y" r="14" fill="rgb(var(--sf-primary))" fill-opacity="0.15" class="transition-all duration-300 pointer-events-none" />
-                    <circle [attr.cx]="coords.x" [attr.cy]="coords.y" r="8" fill="rgb(var(--sf-secondary))" class="transition-all duration-300 pointer-events-none" />
+                    <circle [attr.cx]="c.x" [attr.cy]="c.y" r="13" fill="rgb(var(--sf-primary))" fill-opacity="0.15" class="pointer-events-none" />
                   }
-                  <!-- Visible Data Point with dynamic radius based on hover -->
-                  <circle [attr.cx]="coords.x" [attr.cy]="coords.y" [attr.r]="hoveredIndex() === i ? 7 : 5" 
+                  <circle [attr.cx]="c.x" [attr.cy]="c.y" [attr.r]="hoveredIndex() === i ? 6 : 4"
                           fill="rgb(var(--sf-primary))" stroke="white" stroke-width="2"
-                          class="transition-all duration-300 pointer-events-none" />
-                  <!-- Large invisible hover target to prevent flickering and ease mouse interactions -->
-                  <circle [attr.cx]="coords.x" [attr.cy]="coords.y" r="20" fill="transparent" class="cursor-pointer"
-                          (mouseenter)="hoveredIndex.set(i)"
-                          (mouseleave)="hoveredIndex.set(null)" />
+                          class="transition-all duration-200 pointer-events-none" />
+                  <circle [attr.cx]="c.x" [attr.cy]="c.y" r="18" fill="transparent" class="cursor-pointer"
+                          (mouseenter)="hoveredIndex.set(i)" (mouseleave)="hoveredIndex.set(null)" />
                 }
               </svg>
 
-              <!-- Floating Tooltip Box (HTML) -->
               @if (hoveredIndex() !== null) {
-                @let activeIdx = hoveredIndex()!;
-                @let coords = getPointCoords(activeIdx);
-                @let activeItem = chartData()[activeIdx];
-                <div class="absolute glass-ultra p-3 rounded-2xl border border-sf-primary/40 shadow-premium pointer-events-none transition-all duration-200 z-30 flex flex-col gap-0.5 text-right"
-                     [style.left.%]="(coords.x / 500) * 100"
-                     [style.top.%]="(coords.y / 200) * 100"
-                     style="transform: translate(-50%, -125%);">
-                  <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">{{ activeItem.label }}</span>
-                  <span class="text-lg font-mono-numbers font-black text-sf-primary">
-                    {{ (chartMetric() === 'revenue' ? activeItem.revenue : activeItem.volume) | currencyEgp }}
-                  </span>
+                @let ai = hoveredIndex()!;
+                @let c  = getPointCoords(ai);
+                @let it = chartData()[ai];
+                <div class="absolute glass-ultra p-3 rounded-xl border border-sf-primary/30 shadow-xl
+                            pointer-events-none z-20 text-right"
+                     [style.left.%]="(c.x / 500) * 100"
+                     [style.top.%]="(c.y / 200) * 100"
+                     style="transform: translate(-50%, -120%);">
+                  <p class="text-[9px] font-black text-sf-muted uppercase tracking-widest">{{ it.label }}</p>
+                  <p class="text-base font-mono-numbers font-black text-sf-primary">
+                    {{ (chartMetric() === 'revenue' ? it.revenue : it.volume) | currencyEgp }}
+                  </p>
                 </div>
               }
 
-              <!-- X-Axis Labels -->
-              <div class="absolute bottom-2 left-4 right-4 flex justify-between px-6 text-[10px] font-bold text-sf-muted uppercase tracking-wider">
+              <div class="absolute bottom-2 left-4 right-4 flex justify-between px-4
+                          text-[10px] font-bold text-sf-muted">
                 @for (d of chartData(); track $index) {
                   <span>{{ d.label.split(' ')[0] }}</span>
                 }
               </div>
             } @else {
-              <div class="flex flex-col items-center justify-center opacity-40">
+              <div class="absolute inset-0 flex flex-col items-center justify-center opacity-30">
                 <ng-icon name="heroChartBar" class="text-3xl mb-2"></ng-icon>
-                <p class="text-xs">جاري تجهيز منحنى الأداء...</p>
+                <p class="text-xs">لا توجد بيانات بعد</p>
               </div>
             }
           </div>
         </div>
 
-        <!-- Claim Status Card -->
-        <div class="glass-card p-6 rounded-2xl border border-sf-border shadow-sm flex flex-col justify-between">
-          <div class="flex items-center gap-2 mb-4">
-            <h3 class="text-lg font-display font-bold text-sf-text">حالة التحصيل</h3>
-            <div class="group relative">
-              <ng-icon name="heroInformationCircle" class="text-sf-muted cursor-help size-4"></ng-icon>
-              <div class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-sf-surface border border-sf-border rounded-lg shadow-xl text-[9px] text-sf-muted opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
-                توضح هذه النسبة مقدار ما تم تحصيله فعلياً من العمولات المطالب بها.
-              </div>
-            </div>
-          </div>
-          
-          <div class="flex flex-col items-center justify-center py-2 flex-1">
-            <div class="relative w-36 h-36 flex items-center justify-center">
+        <!-- Claims Ring -->
+        <div class="glass-card p-6 rounded-2xl border border-sf-border flex flex-col">
+          <h3 class="text-sm font-display font-bold text-sf-text mb-1">حالة التحصيل</h3>
+          <p class="text-[10px] text-sf-muted mb-4">العمولات المطالب بها</p>
+
+          <div class="flex flex-col items-center flex-1 justify-center">
+            <div class="relative w-32 h-32">
               <svg class="w-full h-full -rotate-90">
-                <circle cx="72" cy="72" r="62" fill="transparent" stroke="currentColor" stroke-width="10" class="text-sf-bg"></circle>
-                <circle cx="72" cy="72" r="62" fill="transparent" stroke="currentColor" stroke-width="10" class="text-sf-primary"
-                        [attr.stroke-dasharray]="390"
-                        [attr.stroke-dashoffset]="390 - (390 * (data.collectedClaims || 0) / ((data.pendingClaims || 0) + (data.collectedClaims || 0) || 1))"
-                        stroke-linecap="round"></circle>
+                <circle cx="64" cy="64" r="54" fill="transparent" stroke="currentColor"
+                        stroke-width="10" class="text-sf-elevated" />
+                <circle cx="64" cy="64" r="54" fill="transparent" stroke="currentColor"
+                        stroke-width="10" class="text-sf-primary"
+                        [attr.stroke-dasharray]="339"
+                        [attr.stroke-dashoffset]="339 - (339 * (data.collectedClaims || 0) / ((data.pendingClaims || 0) + (data.collectedClaims || 0) || 1))"
+                        stroke-linecap="round"
+                        style="transition: stroke-dashoffset 1.2s ease-out;" />
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="text-xl font-display font-black text-sf-text font-mono-numbers">
+                <span class="text-xl font-black text-sf-text font-mono-numbers">
                   {{ (data.collectedClaims || 0) / ((data.pendingClaims || 0) + (data.collectedClaims || 0) || 1) | percent }}
                 </span>
-                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">تم التحصيل</span>
+                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">محصل</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 w-full gap-3 mt-6">
-              <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border flex flex-col items-center">
-                <span class="text-base font-bold text-sf-text font-mono-numbers">{{ data.collectedClaims }}</span>
-                <span class="text-[9px] font-black text-sf-success uppercase tracking-widest">محصلة</span>
+            <div class="grid grid-cols-2 w-full gap-2 mt-5">
+              <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border text-center">
+                <p class="text-base font-bold text-sf-success font-mono-numbers">{{ data.collectedClaims }}</p>
+                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">محصلة</p>
               </div>
-              <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border flex flex-col items-center">
-                <span class="text-base font-bold text-sf-text font-mono-numbers">{{ data.pendingClaims }}</span>
-                <span class="text-[9px] font-black text-sf-warning uppercase tracking-widest">قيد الانتظار</span>
+              <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border text-center">
+                <p class="text-base font-bold text-sf-warning font-mono-numbers">{{ data.pendingClaims }}</p>
+                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">معلقة</p>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Target Achievement Ring -->
+        <div class="glass-card p-6 rounded-2xl border border-sf-border flex flex-col">
+          <h3 class="text-sm font-display font-bold text-sf-text mb-1">إنجاز المستهدف</h3>
+          <p class="text-[10px] text-sf-muted mb-4">نسبة تحقيق الهدف الربعي</p>
+
+          <div class="flex flex-col items-center flex-1 justify-center">
+            <div class="relative w-32 h-32">
+              <svg class="w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="54" fill="transparent" stroke="currentColor"
+                        stroke-width="10" class="text-sf-elevated" />
+                <circle cx="64" cy="64" r="54" fill="transparent" stroke="currentColor"
+                        stroke-width="10"
+                        [class.text-sf-success]="(data.targetCompletion || 0) >= 90"
+                        [class.text-sf-warning]="(data.targetCompletion || 0) >= 60 && (data.targetCompletion || 0) < 90"
+                        [class.text-sf-error]="(data.targetCompletion || 0) < 60"
+                        [attr.stroke-dasharray]="339"
+                        [attr.stroke-dashoffset]="339 - (339 * (data.targetCompletion || 0) / 100)"
+                        stroke-linecap="round"
+                        style="transition: stroke-dashoffset 1.4s ease-out;" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-xl font-black text-sf-text font-mono-numbers">
+                  {{ data.targetCompletion || 0 }}%
+                </span>
+                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">المستهدف</span>
+              </div>
+            </div>
+
+            <p class="mt-5 text-xs font-bold text-center"
+               [class.text-sf-success]="(data.targetCompletion || 0) >= 90"
+               [class.text-sf-warning]="(data.targetCompletion || 0) >= 60 && (data.targetCompletion || 0) < 90"
+               [class.text-sf-error]="(data.targetCompletion || 0) < 60">
+              {{ getTargetLabel(data.targetCompletion || 0) }}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <!-- Row 4: Detailed Performance Grid -->
-      <div class="grid grid-cols-1 gap-8 pt-4">
-        <!-- Team Performance Full Width -->
-        <div class="glass-card p-6 rounded-2xl border border-sf-border shadow-sm">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-2">
-              <h3 class="text-lg font-display font-bold text-sf-text">أداء الفرق</h3>
-              <span class="text-[10px] bg-sf-primary/10 text-sf-primary px-2 py-0.5 rounded-full font-bold">موزع حسب الإيراد لموظفي السيلز</span>
-            </div>
-            <button class="text-xs font-bold text-sf-primary hover:underline uppercase tracking-wider">فلترة متقدمة</button>
+      <!-- ── Team Performance ───────────────────────────────────────────── -->
+      <div class="glass-card p-6 rounded-2xl border border-sf-border">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="text-base font-display font-bold text-sf-text">أداء الفرق</h3>
+            <p class="text-[10px] text-sf-muted mt-0.5">توزيع الإيراد حسب الفريق لموظفي السيلز</p>
           </div>
+          <span class="text-[10px] bg-sf-primary/10 text-sf-primary px-2.5 py-1 rounded-full font-black border border-sf-primary/20">
+            {{ formatQ(currentQuarter()) }}
+          </span>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            @for (team of data.teamPerformance; track team.teamName) {
-              <div class="group p-5 bg-sf-bg/30 border border-sf-border/30 rounded-2xl space-y-4 hover:border-sf-primary/40 transition-all duration-300">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-2.5 h-2.5 rounded-full bg-sf-primary shadow-glow-sm"></div>
-                    <span class="text-sm font-bold text-sf-text">{{ team.teamName }}</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          @for (team of data.teamPerformance; track team.teamName) {
+            <div class="group p-5 bg-sf-bg/40 border border-sf-border/40 rounded-2xl space-y-4
+                        hover:border-sf-primary/40 transition-all duration-200">
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-2 h-2 rounded-full bg-sf-primary"></div>
+                  <span class="text-sm font-bold text-sf-text">{{ team.teamName }}</span>
+                </div>
+                <span class="text-xs font-bold text-sf-primary font-mono-numbers">{{ team.revenue | currencyEgp }}</span>
+              </div>
+
+              <!-- Revenue share bar -->
+              <div class="space-y-1">
+                <div class="h-2 w-full bg-sf-elevated rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-sf-primary to-sf-secondary rounded-full
+                              transition-all duration-1000 ease-out"
+                       [style.width.%]="(team.revenue / (data.totalRevenue || 1)) * 100">
                   </div>
-                  <span class="text-xs font-bold text-sf-muted font-mono-numbers">{{ team.revenue | currencyEgp }}</span>
                 </div>
-                
-                <div class="h-2 w-full bg-sf-bg/50 rounded-full overflow-hidden border border-sf-border/30">
-                  <div class="h-full bg-gradient-to-r from-sf-primary to-sf-secondary shadow-premium transition-all duration-1000 ease-out"
-                       [style.width.%]="(team.revenue / (data.totalRevenue || 1)) * 100"></div>
-                </div>
-                
-                <div class="flex justify-between text-[10px] font-black text-sf-muted uppercase tracking-widest">
+                <div class="flex justify-between text-[9px] font-bold text-sf-muted uppercase">
                   <span>{{ team.salesCount }} مبيعة</span>
-                  <span class="text-sf-primary font-mono-numbers">
-                    {{ ((team.revenue / (data.totalRevenue || 1)) * 100) | number:'1.0-1' }}%
-                  </span>
+                  <span>{{ ((team.revenue / (data.totalRevenue || 1)) * 100) | number:'1.0-1' }}%</span>
                 </div>
+              </div>
 
-                <!-- Individual Members Progress (Quick View) -->
-                <div class="pt-4 border-t border-sf-border/20 space-y-3">
-                  <div class="text-[10px] font-black text-sf-muted uppercase tracking-widest mb-1">أداء بائعي الفريق:</div>
-                  @for (member of team.membersPerformance; track member.employeeId) {
-                    <div class="flex flex-col gap-1.5">
-                      <div class="flex justify-between items-center">
-                        <a [routerLink]="['/employees', member.employeeId]" 
-                           class="text-[10px] font-bold text-sf-text hover:text-sf-primary transition-colors cursor-pointer">
-                          {{ member.name }}
-                        </a>
-                        <span class="text-[9px] font-black text-sf-muted font-mono-numbers">{{ member.achievementPercentage }}%</span>
-                      </div>
-                      <div class="h-1.5 w-full bg-sf-bg/30 rounded-full overflow-hidden">
-                        <div class="h-full bg-sf-primary/60 transition-all duration-1000"
-                             [style.width.%]="member.achievementPercentage"></div>
+              <!-- Members -->
+              <div class="pt-3 border-t border-sf-border/30 space-y-2.5">
+                <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest">أداء الأعضاء</p>
+                @for (member of team.membersPerformance; track member.employeeId) {
+                  <div class="space-y-1">
+                    <div class="flex justify-between items-center">
+                      <a [routerLink]="['/employees', member.employeeId]"
+                         class="text-[10px] font-bold text-sf-text hover:text-sf-primary transition-colors">
+                        {{ member.name }}
+                      </a>
+                      <span class="text-[9px] font-black font-mono-numbers"
+                            [class.text-sf-success]="member.achievementPercentage >= 90"
+                            [class.text-sf-warning]="member.achievementPercentage >= 60 && member.achievementPercentage < 90"
+                            [class.text-sf-error]="member.achievementPercentage < 60">
+                        {{ member.achievementPercentage }}%
+                      </span>
+                    </div>
+                    <div class="h-1 w-full bg-sf-elevated rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all duration-1000"
+                           [class.bg-sf-success]="member.achievementPercentage >= 90"
+                           [class.bg-sf-warning]="member.achievementPercentage >= 60 && member.achievementPercentage < 90"
+                           [class.bg-sf-error]="member.achievementPercentage < 60"
+                           [style.width.%]="member.achievementPercentage">
                       </div>
                     </div>
-                  }
-                </div>
+                  </div>
+                }
               </div>
-            } @empty {
-              <div class="col-span-2 py-12 flex flex-col items-center justify-center text-sf-muted text-center">
-                <ng-icon name="heroChartBar" class="text-4xl mb-3 opacity-20"></ng-icon>
-                <p class="font-medium">لا توجد بيانات أداء متاحة حالياً.</p>
-                <p class="text-xs opacity-60">تأكد من إدخال مبيعات جديدة لظهور الإحصائيات.</p>
+            </div>
+          } @empty {
+            <div class="col-span-2 py-16 flex flex-col items-center justify-center gap-3">
+              <div class="w-14 h-14 rounded-2xl bg-sf-elevated border border-sf-border border-dashed
+                          flex items-center justify-center text-sf-subtle">
+                <ng-icon name="heroChartBar" class="text-xl"></ng-icon>
               </div>
-            }
+              <div class="text-center">
+                <p class="text-sm font-bold text-sf-text">لا توجد بيانات أداء</p>
+                <p class="text-xs text-sf-muted mt-1">أضف مبيعات جديدة لتظهر إحصائيات الفرق.</p>
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
-    </div>
 
-    <!-- Loading Skeleton Template -->
-    <ng-template #loading>
-      <div class="space-y-8 animate-pulse">
-        <header class="flex justify-between items-center">
-          <div class="space-y-2">
-            <div class="h-8 w-48 bg-sf-surface rounded-lg skeleton"></div>
-            <div class="h-4 w-64 bg-sf-surface rounded-lg skeleton"></div>
-          </div>
-          <div class="h-10 w-32 bg-sf-surface rounded-xl skeleton"></div>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="h-32 bg-sf-surface rounded-2xl border border-sf-border skeleton" *ngFor="let i of [1,2,3,4]"></div>
+    <!-- ── Loading Skeleton ───────────────────────────────────────────── -->
+    <ng-template #loadingSkeleton>
+      <div class="space-y-6">
+        <!-- Header skeleton -->
+        <div class="space-y-2">
+          <div class="h-3 w-32 skeleton rounded"></div>
+          <div class="h-8 w-64 skeleton rounded-lg"></div>
+          <div class="h-4 w-48 skeleton rounded"></div>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div class="lg:col-span-2 h-80 bg-sf-surface rounded-2xl border border-sf-border skeleton"></div>
-          <div class="h-80 bg-sf-surface rounded-2xl border border-sf-border skeleton"></div>
+        <!-- Quick actions skeleton -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="h-16 skeleton rounded-2xl" *ngFor="let i of [1,2,3,4]"></div>
         </div>
+        <!-- KPI cards skeleton -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="h-28 skeleton rounded-2xl" *ngFor="let i of [1,2,3,4,5]"></div>
+        </div>
+        <!-- Analytics skeleton -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div class="lg:col-span-2 h-72 skeleton rounded-2xl"></div>
+          <div class="h-72 skeleton rounded-2xl"></div>
+          <div class="h-72 skeleton rounded-2xl"></div>
+        </div>
+        <!-- Teams skeleton -->
+        <div class="h-64 skeleton rounded-2xl"></div>
       </div>
     </ng-template>
   `,
@@ -361,21 +440,69 @@ import {
 })
 export class DashboardComponent {
   private dashboardService = inject(DashboardService);
-  private themeService = inject(ThemeService);
-  
-  stats = signal<DashboardStats | null>(null);
-  currentQuarter = this.themeService.currentQuarter;
+  private themeService     = inject(ThemeService);
+  private authService      = inject(AuthService);
+  private langService      = inject(LanguageService);
 
-  // Reactive chart signals
-  chartMetric = signal<'revenue' | 'volume'>('revenue');
+  stats          = signal<DashboardStats | null>(null);
+  currentQuarter = this.themeService.currentQuarter;
+  currentUser    = this.authService.currentUser;
+
+  chartMetric  = signal<'revenue' | 'volume'>('revenue');
   hoveredIndex = signal<number | null>(null);
-  chartData = signal<Array<{ label: string; revenue: number; volume: number }>>([]);
+  chartData    = signal<Array<{ label: string; revenue: number; volume: number }>>([]);
+
+  readonly quickActions = [
+    { label: 'مبيعة جديدة',  icon: 'heroPlus',         link: '/sales/new' },
+    { label: 'المطالبات',     icon: 'heroDocumentText', link: '/claims' },
+    { label: 'المستهدفات',    icon: 'heroChartBar',     link: '/targets' },
+    { label: 'الفريق',        icon: 'heroUsers',        link: '/employees' },
+  ];
+
+  get greeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'صباح الخير';
+    if (h < 18) return 'مساء الخير';
+    return 'مساء النور';
+  }
+
+  get currentDate(): string {
+    return new Date().toLocaleDateString(this.langService.currentLocale(), {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+  }
+
+  needsAttention(data: DashboardStats): { icon: string; label: string; link: string; type: 'warning' | 'error' }[] {
+    const items: { icon: string; label: string; link: string; type: 'warning' | 'error' }[] = [];
+    if ((data.pendingClaims || 0) > 0) {
+      items.push({
+        icon: 'heroClock',
+        label: `${data.pendingClaims} مطالبة قيد الانتظار`,
+        link: '/claims',
+        type: 'warning',
+      });
+    }
+    if ((data.targetCompletion || 0) > 0 && (data.targetCompletion || 0) < 60) {
+      items.push({
+        icon: 'heroExclamationTriangle',
+        label: `إنجاز ${data.targetCompletion}% فقط من المستهدف`,
+        link: '/targets',
+        type: 'error',
+      });
+    }
+    return items;
+  }
+
+  getTargetLabel(pct: number): string {
+    if (pct >= 90) return 'ممتاز — تجاوزت المستهدف';
+    if (pct >= 70) return 'جيد — في المسار الصحيح';
+    if (pct >= 50) return 'متوسط — يحتاج جهداً';
+    if (pct > 0)   return 'دون المستوى — راجع الخطة';
+    return 'لا توجد بيانات بعد';
+  }
 
   constructor() {
-    // Reload stats whenever currentQuarter changes globally
-    effect(() => {
-      this.loadStats(this.currentQuarter());
-    });
+    effect(() => { this.loadStats(this.currentQuarter()); });
   }
 
   loadStats(quarterId: string) {

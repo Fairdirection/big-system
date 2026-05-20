@@ -7,14 +7,15 @@ import { TeamService } from '@core/services/team.service';
 import { ThemeService } from '@core/services/theme.service';
 import { InputComponent } from '@shared/components/input/input.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
+import { heroChevronLeft, heroCheck, heroArrowUpTray, heroTrash, heroCamera } from '@ng-icons/heroicons/outline';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-employee-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputComponent, NgIconComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputComponent, NgIconComponent, TranslateModule],
   providers: [
-    provideIcons({ heroChevronLeft, heroCheck })
+    provideIcons({ heroChevronLeft, heroCheck, heroArrowUpTray, heroTrash, heroCamera })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -25,7 +26,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
             <ng-icon name="heroChevronRight" class="text-xl"></ng-icon>
           </button>
           <h1 class="text-3xl font-display font-bold text-sf-text">
-            {{ isEditMode() ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد' }}
+            {{ isEditMode() ? ('employee.form.edit_title' | translate) : ('employee.form.add_title' | translate) }}
           </h1>
         </div>
         <div class="flex flex-col items-end gap-1">
@@ -33,7 +34,7 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                   class="btn btn-primary px-8 flex items-center gap-2">
             <ng-icon *ngIf="!isSubmitting()" name="heroCheck"></ng-icon>
             <span *ngIf="isSubmitting()" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            <span>{{ isSubmitting() ? 'جاري الحفظ...' : 'حفظ الموظف' }}</span>
+            <span>{{ isSubmitting() ? ('common.saving' | translate) : ('employee.form.save_btn' | translate) }}</span>
           </button>
           <p *ngIf="form.invalid && form.touched" class="text-[10px] text-sf-error font-bold">يرجى التأكد من ملء جميع الحقول المطلوبة بشكل صحيح.</p>
         </div>
@@ -46,6 +47,88 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
       </div>
 
       <form *ngIf="!isLoading(); else skeleton" [formGroup]="form" class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-8">
+
+        <!-- ── Avatar Upload ──────────────────────────────────── -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 pb-4 border-b border-sf-border/30">
+            <h3 class="text-lg font-display font-bold text-sf-text">صورة الموظف</h3>
+            <span class="text-[10px] font-bold text-sf-muted bg-sf-surface border border-sf-border px-2 py-0.5 rounded-full">اختياري</span>
+          </div>
+
+          <div class="flex items-center gap-6">
+            <!-- Drop Zone / Preview Circle -->
+            <div
+              (dragover)="onAvatarDragOver($event)"
+              (dragleave)="isDraggingAvatar.set(false)"
+              (drop)="onAvatarDrop($event)"
+              (click)="avatarFileInput.click()"
+              class="relative w-24 h-24 rounded-2xl flex-shrink-0 cursor-pointer group transition-all duration-200 select-none"
+              [class.ring-2]="isDraggingAvatar()"
+              [class.ring-sf-primary]="isDraggingAvatar()"
+              [class.scale-105]="isDraggingAvatar()">
+
+              @if (avatarPreview()) {
+                <!-- Has photo -->
+                <img [src]="avatarPreview()!"
+                     class="w-full h-full rounded-2xl object-cover border border-sf-border/40 shadow-md" />
+                <div class="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100
+                             flex items-center justify-center transition-opacity duration-200">
+                  <ng-icon name="heroCamera" class="text-white text-xl"></ng-icon>
+                </div>
+              } @else {
+                <!-- Empty zone -->
+                <div class="w-full h-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all duration-200"
+                     [class.border-sf-primary]="isDraggingAvatar()"
+                     [class.bg-sf-primary/5]="isDraggingAvatar()"
+                     [class.border-sf-border]="!isDraggingAvatar()"
+                     [class.bg-sf-surface]="!isDraggingAvatar()"
+                     [class.group-hover:border-sf-primary/60]="!isDraggingAvatar()">
+                  <ng-icon name="heroArrowUpTray" class="text-sf-muted text-xl group-hover:text-sf-primary transition-colors"></ng-icon>
+                  <span class="text-[9px] font-bold text-sf-muted group-hover:text-sf-primary transition-colors text-center leading-tight px-1">
+                    {{ isDraggingAvatar() ? 'أفلت هنا' : 'رفع صورة' }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Instructions + buttons -->
+            <div class="flex-1 space-y-3">
+              <div>
+                <p class="text-sm font-bold text-sf-text">{{ avatarPreview() ? 'تم اختيار الصورة' : 'اختر صورة للموظف' }}</p>
+                <p class="text-[11px] text-sf-muted mt-0.5">
+                  اسحب الصورة على المربع أو اضغط عليه لتصفح الملفات. JPG, PNG, WEBP — بحد أقصى 5 ميغابايت.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button type="button" (click)="avatarFileInput.click()"
+                        class="px-4 py-2 rounded-xl bg-sf-primary/10 hover:bg-sf-primary/20 border border-sf-primary/20
+                               text-sf-primary font-bold text-xs transition-all flex items-center gap-1.5">
+                  <ng-icon name="heroArrowUpTray" class="text-sm"></ng-icon>
+                  {{ avatarPreview() ? 'تغيير الصورة' : 'اختر صورة' }}
+                </button>
+
+                @if (avatarPreview()) {
+                  <button type="button" (click)="removeAvatar()"
+                          class="px-4 py-2 rounded-xl bg-sf-danger/10 hover:bg-sf-danger/20 border border-sf-danger/20
+                                 text-sf-danger font-bold text-xs transition-all flex items-center gap-1.5">
+                    <ng-icon name="heroTrash" class="text-sm"></ng-icon>
+                    حذف
+                  </button>
+                }
+              </div>
+
+              @if (avatarError()) {
+                <p class="text-xs font-bold text-sf-danger">{{ avatarError() }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- Hidden file input -->
+          <input #avatarFileInput type="file" accept="image/jpeg,image/png,image/webp"
+                 class="hidden" (change)="onAvatarFileSelected($event)" />
+        </section>
+
         <!-- Identity -->
         <section class="space-y-6">
           <div class="flex items-center gap-3 pb-4 border-b border-sf-border/30">
@@ -210,8 +293,14 @@ import { heroChevronLeft, heroCheck } from '@ng-icons/heroicons/outline';
                      [class.border-sf-border]="!isTeamMemberSelected(member._id)"
                      [class.bg-sf-surface]="!isTeamMemberSelected(member._id)">
                   <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
-                      {{ member.name.charAt(0) }}
+                    <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-sf-border">
+                      @if (member.avatarUrl) {
+                        <img [src]="member.avatarUrl" class="w-full h-full object-cover" />
+                      } @else {
+                        <div class="w-full h-full bg-sf-bg flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
+                          {{ member.name.charAt(0) }}
+                        </div>
+                      }
                     </div>
                     <div>
                       <span class="text-xs font-bold text-sf-text block">{{ member.name }}</span>
@@ -293,6 +382,7 @@ export class EmployeeFormComponent implements OnInit {
   private teamService = inject(TeamService);
   private cdr = inject(ChangeDetectorRef);
   private themeService = inject(ThemeService);
+  private translate = inject(TranslateService);
 
   form!: FormGroup;
   isSubmitting = signal(false);
@@ -300,6 +390,11 @@ export class EmployeeFormComponent implements OnInit {
   isEditMode = signal(false);
   errorMessage = signal<string | null>(null);
   employeeId: string | null = null;
+
+  // Avatar upload state
+  avatarPreview    = signal<string | null>(null);
+  isDraggingAvatar = signal(false);
+  avatarError      = signal<string | null>(null);
 
   teams = signal<any[]>([]);
   salesEmployees = signal<any[]>([]);
@@ -487,8 +582,12 @@ export class EmployeeFormComponent implements OnInit {
             phone: emp.phone,
             code: emp.code,
             currentTeamId: emp.currentTeamId?._id || emp.currentTeamId || null,
-            managerId: emp.managerId?._id || emp.managerId || this.ceoEmployee()?._id || '69f60230c2120b7ce02988dd'
+            managerId: emp.managerId?._id || emp.managerId || this.ceoEmployee()?._id || '69f60230c2120b7ce02988dd',
+            avatarUrl: emp.avatarUrl || null
           });
+          if (emp.avatarUrl) {
+            this.avatarPreview.set(emp.avatarUrl);
+          }
           this.department.set(emp.department || 'Sales');
           this.seniorityLevel.set(emp.seniorityLevel || 'Fresh');
           this.syncSalesManagerTeams();
@@ -520,7 +619,8 @@ export class EmployeeFormComponent implements OnInit {
       managerId: [this.ceoEmployee()?._id || '69f60230c2120b7ce02988dd'], // General Manager / CEO
       currentTeamId: [null],
       managedTeamIds: [[]],
-      teamMemberIds: [[]]
+      teamMemberIds: [[]],
+      avatarUrl: [null]
     });
 
     this.form.get('isActive')?.valueChanges.subscribe(active => {
@@ -563,6 +663,73 @@ export class EmployeeFormComponent implements OnInit {
       this.cdr.markForCheck();
     });
   }
+
+  // ── Avatar upload ────────────────────────────────────────────────
+  onAvatarDragOver(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.isDraggingAvatar.set(true);
+  }
+
+  onAvatarDrop(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.isDraggingAvatar.set(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) this.processAvatarFile(file);
+  }
+
+  onAvatarFileSelected(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) this.processAvatarFile(file);
+    (e.target as HTMLInputElement).value = '';
+  }
+
+  private processAvatarFile(file: File) {
+    this.avatarError.set(null);
+    if (!file.type.startsWith('image/')) {
+      this.avatarError.set('الملف المحدد ليس صورة. يرجى اختيار JPG أو PNG أو WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.avatarError.set('حجم الصورة يتجاوز الحد المسموح (5 ميغابايت).');
+      return;
+    }
+    this.compressAvatar(file).then(base64 => {
+      this.avatarPreview.set(base64);
+      this.form.get('avatarUrl')?.setValue(base64);
+      this.form.get('avatarUrl')?.markAsDirty();
+      this.cdr.markForCheck();
+    });
+  }
+
+  private compressAvatar(file: File, size = 256, quality = 0.88): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width  - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = url;
+    });
+  }
+
+  removeAvatar() {
+    this.avatarPreview.set(null);
+    this.form.get('avatarUrl')?.setValue(null);
+    this.form.get('avatarUrl')?.markAsDirty();
+    this.avatarError.set(null);
+  }
+  // ─────────────────────────────────────────────────────────────────
 
   isInvalid(controlName: string): boolean {
     const control = this.form.get(controlName);
@@ -631,11 +798,11 @@ export class EmployeeFormComponent implements OnInit {
         if (err.status === 409) {
           const msg = err.error?.message || '';
           if (msg.includes('nationalId')) {
-            this.errorMessage.set('الرقم القومي مسجل مسبقاً لموظف آخر.');
+            this.errorMessage.set(this.translate.instant('employee.form.duplicate_national_id'));
           } else if (msg.includes('email')) {
-            this.errorMessage.set('البريد الإلكتروني مسجل مسبقاً لموظف آخر.');
+            this.errorMessage.set(this.translate.instant('employee.form.duplicate_email'));
           } else {
-            this.errorMessage.set('هذه البيانات مسجلة مسبقاً.');
+            this.errorMessage.set(this.translate.instant('employee.form.duplicate_generic'));
           }
         } else if (err.status === 400) {
           const validationErrors = err.error?.errors;
@@ -652,12 +819,12 @@ export class EmployeeFormComponent implements OnInit {
               if (e.field === 'target') fieldArabic = 'المستهدف';
               return `(${fieldArabic}: ${e.message})`;
             }).join('، ');
-            this.errorMessage.set(`يرجى التأكد من صحة البيانات: ${msgs}`);
+            this.errorMessage.set(`${this.translate.instant('employee.form.validation_error')} ${msgs}`);
           } else {
-            this.errorMessage.set(err.error?.message || 'يرجى التأكد من صحة جميع البيانات المدخلة.');
+            this.errorMessage.set(err.error?.message || this.translate.instant('common.required_fields'));
           }
         } else {
-          this.errorMessage.set('حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.');
+          this.errorMessage.set(this.translate.instant('common.error_generic'));
         }
       }
     });

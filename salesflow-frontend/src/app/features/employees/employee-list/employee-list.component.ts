@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { EmployeeService } from '@core/services/employee.service';
@@ -8,18 +9,21 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroPlus,
-  heroMagnifyingGlass,
   heroIdentification,
   heroEnvelope,
   heroPhone,
   heroChevronRight,
   heroCalendarDays,
-  heroChartBar
+  heroChartBar,
+  heroSquares2x2,
+  heroTableCells,
 } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { environment } from '@env/environment';
 import { formatQuarter } from '@core/utils/quarter.utils';
+import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface EmployeeWithQuarterlyTarget extends Employee {
   _quarterlyTarget?: number | null;   // adjusted target for active quarter
@@ -29,17 +33,12 @@ interface EmployeeWithQuarterlyTarget extends Employee {
 @Component({
   selector: 'app-employee-list',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, ListToolbarComponent, TranslateModule],
   providers: [
     provideIcons({
-      heroPlus,
-      heroMagnifyingGlass,
-      heroIdentification,
-      heroEnvelope,
-      heroPhone,
-      heroChevronRight,
-      heroCalendarDays,
-      heroChartBar
+      heroPlus, heroIdentification, heroEnvelope, heroPhone,
+      heroChevronRight, heroCalendarDays, heroChartBar,
+      heroSquares2x2, heroTableCells,
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,71 +47,73 @@ interface EmployeeWithQuarterlyTarget extends Employee {
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-display font-bold text-sf-text tracking-tight">المؤسسة</h1>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'employee.list.title' | translate }}</h1>
           <p class="text-sf-muted font-medium mt-1 text-sm">إدارة أعضاء الفريق، الأقسام، ومستهدفات المبيعات.</p>
         </div>
         <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 self-start sm:self-auto">
           <ng-icon name="heroPlus"></ng-icon>
-          <span>إضافة موظف</span>
+          <span>{{ 'employee.list.add' | translate }}</span>
         </button>
       </header>
 
-      <!-- Filter Bar -->
-      <div class="flex flex-col gap-3 bg-sf-surface/50 p-4 rounded-2xl border border-sf-border shadow-xl">
-        <!-- Search -->
-        <div class="relative w-full group">
-          <ng-icon name="heroMagnifyingGlass" class="absolute right-4 top-1/2 -translate-y-1/2 text-sf-muted group-focus-within:text-sf-primary transition-colors text-lg"></ng-icon>
-          <input type="text" placeholder="بحث بالاسم، الكود أو البريد..."
-                 (input)="onSearch($event)"
-                 class="w-full pr-11 pl-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 transition-all outline-none">
+      <!-- Toolbar row: ListToolbar + View toggle -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
+        <div class="flex-1">
+          <app-list-toolbar
+            placeholder="بحث بالاسم، الكود أو البريد..."
+            [statusOptions]="statusOptions"
+            [activeStatus]="statusFilter()"
+            [count]="filteredEmployees().length"
+            [loading]="loading()"
+            (searchChange)="onSearch($event)"
+            (statusChange)="changeStatusFilter($event)"
+          />
         </div>
 
-        <!-- Status + count row -->
-        <div class="flex flex-wrap items-center gap-3">
-          <!-- Status Filter Tabs -->
-          <div class="flex items-center gap-1 bg-sf-bg p-1 rounded-xl border border-sf-border flex-1 min-w-0 overflow-x-auto">
-            <button (click)="changeStatusFilter('active')"
-                    [class]="statusFilter() === 'active' ? 'flex-1 px-3 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm whitespace-nowrap' : 'flex-1 px-3 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all whitespace-nowrap'">
-              النشطون
-            </button>
-            <button (click)="changeStatusFilter('inactive')"
-                    [class]="statusFilter() === 'inactive' ? 'flex-1 px-3 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm whitespace-nowrap' : 'flex-1 px-3 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all whitespace-nowrap'">
-              غير النشطين
-            </button>
-            <button (click)="changeStatusFilter('all')"
-                    [class]="statusFilter() === 'all' ? 'flex-1 px-3 py-1.5 bg-sf-primary text-white rounded-lg text-xs font-bold transition-all shadow-glow-sm whitespace-nowrap' : 'flex-1 px-3 py-1.5 text-sf-muted hover:text-sf-text rounded-lg text-xs font-bold transition-all whitespace-nowrap'">
-              الكل
-            </button>
-          </div>
-
-          <!-- Total + Quarter badges -->
-          <div class="flex items-center gap-2 shrink-0">
-            <div class="px-3 py-2 bg-sf-bg border border-sf-border rounded-xl text-xs font-semibold text-sf-text whitespace-nowrap">
-              <span class="text-sf-muted ml-1">الإجمالي:</span>{{ filteredEmployees().length }}
-            </div>
-            <div class="px-3 py-2 bg-sf-primary/10 border border-sf-primary/20 rounded-xl text-xs font-bold text-sf-primary whitespace-nowrap">
-              {{ formatQ(currentQuarter()) }}
-            </div>
-          </div>
+        <!-- View toggle -->
+        <div class="flex items-center gap-1 p-1 bg-sf-surface border border-sf-border rounded-2xl self-start flex-shrink-0 h-[50px] mt-0.5">
+          <button (click)="viewMode.set('card')"
+                  class="p-2 rounded-xl transition-all duration-200"
+                  [class.bg-sf-primary]="viewMode() === 'card'"
+                  [class.text-white]="viewMode() === 'card'"
+                  [class.text-sf-muted]="viewMode() !== 'card'"
+                  title="عرض البطاقات">
+            <ng-icon name="heroSquares2x2" class="text-lg"></ng-icon>
+          </button>
+          <button (click)="viewMode.set('table')"
+                  class="p-2 rounded-xl transition-all duration-200"
+                  [class.bg-sf-primary]="viewMode() === 'table'"
+                  [class.text-white]="viewMode() === 'table'"
+                  [class.text-sf-muted]="viewMode() !== 'table'"
+                  title="عرض القائمة">
+            <ng-icon name="heroTableCells" class="text-lg"></ng-icon>
+          </button>
         </div>
       </div>
 
-      <!-- Employee Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6" *ngIf="!loading(); else skeleton">
+      <!-- Employee Grid (card view) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
+           *ngIf="!loading() && viewMode() === 'card'; else tableOrSkeleton">
         @for (emp of filteredEmployees(); track emp._id) {
           <div class="glass-card p-5 rounded-2xl border border-sf-border shadow-xl hover:border-sf-primary/50 transition-all group cursor-pointer flex flex-col gap-4"
                [routerLink]="[emp._id]">
 
             <!-- Top Row: Avatar + Name + Badge -->
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-11 h-11 rounded-xl bg-gradient-purple flex items-center justify-center text-white text-lg font-display font-black shadow-glow-sm shrink-0">
-                {{ emp.name.charAt(0) }}
+              <div class="w-11 h-11 rounded-xl shrink-0 overflow-hidden shadow-glow-sm">
+                @if (emp.avatarUrl) {
+                  <img [src]="emp.avatarUrl" class="w-full h-full object-cover" />
+                } @else {
+                  <div class="w-full h-full bg-gradient-purple flex items-center justify-center text-white text-lg font-display font-black">
+                    {{ emp.name.charAt(0) }}
+                  </div>
+                }
               </div>
               <div class="flex-1 min-w-0">
                 <h3 class="text-sm font-bold text-sf-text group-hover:text-sf-primary transition-colors truncate leading-tight">{{ emp.name }}</h3>
                 <span class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ emp.code }}</span>
               </div>
-              <app-badge [color]="emp.isActive ? 'success' : 'gray'" class="shrink-0">{{ emp.isActive ? 'نشط' : 'غير نشط' }}</app-badge>
+              <app-badge [color]="emp.isActive ? 'success' : 'gray'" class="shrink-0">{{ emp.isActive ? ('common.status_active' | translate) : ('common.status_inactive' | translate) }}</app-badge>
             </div>
 
             <!-- Department & Seniority -->
@@ -143,7 +144,7 @@ interface EmployeeWithQuarterlyTarget extends Employee {
               <div class="flex flex-col gap-0.5 min-w-0">
                 <span class="text-[9px] font-bold text-sf-muted uppercase tracking-tighter flex items-center gap-1">
                   <ng-icon name="heroCalendarDays" class="text-sf-primary shrink-0"></ng-icon>
-                  تاريخ التعيين
+                  {{ 'employee.list.hire_date' | translate }}
                 </span>
                 <span class="text-sm font-semibold text-sf-text truncate">{{ emp.hireDate | date:'dd/MM/yyyy' }}</span>
               </div>
@@ -164,7 +165,7 @@ interface EmployeeWithQuarterlyTarget extends Employee {
                 </button>
               </div>
               <button class="flex items-center gap-1 text-[10px] font-black text-sf-primary uppercase tracking-widest group-hover:gap-2 transition-all shrink-0">
-                الملف الشخصي
+                {{ 'employee.detail.edit_btn' | translate }}
                 <ng-icon name="heroChevronRight" class="rotate-180 text-sm"></ng-icon>
               </button>
             </div>
@@ -174,11 +175,79 @@ interface EmployeeWithQuarterlyTarget extends Employee {
             <div class="w-20 h-20 rounded-full bg-sf-surface flex items-center justify-center mb-6 border border-sf-border border-dashed animate-pulse">
               <ng-icon name="heroIdentification" class="text-4xl opacity-20"></ng-icon>
             </div>
-            <h3 class="text-xl font-bold">لم يتم العثور على موظفين</h3>
+            <h3 class="text-xl font-bold">{{ 'employee.list.no_data' | translate }}</h3>
             <p class="text-sm mt-1">تأكد من كتابة الاسم بشكل صحيح أو ابدأ بإضافة موظفين جدد.</p>
           </div>
         }
       </div>
+
+      <!-- Table view / Skeleton -->
+      <ng-template #tableOrSkeleton>
+        <ng-container *ngIf="!loading(); else skeleton">
+          <!-- Table view -->
+          <div class="glass-card rounded-2xl border border-sf-border overflow-hidden" *ngIf="viewMode() === 'table'">
+            <div class="overflow-x-auto">
+              <table class="w-full text-right border-collapse table-compact table-sticky-header">
+                <thead>
+                  <tr class="bg-sf-surface/50 border-b border-sf-border">
+                    <th>{{ 'employee.list.title' | translate }}</th>
+                    <th>القسم والمستوى</th>
+                    <th class="text-left">{{ 'employee.list.target_progress' | translate }}</th>
+                    <th>{{ 'employee.list.hire_date' | translate }}</th>
+                    <th>{{ 'employee.list.status' | translate }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-sf-border/40">
+                  @for (emp of filteredEmployees(); track emp._id) {
+                    <tr class="group row-financial-hover cursor-pointer" [routerLink]="[emp._id]">
+                      <td class="px-6 py-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden">
+                            @if (emp.avatarUrl) {
+                              <img [src]="emp.avatarUrl" class="w-full h-full object-cover" />
+                            } @else {
+                              <div class="w-full h-full bg-gradient-purple flex items-center justify-center text-white text-sm font-black">
+                                {{ emp.name.charAt(0) }}
+                              </div>
+                            }
+                          </div>
+                          <div>
+                            <p class="text-sm font-bold text-sf-text group-hover:text-sf-primary transition-colors">{{ emp.name }}</p>
+                            <p class="text-[10px] font-bold text-sf-muted uppercase tracking-widest">{{ emp.code }}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-3">
+                        <p class="text-sm font-medium text-sf-text">{{ translateDepartment(emp.department) }}</p>
+                        <p class="text-xs text-sf-muted">{{ translateSeniority(emp.seniorityLevel) }}</p>
+                      </td>
+                      <td class="px-6 py-3 text-left font-mono-numbers">
+                        <span class="text-sm font-bold text-sf-text">{{ getEffectiveTarget(emp) | currencyEgp }}</span>
+                      </td>
+                      <td class="px-6 py-3">
+                        <span class="text-sm font-medium text-sf-muted">{{ emp.hireDate | date:'dd/MM/yyyy' }}</span>
+                      </td>
+                      <td class="px-6 py-3">
+                        <app-badge [color]="emp.isActive ? 'success' : 'gray'">{{ emp.isActive ? ('common.status_active' | translate) : ('common.status_inactive' | translate) }}</app-badge>
+                      </td>
+                      <td class="px-6 py-3 text-left">
+                        <ng-icon name="heroChevronRight" class="text-sf-muted rotate-180 text-sm"></ng-icon>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="py-16 text-center text-sf-muted">
+                        <p class="font-bold">{{ 'employee.list.no_data' | translate }}</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-template>
 
       <!-- Skeleton Loader -->
       <ng-template #skeleton>
@@ -201,13 +270,21 @@ export class EmployeeListComponent implements OnInit {
   private employeeService = inject(EmployeeService);
   private themeService = inject(ThemeService);
   private http = inject(HttpClient);
+  private destroyRef = inject(DestroyRef);
 
-  employees = signal<EmployeeWithQuarterlyTarget[]>([]);
-  searchTerm = signal('');
-  statusFilter = signal<'active' | 'inactive' | 'all'>('active');
-  loading = signal(true);
+  employees         = signal<EmployeeWithQuarterlyTarget[]>([]);
+  searchTerm        = signal('');
+  statusFilter      = signal<'active' | 'inactive' | 'all'>('active');
+  loading           = signal(true);
   filteredEmployees = signal<EmployeeWithQuarterlyTarget[]>([]);
-  currentQuarter = this.themeService.currentQuarter;
+  viewMode          = signal<'card' | 'table'>('card');
+  currentQuarter    = this.themeService.currentQuarter;
+
+  readonly statusOptions = [
+    { value: 'active',   label: 'النشطون' },
+    { value: 'inactive', label: 'غير النشطين' },
+    { value: 'all',      label: 'الكل' },
+  ];
 
   constructor() {
     effect(() => {
@@ -223,7 +300,7 @@ export class EmployeeListComponent implements OnInit {
     this.themeService.loading.set(true);
     this.loading.set(true);
 
-    this.employeeService.getEmployees().subscribe({
+    this.employeeService.getEmployees().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: res => {
         if (res.success) {
           const baseEmployees: EmployeeWithQuarterlyTarget[] = res.data.map(e => ({
@@ -249,7 +326,7 @@ export class EmployeeListComponent implements OnInit {
 
   loadQuarterlyTargets(baseEmployees: EmployeeWithQuarterlyTarget[], quarterId: string) {
     // Fetch the fast target overrides which contains per-employee quarterly targets
-    this.http.get<any>(`${environment.apiUrl}/targets/overrides`, { params: { quarterId } }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/targets/overrides`, { params: { quarterId } }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.themeService.loading.set(false);
         this.loading.set(false);
@@ -291,13 +368,13 @@ export class EmployeeListComponent implements OnInit {
     return emp.target ?? 0;
   }
 
-  onSearch(event: any) {
-    this.searchTerm.set(event.target.value.toLowerCase());
+  onSearch(query: string) {
+    this.searchTerm.set(query.toLowerCase());
     this.applyFilters();
   }
 
-  changeStatusFilter(filter: 'active' | 'inactive' | 'all') {
-    this.statusFilter.set(filter);
+  changeStatusFilter(filter: string) {
+    this.statusFilter.set(filter as 'active' | 'inactive' | 'all');
     this.applyFilters();
   }
 

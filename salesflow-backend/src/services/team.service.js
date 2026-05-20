@@ -2,8 +2,10 @@ const mongoose = require('mongoose');
 const Team = require('../models/team.model');
 const Employee = require('../models/employee.model');
 const EmployeeTeamHistory = require('../models/employee-team-history.model');
+const QuarterlyTarget = require('../models/quarterly-target.model');
 const { getQuarterId, getQuarterBounds, calculateWorkingDays, calculateEmployeeQuarterDays } = require('../utils/quarter.utils');
 const Sale = require('../models/sale.model');
+require('../models/client.model');
 
 const createTeam = async (data) => {
   const leader = await Employee.findById(data.teamLeaderId);
@@ -297,7 +299,6 @@ const getTeamMemberPerformance = async (employeeId, teamId, quarterId) => {
   const employeeService = require('./employee.service');
   const memberProgress = await employeeService.getTargetProgress(employeeId, quarterId);
 
-  const QuarterlyTarget = require('../models/quarterly-target.model');
   const customTargetRecord = await QuarterlyTarget.findOne({
     employeeId: employee._id,
     quarterId
@@ -455,7 +456,7 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
 
     membersProgress.push({
       employeeId: team.teamLeaderId._id,
-      name: team.teamLeaderId.name + ' (قائد)',
+      name: team.teamLeaderId.name + ' (Leader)',
       code: team.teamLeaderId.code,
       fullTarget: 0,
       actualWorkingDays: 90,
@@ -498,7 +499,7 @@ const getTeamsWithPerformance = async (quarterId) => {
         { leaveDate: { $gte: qStart } }
       ]
     }).lean(),
-    mongoose.model('QuarterlyTarget').find({ quarterId }).lean(),
+    QuarterlyTarget.find({ quarterId }).lean(),
     Sale.find({
       status: { $in: ['confirmed', 'claimed', 'collected'] },
       isActive: true
@@ -664,7 +665,7 @@ const getTeamsWithPerformance = async (quarterId) => {
         totalAchieved += leaderProg.achievedSalesValue || 0;
         membersPerformance.push({
           employeeId: team.teamLeaderId._id,
-          name: team.teamLeaderId.name + ' (قائد)',
+          name: team.teamLeaderId.name + ' (Leader)',
           code: team.teamLeaderId.code,
           adjustedTarget: 0,
           achieved: Math.round(leaderProg.achievedSalesValue),
@@ -748,7 +749,7 @@ const getTeamsWithPerformance = async (quarterId) => {
         totalAchieved += leaderProg.achievedSalesValue || 0;
         membersPerformance.push({
           employeeId: team.teamLeaderId._id,
-          name: team.teamLeaderId.name + ' (قائد)',
+          name: team.teamLeaderId.name + ' (Leader)',
           code: team.teamLeaderId.code,
           adjustedTarget: 0,
           achieved: Math.round(leaderProg.achievedSalesValue),
@@ -769,7 +770,7 @@ const getTeamsWithPerformance = async (quarterId) => {
     });
   }
 
-  return teams.map(t => resultsMap.get(t._id.toString()));
+  return teams.map(t => resultsMap.get(t._id.toString()) ?? { ...t, performance: null });
 };
 
 const reassignMembers = async (oldTeamId, { membersReassignment }) => {

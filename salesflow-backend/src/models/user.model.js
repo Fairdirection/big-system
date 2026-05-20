@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   code:         { type: String, unique: true, sparse: true }, // Employee Code
   passwordHash: { type: String, required: true },
   role:         { type: String, enum: ['admin'], default: 'admin' },
+  avatarUrl:    { type: String, default: null },              // base64 data URL or external URL
   isActive:     { type: Boolean, default: true }
 }, { timestamps: true });
 

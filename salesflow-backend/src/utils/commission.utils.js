@@ -1,9 +1,11 @@
+const { TAX } = require('./constants');
+
 /**
  * Performs full commission chain calculation.
  * Guarantees that the invoiceAmount matches the sum of its rounded line items perfectly
  * to prevent any ledger reconciliation imbalances.
  */
-function calculateCommission({ unitValue, contractCommissionPercentage, developerCollectionPercentage, vatPercentage = 14, withholdingTaxPercentage = 5 }) {
+function calculateCommission({ unitValue, contractCommissionPercentage, developerCollectionPercentage, vatPercentage = TAX.VAT_PERCENTAGE, withholdingTaxPercentage = TAX.WITHHOLDING_PERCENTAGE }) {
   // Step 1: Collected commission percentage (النسبة المحصلة الأولى)
   const collectedCommissionPercentage = contractCommissionPercentage * (developerCollectionPercentage / 100);
 

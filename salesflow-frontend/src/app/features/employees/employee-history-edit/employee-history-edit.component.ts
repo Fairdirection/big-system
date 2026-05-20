@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,11 +21,13 @@ import {
   heroArrowRight
 } from '@ng-icons/heroicons/outline';
 import { TeamService } from '@core/services/team.service';
+import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-employee-history-edit',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, FormsModule],
+  imports: [CommonModule, NgIconComponent, FormsModule, TranslateModule],
   providers: [
     provideIcons({ 
       heroChevronRight, 
@@ -297,11 +300,14 @@ import { TeamService } from '@core/services/team.service';
   `]
 })
 export class EmployeeHistoryEditComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private route           = inject(ActivatedRoute);
+  private router          = inject(Router);
   private employeeService = inject(EmployeeService);
-  private teamService = inject(TeamService);
-  private themeService = inject(ThemeService);
+  private teamService     = inject(TeamService);
+  private destroyRef = inject(DestroyRef);
+  private themeService    = inject(ThemeService);
+  private confirmDialog   = inject(ConfirmDialogService);
+  private translate       = inject(TranslateService);
 
   employee = signal<Employee | null>(null);
   history = signal<any[]>([]);
@@ -321,12 +327,12 @@ export class EmployeeHistoryEditComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
-    this.employeeService.getEmployee(id).subscribe(res => {
+    this.employeeService.getEmployee(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(res => {
       this.employee.set(res.data);
       this.loadHistory();
     });
 
-    this.teamService.getTeams().subscribe(res => {
+    this.teamService.getTeams().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(res => {
       this.teams.set(res.data);
     });
   }
@@ -334,7 +340,7 @@ export class EmployeeHistoryEditComponent implements OnInit {
   loadHistory() {
     const id = this.employee()?._id;
     if (!id) return;
-    this.employeeService.getTeamHistory(id).subscribe(res => {
+    this.employeeService.getTeamHistory(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(res => {
       if (res.success) {
         this.history.set(res.data.timeline.map((item: any) => ({ ...item, isDirty: false })));
         this.summaryStats.set(res.data.stats);
@@ -380,7 +386,7 @@ export class EmployeeHistoryEditComponent implements OnInit {
       leaveDate: record.endDate
     };
 
-    this.employeeService.updateHistory(record.historyId, data).subscribe({
+    this.employeeService.updateHistory(record.historyId, data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.themeService.loading.set(false);
         this.loadHistory();
@@ -405,7 +411,7 @@ export class EmployeeHistoryEditComponent implements OnInit {
       leaveDate: this.newRecordData.endDate
     };
 
-    this.employeeService.addHistory(id, payload).subscribe({
+    this.employeeService.addHistory(id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.themeService.loading.set(false);
         this.isAddingNew.set(false);
@@ -415,11 +421,18 @@ export class EmployeeHistoryEditComponent implements OnInit {
     });
   }
 
-  deleteRecord(record: any) {
-    if (!record.historyId || !confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+  async deleteRecord(record: any) {
+    if (!record.historyId) return;
+    const ok = await this.confirmDialog.confirm({
+      title: this.translate.instant('common.delete'),
+      message: this.translate.instant('common.error_generic'),
+      confirmLabel: this.translate.instant('common.delete'),
+      type: 'danger',
+    });
+    if (!ok) return;
     
     this.themeService.loading.set(true);
-    this.employeeService.deleteHistory(record.historyId).subscribe({
+    this.employeeService.deleteHistory(record.historyId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.themeService.loading.set(false);
         this.loadHistory();
@@ -432,7 +445,7 @@ export class EmployeeHistoryEditComponent implements OnInit {
     const newDate = prompt('أدخل تاريخ التعيين الجديد (YYYY-MM-DD):', this.formatDate(record.startDate));
     if (newDate) {
       this.themeService.loading.set(true);
-      this.employeeService.updateEmployee(this.employee()?._id || '', { hireDate: newDate }).subscribe({
+      this.employeeService.updateEmployee(this.employee()?._id || '', { hireDate: newDate }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.themeService.loading.set(false);
           this.loadHistory();

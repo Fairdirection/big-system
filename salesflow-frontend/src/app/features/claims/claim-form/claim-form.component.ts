@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { LanguageService } from '@core/services/language.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClaimService } from '@core/services/claim.service';
 import { ToastService } from '@core/services/toast.service';
@@ -352,6 +353,7 @@ export class ClaimFormComponent implements OnInit {
   private claimService = inject(ClaimService);
   private toastService = inject(ToastService);
   private celebrationService = inject(CelebrationService);
+  private langService = inject(LanguageService);
 
   claim = signal<Claim | null>(null);
   submitting = signal(false);
@@ -547,12 +549,13 @@ export class ClaimFormComponent implements OnInit {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const formattedDate = new Intl.DateTimeFormat('ar-EG', {
+    const locale = this.langService.currentLocale();
+    const formattedDate = new Intl.DateTimeFormat(locale, {
       year: 'numeric', month: 'long', day: 'numeric'
     }).format(new Date(c.collectionDate || new Date()));
-    
-    const formattedCommission = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(c.commissionDue);
-    const formattedCollected = c.collectedAmount ? new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(c.collectedAmount) : '-';
+
+    const formattedCommission = new Intl.NumberFormat(locale, { style: 'currency', currency: 'EGP' }).format(c.commissionDue);
+    const formattedCollected = c.collectedAmount ? new Intl.NumberFormat(locale, { style: 'currency', currency: 'EGP' }).format(c.collectedAmount) : '-';
 
     const statusStampText = c.status === 'collected' ? 'محصلة بالكامل' : 'قيد الانتظار';
     const statusStampClass = c.status === 'collected' ? 'stamp-paid' : 'stamp-pending';
@@ -746,7 +749,7 @@ export class ClaimFormComponent implements OnInit {
             <div class="invoice-details">
               <h2>مطالبة عمولة مبيعات</h2>
               <p>المعرف: ${c.claimNumber}</p>
-              <p>تاريخ الاستحقاق: ${new Date(c.expectedCollectionDate || c.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p>تاريخ الاستحقاق: ${new Date(c.expectedCollectionDate || c.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
           </div>
 

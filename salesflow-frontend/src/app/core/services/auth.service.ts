@@ -58,6 +58,17 @@ export class AuthService {
       .pipe(tap((res) => this._currentUser.set(res.data)));
   }
 
+  updateAvatar(avatarUrl: string | null) {
+    return this.http
+      .patch<ApiResponse<User>>(`${environment.apiUrl}/auth/avatar`, { avatarUrl })
+      .pipe(tap((res) => this._currentUser.set(res.data)));
+  }
+
+  patchCurrentUser(partial: Partial<User>) {
+    const current = this._currentUser();
+    if (current) this._currentUser.set({ ...current, ...partial });
+  }
+
   getToken(): string | null {
     return this._token();
   }

@@ -5,19 +5,22 @@ import { SettingService, Setting } from '@core/services/setting.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { 
   heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
-  heroBriefcase, heroClock
+  heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle
 } from '@ng-icons/heroicons/outline';
 import { ThemeService } from '@core/services/theme.service';
 import { formatQuarter } from '@core/utils/quarter.utils';
+import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '@core/services/language.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, ReactiveFormsModule],
+  imports: [CommonModule, NgIconComponent, ReactiveFormsModule, TranslateModule],
   providers: [
     provideIcons({ 
       heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
-      heroBriefcase, heroClock
+      heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,8 +29,8 @@ import { formatQuarter } from '@core/utils/quarter.utils';
       <!-- Header -->
       <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">إعدادات النظام</h1>
-          <p class="text-sf-muted font-medium mt-1">تخصيص لوحة التحكم وقيم القوائم المنسدلة وتفضيلات الأمان واللغة بكل سهولة.</p>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'settings.title' | translate }}</h1>
+          <p class="text-sf-muted font-medium mt-1">{{ 'settings.subtitle' | translate }}</p>
         </div>
       </header>
 
@@ -39,36 +42,44 @@ import { formatQuarter } from '@core/utils/quarter.utils';
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Sidebar Tabs: Fully scrollable and responsive for mobile viewports -->
-        <div class="lg:col-span-1 flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none border-b border-sf-border/30 lg:border-b-0">
+        <div class="lg:col-span-1 lg:h-fit flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none border-b border-sf-border/30 lg:border-b-0 lg:bg-sf-surface/80 lg:backdrop-blur-md lg:p-3 lg:rounded-3xl lg:border lg:border-sf-border/40 lg:shadow-lg">
           <button (click)="activeTab.set('lists')"
                   [class]="activeTab() === 'lists' ? 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
             <ng-icon name="heroSwatch" class="text-lg"></ng-icon>
-            قيم القوائم
+            {{ 'settings.tab_lists' | translate }}
           </button>
-          
+
           <button (click)="activeTab.set('regional')"
                   [class]="activeTab() === 'regional' ? 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
             <ng-icon name="heroGlobeAlt" class="text-lg"></ng-icon>
-            اللغة والمنطقة
+            {{ 'settings.tab_regional' | translate }}
           </button>
-          
+
+          <button (click)="activeTab.set('commissionRules')"
+                  [class]="activeTab() === 'commissionRules' ? 
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
+            <ng-icon name="heroBriefcase" class="text-lg"></ng-icon>
+            {{ 'settings.tab_commission' | translate }}
+          </button>
+
           <button (click)="activeTab.set('security')"
                   [class]="activeTab() === 'security' ? 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
             <ng-icon name="heroShieldCheck" class="text-lg"></ng-icon>
-            الأمان والمصادقة
+            {{ 'settings.tab_security' | translate }}
           </button>
         </div>
 
         <!-- Content Area -->
         <div class="lg:col-span-3 space-y-8">
           
-          <!-- TAB 1: DROPDOWN VALUES LISTS (Organized with premium nested segmented controls) -->
+          <!-- TAB 1: DROPDOWN VALUES LISTS -->
           <div *ngIf="activeTab() === 'lists'" class="space-y-6 animate-fade-in">
             <!-- Segmented Switcher for Nested Lists -->
             <div class="flex items-center gap-1.5 p-1 bg-sf-surface border border-sf-border rounded-2xl overflow-x-auto scrollbar-none shadow-inner">
@@ -322,14 +333,275 @@ import { formatQuarter } from '@core/utils/quarter.utils';
                 <div class="flex justify-start pt-4">
                   <button type="submit" [disabled]="regionalForm.invalid" class="px-8 py-3.5 rounded-2xl bg-sf-primary text-white font-bold shadow-glow-purple hover:brightness-110 transition-all flex items-center gap-2">
                     <ng-icon name="heroCheck"></ng-icon>
-                    حفظ التفضيلات الإقليمية
+                    {{ 'settings.save_regional' | translate }}
                   </button>
                 </div>
               </form>
             </section>
           </div>
 
-          <!-- TAB 3: SECURITY & AUTHENTICATION -->
+          <!-- TAB 3: COMMISSION RULES -->
+          <div *ngIf="activeTab() === 'commissionRules'" class="space-y-8 animate-fade-in text-right">
+            <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-8">
+              
+              <!-- Premium Section Header -->
+              <div class="pb-6 border-b border-sf-border/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-1">
+                  <h3 class="text-2xl font-display font-black text-sf-text bg-gradient-to-l from-sf-primary to-sf-info bg-clip-text text-transparent flex items-center gap-2">
+                    <ng-icon name="heroBriefcase" class="text-sf-primary"></ng-icon>
+                    إدارة وتخصيص لائحة العمولات
+                  </h3>
+                  <p class="text-xs text-sf-muted font-medium">تعديل المستهدفات البيعية، فئات عمولة الشركة، وشرائح مبيعات المطور لكل مستوى وظيفي بالشركة بكل دقة.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-3.5 py-1.5 bg-sf-primary/10 text-sf-primary text-[10px] font-black rounded-xl uppercase tracking-wider border border-sf-primary/20 flex items-center gap-1.5 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sf-primary animate-pulse"></span>
+                    لوحة المدير المالي
+                  </span>
+                </div>
+              </div>
+
+              <!-- Roles Selector (Horizontal Cards with Rich Metadata) -->
+              <div class="space-y-3">
+                <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستوى الوظيفي المستهدف بالتعديل</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <button *ngFor="let role of ['BA', 'BC', 'Senior', 'SV', 'TeamLeader', 'Fresh']"
+                          type="button"
+                          (click)="selectedSeniority.set(role)"
+                          [class]="selectedSeniority() === role ? 
+                          'p-4 rounded-2xl bg-sf-primary/10 border-2 border-sf-primary text-sf-text shadow-glow-sm transform scale-[1.02] transition-all text-right flex flex-col justify-between gap-3 min-h-[100px]' : 
+                          'p-4 rounded-2xl bg-sf-surface hover:bg-sf-surface/80 border border-sf-border text-sf-muted hover:text-sf-text transition-all text-right flex flex-col justify-between gap-3 min-h-[100px]'">
+                    <div class="flex items-center justify-between w-full">
+                      <span class="text-xs font-black" [class.text-sf-primary]="selectedSeniority() === role">{{ role }}</span>
+                      <ng-icon [name]="getRoleIcon(role)" class="text-lg" [class]="selectedSeniority() === role ? 'text-sf-primary animate-bounce' : 'text-sf-muted/60'"></ng-icon>
+                    </div>
+                    <div class="space-y-0.5">
+                      <p class="text-xs font-black leading-tight">{{ getRoleSimpleLabel(role) }}</p>
+                      <p class="text-[9px] opacity-75 font-semibold leading-none">{{ getRoleSubLabel(role) }}</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Explanation Banner for Selected Role -->
+              <div class="p-4 sm:p-5 rounded-2xl bg-sf-bg/50 border border-sf-border/60 flex items-start gap-4 transition-all">
+                <div class="p-3 rounded-xl bg-sf-primary/10 text-sf-primary shadow-sm flex items-center justify-center">
+                  <ng-icon name="heroInformationCircle" class="text-xl"></ng-icon>
+                </div>
+                <div class="space-y-1">
+                  <h4 class="text-xs sm:text-sm font-black text-sf-text">آلية الاحتساب لـ {{ getRoleLabel(selectedSeniority()) }}</h4>
+                  <p class="text-xs text-sf-muted leading-relaxed font-medium">{{ getRoleExplanation(selectedSeniority()) }}</p>
+                </div>
+              </div>
+
+              <!-- Content for Selected Role -->
+              <div *ngIf="commissionRules() && currentRoleRules" class="space-y-8 animate-fade-in">
+                
+                <!-- Target Settings Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-sf-surface/40 p-6 rounded-2xl border border-sf-border/50">
+                  <!-- Normal Targets (Except Team Leader) -->
+                  <div class="space-y-2" *ngIf="selectedSeniority() !== 'TeamLeader'">
+                    <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف الربع سنوي الافتراضي</label>
+                    <div class="relative flex items-center">
+                      <input type="number" 
+                             [value]="currentRoleRules.target" 
+                             (input)="updateTarget($event)"
+                             placeholder="مثال: 27000000"
+                             class="w-full pl-20 pr-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text font-mono text-left">
+                      <span class="absolute left-3 px-2.5 py-1 bg-sf-surface border border-sf-border rounded-lg text-[10px] font-black text-sf-muted font-mono">EGP</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-1.5 px-1">
+                      <p class="text-[10px] text-sf-muted font-medium">المستهدف الأصلي قبل تعديله بالأيام: <span class="font-bold text-sf-text font-mono">{{ (currentRoleRules.target || 0) | number }} ج.م</span></p>
+                      <span class="text-[11px] font-black text-sf-primary bg-sf-primary/10 px-2 py-0.5 rounded-lg border border-sf-primary/20 shadow-sm">
+                        {{ formatArabicMillions(currentRoleRules.target) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dynamic Info for Team Leader Targets -->
+                  <div class="space-y-2 flex flex-col justify-center" *ngIf="selectedSeniority() === 'TeamLeader'">
+                    <span class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">المستهدف الربع سنوي لقائد الفريق</span>
+                    <div class="p-3.5 rounded-xl bg-sf-primary/5 border border-sf-primary/15 text-sf-primary font-bold text-xs flex items-center gap-2 mt-1">
+                      <ng-icon name="heroUsers" class="text-base"></ng-icon>
+                      <span>المستهدف يتم احتسابه ديناميكياً كمجموع لمستهدفات فريقه.</span>
+                    </div>
+                  </div>
+
+                  <!-- Flat Rate (For Fresh) -->
+                  <div class="space-y-2" *ngIf="selectedSeniority() === 'Fresh'">
+                    <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">العمولة الثابتة لكل مليون</label>
+                    <div class="relative flex items-center">
+                      <input type="number" 
+                             [value]="currentRoleRules.companyRate" 
+                             (input)="updateFlatRate($event)"
+                             placeholder="مثال: 4500"
+                             class="w-full pl-24 pr-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text font-mono text-left">
+                      <span class="absolute left-3 px-2.5 py-1 bg-sf-surface border border-sf-border rounded-lg text-[10px] font-black text-sf-muted font-mono">ج.م / المليون</span>
+                    </div>
+                    <p class="text-[10px] text-sf-muted mt-1 px-1 font-medium">يصرف هذا المبلغ كعلاوة ثابتة لكل مليون مبيعات مغلقة بنجاح.</p>
+                  </div>
+                </div>
+
+                <!-- Company Tiers (Achievements Brackets) -->
+                <div class="space-y-4" *ngIf="selectedSeniority() !== 'Fresh'">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-black text-sf-text flex items-center gap-2">
+                      <div class="w-2 h-4 rounded-full bg-sf-primary"></div>
+                      شرائح مبيعات الشركة (Company Sales Tiers)
+                    </h4>
+                    <button type="button" (click)="addTier()" class="text-xs font-black text-sf-primary hover:text-sf-primary/80 flex items-center gap-1.5 bg-sf-primary/5 px-3.5 py-2 rounded-xl border border-sf-primary/10 transition-all shadow-sm">
+                      <ng-icon name="heroPlus" class="text-xs"></ng-icon>
+                      إضافة شريحة جديدة
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div *ngFor="let tier of currentRoleRules.companyTiers; let i = index" class="p-5 rounded-2xl bg-sf-bg/40 border border-sf-border hover:border-sf-primary/30 hover:bg-sf-surface/20 transition-all flex flex-col justify-between gap-4 relative group shadow-sm">
+                      <!-- Card Header -->
+                      <div class="flex items-center justify-between border-b border-sf-border/30 pb-3">
+                        <span class="text-xs font-black text-sf-primary bg-sf-primary/10 px-2.5 py-1 rounded-lg border border-sf-primary/20">الشريحة {{ i + 1 }}</span>
+                        <button type="button" (click)="removeTier(i)" class="text-sf-muted hover:text-sf-danger p-1.5 hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark" class="text-base"></ng-icon>
+                        </button>
+                      </div>
+                      <!-- Inputs Grid -->
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">من تحقيق %</label>
+                          <div class="relative flex items-center">
+                            <input type="number" 
+                                   [value]="tier.minAchievement" 
+                                   (input)="updateTier(i, 'minAchievement', $event)"
+                                   step="0.01"
+                                   class="w-full px-2 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-center outline-none focus:border-sf-primary transition-all">
+                            <span class="absolute left-2.5 text-[10px] text-sf-muted font-bold">%</span>
+                          </div>
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">إلى تحقيق %</label>
+                          <div class="relative flex items-center">
+                            <input type="number" 
+                                   [value]="tier.maxAchievement" 
+                                   (input)="updateTier(i, 'maxAchievement', $event)"
+                                   placeholder="بلا حد"
+                                   class="w-full px-2 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-center outline-none focus:border-sf-primary transition-all">
+                            <span class="absolute left-2.5 text-[10px] text-sf-muted font-bold">%</span>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Rate Per Million -->
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">العمولة لكل مليون</label>
+                        <div class="relative flex items-center">
+                          <input type="number" 
+                                 [value]="tier.ratePerMillion" 
+                                 (input)="updateTier(i, 'ratePerMillion', $event)"
+                                 class="w-full pl-12 pr-3 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-left outline-none focus:border-sf-primary transition-all">
+                          <span class="absolute left-3 text-[10px] text-sf-muted font-bold">ج.م</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div *ngIf="!currentRoleRules.companyTiers || currentRoleRules.companyTiers.length === 0" class="col-span-full py-10 flex flex-col items-center justify-center text-sf-muted bg-sf-bg/20 rounded-2xl border border-dashed border-sf-border">
+                      <ng-icon name="heroSwatch" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-bold">لا يوجد شرائح معرفة حالياً. أضف شريحة جديدة للبدء.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Personal Slabs (Personal Sales) -->
+                <div class="space-y-4" *ngIf="selectedSeniority() !== 'Fresh'">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-black text-sf-text flex items-center gap-2">
+                      <div class="w-2 h-4 rounded-full bg-sf-info"></div>
+                      شرائح المبيعات الشخصية (Personal Sales Slabs)
+                    </h4>
+                    <button type="button" (click)="addSlab()" class="text-xs font-black text-sf-info hover:text-sf-info/80 flex items-center gap-1.5 bg-sf-info/5 px-3.5 py-2 rounded-xl border border-sf-info/10 transition-all shadow-sm">
+                      <ng-icon name="heroPlus" class="text-xs"></ng-icon>
+                      إضافة شريحة شخصية
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div *ngFor="let slab of currentRoleRules.personalSlabs; let i = index" class="p-5 rounded-2xl bg-sf-bg/40 border border-sf-border hover:border-sf-info/30 hover:bg-sf-surface/20 transition-all flex flex-col justify-between gap-4 relative group shadow-sm">
+                      <!-- Card Header -->
+                      <div class="flex items-center justify-between border-b border-sf-border/30 pb-3">
+                        <span class="text-xs font-black text-sf-info bg-sf-info/10 px-2.5 py-1 rounded-lg border border-sf-info/20">شريحة شخصية {{ i + 1 }}</span>
+                        <button type="button" (click)="removeSlab(i)" class="text-sf-muted hover:text-sf-danger p-1.5 hover:bg-sf-danger/10 rounded-lg transition-all">
+                          <ng-icon name="heroXMark" class="text-base"></ng-icon>
+                        </button>
+                      </div>
+                      <!-- Inputs Grid -->
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">من عمولة المطور %</label>
+                          <div class="relative flex items-center">
+                            <input type="number" 
+                                   [value]="slab.minRate" 
+                                   (input)="updateSlab(i, 'minRate', $event)"
+                                   step="0.1"
+                                   class="w-full px-2 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-center outline-none focus:border-sf-info transition-all">
+                            <span class="absolute left-2.5 text-[10px] text-sf-muted font-bold">%</span>
+                          </div>
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">إلى عمولة المطور %</label>
+                          <div class="relative flex items-center">
+                            <input type="number" 
+                                   [value]="slab.maxRate" 
+                                   (input)="updateSlab(i, 'maxRate', $event)"
+                                   step="0.1"
+                                   placeholder="بلا حد"
+                                   class="w-full px-2 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-center outline-none focus:border-sf-info transition-all">
+                            <span class="absolute left-2.5 text-[10px] text-sf-muted font-bold">%</span>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Rate Per Million & useCompanyTiers Checkbox -->
+                      <div class="space-y-3">
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black text-sf-muted uppercase tracking-wider mr-0.5">العمولة لكل مليون</label>
+                          <div class="relative flex items-center">
+                            <input type="number" 
+                                   [value]="slab.ratePerMillion" 
+                                   [disabled]="slab.useCompanyTiers"
+                                   (input)="updateSlab(i, 'ratePerMillion', $event)"
+                                   class="w-full pl-12 pr-3 py-2 bg-sf-surface border border-sf-border rounded-xl text-xs font-semibold text-sf-text font-mono text-left outline-none focus:border-sf-info transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                            <span class="absolute left-3 text-[10px] text-sf-muted font-bold">ج.م</span>
+                          </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 pt-2.5 border-t border-sf-border/30" *ngIf="selectedSeniority() !== 'Fresh' && selectedSeniority() !== 'TeamLeader'">
+                          <input type="checkbox" 
+                                 [checked]="slab.useCompanyTiers" 
+                                 (change)="updateSlab(i, 'useCompanyTiers', $event)"
+                                 [id]="'check_slab_' + i"
+                                 class="w-4 h-4 text-sf-primary focus:ring-sf-primary/50 border-sf-border rounded cursor-pointer transition-all">
+                          <label [for]="'check_slab_' + i" class="text-[11px] font-black text-sf-muted cursor-pointer select-none leading-none">الربط التلقائي بشرائح مبيعات الشركة</label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div *ngIf="!currentRoleRules.personalSlabs || currentRoleRules.personalSlabs.length === 0" class="col-span-full py-10 flex flex-col items-center justify-center text-sf-muted bg-sf-bg/20 rounded-2xl border border-dashed border-sf-border">
+                      <ng-icon name="heroSwatch" class="text-3xl opacity-30 mb-2"></ng-icon>
+                      <p class="text-xs font-bold">لا يوجد شرائح شخصية معرفة حالياً. أضف شريحة للبدء.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-start pt-6 border-t border-sf-border/30">
+                  <button type="button" (click)="saveCommissionRules()" class="px-8 py-4 rounded-2xl bg-sf-primary text-white font-black shadow-glow-purple hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2">
+                    <ng-icon name="heroCheck" class="text-lg"></ng-icon>
+                    {{ 'settings.commission_save' | translate }}
+                  </button>
+                </div>
+
+              </div>
+            </section>
+          </div>
+
+          <!-- TAB 4: SECURITY & AUTHENTICATION -->
           <div *ngIf="activeTab() === 'security'" class="space-y-8 animate-fade-in">
             <!-- Password Change -->
             <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
@@ -487,16 +759,22 @@ import { formatQuarter } from '@core/utils/quarter.utils';
 })
 export class SettingsComponent implements OnInit {
   private settingService = inject(SettingService);
+  private confirmDialog  = inject(ConfirmDialogService);
   private fb = inject(FormBuilder);
   public themeService = inject(ThemeService);
+  private translate = inject(TranslateService);
+  private langService = inject(LanguageService);
 
   settings = signal<Setting[]>([]);
-  activeTab = signal<'lists' | 'regional' | 'security'>('lists');
+  activeTab = signal<'lists' | 'regional' | 'commissionRules' | 'security'>('lists');
   activeListSubTab = signal<'saleSource' | 'collectionPercentage' | 'invoiceType' | 'tax'>('saleSource');
   showModal = signal(false);
   currentType = signal<string>('');
   saveSuccessMessage = signal<string | null>(null);
   is2faEnabled = signal(localStorage.getItem('sf_2fa') === 'true');
+
+  commissionRules = signal<any>(null);
+  selectedSeniority = signal<string>('BA');
 
   form: FormGroup;
   securityForm: FormGroup;
@@ -535,6 +813,14 @@ export class SettingsComponent implements OnInit {
     this.settingService.getAllSettings().subscribe(res => {
       if (res.success) {
         this.settings.set(res.data);
+        const rulesSetting = res.data.find(s => s.type === 'commissionRules');
+        if (rulesSetting) {
+          try {
+            this.commissionRules.set(JSON.parse(rulesSetting.value));
+          } catch (e) {
+            console.error('Error parsing commission rules:', e);
+          }
+        }
       }
     });
   }
@@ -574,24 +860,30 @@ export class SettingsComponent implements OnInit {
         if (res.success) {
           this.loadSettings();
           this.closeModal();
-          this.showToast('تمت إضافة الإعداد الجديد بنجاح!');
+          this.showToast(this.translate.instant('settings.saved_success'));
         }
       },
       error: (err) => {
-        alert(err.error?.message || 'Error saving setting');
+        this.showToast('خطأ أثناء الحفظ: ' + (err.error?.message || 'حاول مرة أخرى'));
       }
     });
   }
 
-  deleteSetting(id: string) {
-    if (!confirm('هل أنت متأكد من حذف هذا الإعداد؟')) return;
+  async deleteSetting(id: string) {
+    const ok = await this.confirmDialog.confirm({
+      title: this.translate.instant('settings.delete_title'),
+      message: this.translate.instant('settings.delete_msg'),
+      confirmLabel: this.translate.instant('common.delete'),
+      type: 'danger',
+    });
+    if (!ok) return;
     
     this.settingService.deleteSetting(id).subscribe({
       next: () => {
         this.loadSettings();
-        this.showToast('تم حذف الإعداد بنجاح!');
+        this.showToast(this.translate.instant('settings.deleted_success'));
       },
-      error: (err) => alert(err.error?.message || 'Error deleting setting')
+      error: (err) => this.showToast('خطأ أثناء الحذف: ' + (err.error?.message || 'حاول مرة أخرى'))
     });
   }
 
@@ -606,13 +898,13 @@ export class SettingsComponent implements OnInit {
       dateFormat: val.dateFormat
     });
     
-    this.showToast('تم حفظ التفضيلات الإقليمية وتطبيقها بنجاح!');
+    this.showToast(this.translate.instant('settings.regional_saved'));
   }
 
   changePassword() {
     if (this.securityForm.invalid) return;
     this.securityForm.reset();
-    this.showToast('تم تحديث كلمة المرور الخاصة بك بنجاح!');
+    this.showToast(this.translate.instant('settings.password_changed'));
   }
 
   toggle2fa() {
@@ -675,10 +967,201 @@ export class SettingsComponent implements OnInit {
 
   onQuarterChange(event: any) {
     this.themeService.setQuarter(event.target.value);
-    this.showToast('تم تغيير الربع المالي النشط بنجاح!');
+    this.showToast(this.translate.instant('settings.quarter_changed'));
   }
 
   formatQ(q: string): string {
     return formatQuarter(q);
+  }
+
+  getRoleLabel(role: string): string {
+    switch (role) {
+      case 'BA': return 'مستشار عقاري (BA)';
+      case 'BC': return 'مستشار عقاري أول (BC)';
+      case 'Senior': return 'مستشار مبيعات كبار (Senior)';
+      case 'SV': return 'مشرف مبيعات (SV)';
+      case 'TeamLeader': return 'قائد فريق (Team Leader)';
+      case 'Fresh': return 'موظف حديث التعيين (Fresh)';
+      default: return role;
+    }
+  }
+
+  getRoleIcon(role: string): string {
+    switch (role) {
+      case 'BA': return 'heroBriefcase';
+      case 'BC': return 'heroBriefcase';
+      case 'Senior': return 'heroSparkles';
+      case 'SV': return 'heroClock';
+      case 'TeamLeader': return 'heroUsers';
+      case 'Fresh': return 'heroLightBulb';
+      default: return 'heroBriefcase';
+    }
+  }
+
+  getRoleSimpleLabel(role: string): string {
+    switch (role) {
+      case 'BA': return 'مستشار عقاري';
+      case 'BC': return 'مستشار أول';
+      case 'Senior': return 'مستشار كبار';
+      case 'SV': return 'مشرف مبيعات';
+      case 'TeamLeader': return 'قائد فريق';
+      case 'Fresh': return 'حديث التعيين';
+      default: return role;
+    }
+  }
+
+  getRoleSubLabel(role: string): string {
+    switch (role) {
+      case 'BA': return 'مبتدئ / عادي';
+      case 'BC': return 'مبيعات متقدمة';
+      case 'Senior': return 'مبيعات كبار';
+      case 'SV': return 'إشراف ومتابعة';
+      case 'TeamLeader': return 'إدارة فريق عمل';
+      case 'Fresh': return 'تدريب وعمولة فلات';
+      default: return '';
+    }
+  }
+
+  getRoleExplanation(role: string): string {
+    switch (role) {
+      case 'BA':
+      case 'BC':
+      case 'Senior':
+        return 'يحسب مستهدف هذه الفئة للأيام الفعلية. يمكن تعديل المستهدف الربع سنوي. تخضع العمولات لشرائح مبيعات الشركة (عند تفعيل الربط) أو شرائح مبيعات المطور الشخصية.';
+      case 'SV':
+        return 'مشرف المبيعات لديه مستهدف خاص به يتم تعديله بعدد الأيام الفعلية. تحسب العمولات على شرائح مبيعات الشركة أو شرائح المبيعات الشخصية.';
+      case 'TeamLeader':
+        return 'قائد الفريق لا يحتاج لتحديد مستهدف ربع سنوي؛ حيث يتم حسابه تلقائياً من (مجموع مستهدفات جميع أعضاء فريقه بما فيهم المشرفين). تحسب علاوته بناءً على مبيعات فريقه الإجمالية المنجزة مضروبةً في شرائح مبيعات الشركة.';
+      case 'Fresh':
+        return 'الموظف الجديد حديث التعيين لا تنطبق عليه أي شرائح معقدة، وإنما يحصل على عمولة ثابتة (Flat Rate) لكل مليون مبيعات يقوم بإنجازها شخصياً.';
+      default:
+        return '';
+    }
+  }
+
+  formatArabicMillions(value: number | null | undefined): string {
+    if (!value) return '0 جنيه';
+    if (value >= 1000000) {
+      const millions = value / 1000000;
+      return `${millions % 1 === 0 ? millions : millions.toFixed(2)} مليون جنيه`;
+    }
+    return `${value.toLocaleString(this.langService.currentLocale())} جنيه`;
+  }
+
+  get currentRoleRules() {
+    return this.commissionRules()?.[this.selectedSeniority()];
+  }
+
+  updateTarget(event: any) {
+    const val = Number(event.target.value);
+    const rules = { ...this.commissionRules() };
+    if (rules[this.selectedSeniority()]) {
+      rules[this.selectedSeniority()].target = val;
+      this.commissionRules.set(rules);
+    }
+  }
+
+  updateFlatRate(event: any) {
+    const val = Number(event.target.value);
+    const rules = { ...this.commissionRules() };
+    if (rules[this.selectedSeniority()]) {
+      rules[this.selectedSeniority()].companyRate = val;
+      this.commissionRules.set(rules);
+    }
+  }
+
+  updateTier(index: number, field: string, event: any) {
+    const val = event.target.value === '' ? undefined : Number(event.target.value);
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules && roleRules.companyTiers && roleRules.companyTiers[index]) {
+      roleRules.companyTiers[index][field] = val;
+      this.commissionRules.set(rules);
+    }
+  }
+
+  addTier() {
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules) {
+      if (!roleRules.companyTiers) {
+        roleRules.companyTiers = [];
+      }
+      roleRules.companyTiers.push({ minAchievement: 0, maxAchievement: 100, ratePerMillion: 4500 });
+      this.commissionRules.set(rules);
+    }
+  }
+
+  removeTier(index: number) {
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules && roleRules.companyTiers) {
+      roleRules.companyTiers.splice(index, 1);
+      this.commissionRules.set(rules);
+    }
+  }
+
+  updateSlab(index: number, field: string, event: any) {
+    let val: any;
+    if (field === 'useCompanyTiers') {
+      val = event.target.checked;
+    } else {
+      val = event.target.value === '' ? undefined : Number(event.target.value);
+    }
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules && roleRules.personalSlabs && roleRules.personalSlabs[index]) {
+      roleRules.personalSlabs[index][field] = val;
+      this.commissionRules.set(rules);
+    }
+  }
+
+  addSlab() {
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules) {
+      if (!roleRules.personalSlabs) {
+        roleRules.personalSlabs = [];
+      }
+      roleRules.personalSlabs.push({ minRate: 3.0, maxRate: 3.9, ratePerMillion: 7500 });
+      this.commissionRules.set(rules);
+    }
+  }
+
+  removeSlab(index: number) {
+    const rules = { ...this.commissionRules() };
+    const roleRules = rules[this.selectedSeniority()];
+    if (roleRules && roleRules.personalSlabs) {
+      roleRules.personalSlabs.splice(index, 1);
+      this.commissionRules.set(rules);
+    }
+  }
+
+  saveCommissionRules() {
+    const payload = { value: JSON.stringify(this.commissionRules()) };
+    const rulesSetting = this.settings().find(s => s.type === 'commissionRules');
+
+    const request$ = rulesSetting
+      ? this.settingService.updateSetting(rulesSetting._id, payload)
+      : this.settingService.createSetting({
+          type: 'commissionRules',
+          label: 'لائحة العمولات',
+          value: payload.value,
+          isDefault: true,
+          isActive: true,
+          sortOrder: 0
+        });
+
+    request$.subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.loadSettings();
+          this.showToast(this.translate.instant('settings.commission_saved'));
+        }
+      },
+      error: (err) => {
+        this.showToast('خطأ أثناء حفظ قواعد العمولات: ' + (err.error?.message || 'حاول مرة أخرى'));
+      }
+    });
   }
 }

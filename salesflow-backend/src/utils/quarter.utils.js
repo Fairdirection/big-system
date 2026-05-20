@@ -1,6 +1,18 @@
 /**
+ * Normalizes a date to the 30-day month convention by capping the day at 30.
+ * Use this before any timestamp comparisons to keep everything on the same basis.
+ * @param {Date|string} date
+ * @returns {Date}
+ */
+function to30Day(date) {
+  const d = new Date(date);
+  if (d.getDate() > 30) d.setDate(30);
+  return d;
+}
+
+/**
  * Detects the quarter ID for a given date.
- * @param {Date} date 
+ * @param {Date} date
  * @returns {string} e.g. "Q2-2026"
  */
 function getQuarterId(date) {
@@ -25,7 +37,7 @@ function getQuarterBounds(quarterId) {
   const endMonth = qNum * 3 - 1; // 0-indexed: 2, 5, 8, 11
   
   const start = new Date(year, startMonth, 1);
-  // For the 30-day rule, we'll treat the "end" of the quarter as the 30th of the last month.
+  // Fixed 30-day month convention: quarter is always treated as 90 days (30 per month)
   const end = new Date(year, endMonth, 30, 23, 59, 59, 999);
   
   return { start, end };
@@ -64,19 +76,20 @@ function calculateWorkingDays(startDate, endDate) {
  */
 function calculateEmployeeQuarterDays(historyRecords, quarterId, untilToday = false) {
   const { start: qStart, end: qEnd } = getQuarterBounds(quarterId);
-  const limit = untilToday ? new Date() : qEnd;
+  // Normalize "today" to the 30-day convention so day 31 is treated as day 30
+  const limit = untilToday ? to30Day(new Date()) : qEnd;
   const qLimit = new Date(Math.min(qEnd.getTime(), limit.getTime()));
 
   let totalDays = 0;
 
   for (const record of historyRecords) {
-    const effectiveStart = new Date(Math.max(qStart.getTime(), new Date(record.joinDate).getTime()));
-    
-    // If the employee is still in the team (leaveDate is null), 
-    // use qLimit (either end of quarter or today)
-    const leaveDate = record.leaveDate ? new Date(record.leaveDate) : qLimit;
-    const effectiveEnd = new Date(Math.min(qLimit.getTime(), leaveDate.getTime()));
-    
+    // Normalize join/leave dates to 30-day convention before timestamp comparisons
+    const joinNorm = to30Day(record.joinDate);
+    const effectiveStart = new Date(Math.max(qStart.getTime(), joinNorm.getTime()));
+
+    const leaveNorm = record.leaveDate ? to30Day(record.leaveDate) : qLimit;
+    const effectiveEnd = new Date(Math.min(qLimit.getTime(), leaveNorm.getTime()));
+
     if (effectiveEnd >= effectiveStart) {
       totalDays += calculateWorkingDays(effectiveStart, effectiveEnd);
     }
@@ -85,9 +98,10 @@ function calculateEmployeeQuarterDays(historyRecords, quarterId, untilToday = fa
   return totalDays;
 }
 
-module.exports = { 
-  getQuarterId, 
-  getQuarterBounds, 
-  calculateWorkingDays, 
-  calculateEmployeeQuarterDays 
+module.exports = {
+  to30Day,
+  getQuarterId,
+  getQuarterBounds,
+  calculateWorkingDays,
+  calculateEmployeeQuarterDays
 };

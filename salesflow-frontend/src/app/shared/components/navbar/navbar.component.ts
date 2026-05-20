@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '@core/services/auth.service';
 import { ThemeService } from '@core/services/theme.service';
 import { LayoutService } from '@core/services/layout.service';
+import { LanguageService } from '@core/services/language.service';
+import { TranslateModule } from '@ngx-translate/core';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroBars3, heroXMark, heroMoon, heroSun, heroCalendar } from '@ng-icons/heroicons/outline';
 import { formatQuarter } from '@core/utils/quarter.utils';
@@ -10,7 +12,7 @@ import { formatQuarter } from '@core/utils/quarter.utils';
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, NgIconComponent],
+  imports: [CommonModule, NgIconComponent, TranslateModule],
   templateUrl: './navbar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
@@ -21,22 +23,27 @@ export class NavbarComponent {
   private auth = inject(AuthService);
   public theme = inject(ThemeService);
   private layout = inject(LayoutService);
+  public langService = inject(LanguageService);
 
   currentUser = this.auth.currentUser;
   isDark = this.theme.isDark;
   mobileMenuOpen = this.layout.mobileMenuOpen;
 
-  toggleTheme() { 
-    console.log('Navbar: Toggle button clicked');
-    this.theme.toggle(); 
-  }
+  roleLabel = computed(() => {
+    const map: Record<string, string> = {
+      admin: 'مسؤول النظام',
+      manager: 'مدير',
+      employee: 'موظف',
+    };
+    return map[this.currentUser()?.role ?? ''] ?? 'مستخدم';
+  });
+
+  toggleTheme() { this.theme.toggle(); }
   toggleMobileMenu() { this.layout.toggleMobileMenu(); }
 
-  onQuarterChange(event: any) {
-    this.theme.setQuarter(event.target.value);
+  onQuarterChange(event: Event) {
+    this.theme.setQuarter((event.target as HTMLSelectElement).value);
   }
 
-  formatQ(q: string) {
-    return formatQuarter(q);
-  }
+  formatQ(q: string) { return formatQuarter(q); }
 }

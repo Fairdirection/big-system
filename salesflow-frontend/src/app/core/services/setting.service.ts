@@ -4,10 +4,11 @@ import { environment } from '@env/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { LanguageService } from './language.service';
 
 export interface Setting {
   _id: string;
-  type: 'saleSource' | 'invoiceType' | 'collectionPercentage';
+  type: 'saleSource' | 'invoiceType' | 'collectionPercentage' | 'tax' | 'commissionRules' | string;
   value: string;
   label: string;
   isDefault: boolean;
@@ -18,6 +19,7 @@ export interface Setting {
 @Injectable({ providedIn: 'root' })
 export class SettingService {
   private http = inject(HttpClient);
+  private langService = inject(LanguageService);
   private base = `${environment.apiUrl}/settings`;
   private cache = new Map<string, Setting[]>();
 
@@ -35,12 +37,9 @@ export class SettingService {
 
   updatePreferences(prefs: { language?: string; currency?: string; timezone?: string; dateFormat?: string }) {
     if (prefs.language) {
-      localStorage.setItem('sf_lang', prefs.language);
       this.preferredLanguage.set(prefs.language);
-      
-      // Update DOM direction and lang attributes dynamically
-      document.documentElement.dir = prefs.language === 'en' ? 'ltr' : 'rtl';
-      document.documentElement.lang = prefs.language;
+      // Delegate to LanguageService which handles translate.use + DOM dir + localStorage
+      this.langService.setLanguage(prefs.language as 'ar' | 'en');
     }
     if (prefs.currency) {
       localStorage.setItem('sf_currency', prefs.currency);

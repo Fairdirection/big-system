@@ -580,7 +580,7 @@ const getTeamHistory = async (employeeId) => {
       timeline.push({
         type: 'no-team',
         isInitial: currentDate.getTime() === employee.hireDate.getTime(),
-        name: 'بدون فريق',
+        name: 'no_team',
         startDate: currentDate,
         endDate: joinDate,
         durationDays: calculateWorkingDays(currentDate, joinDate) - 1,
@@ -604,7 +604,7 @@ const getTeamHistory = async (employeeId) => {
     timeline.push({
       historyId: record._id,
       type: record.teamId ? 'team' : 'no-team',
-      name: record.teamId ? (record.teamId.name || 'فريق محذوف') : 'بدون فريق',
+      name: record.teamId ? (record.teamId.name || 'deleted_team') : 'no_team',
       teamId: record.teamId ? record.teamId._id : null,
       startDate: joinDate,
       endDate: record.leaveDate,
@@ -633,7 +633,8 @@ const getTeamHistory = async (employeeId) => {
 
       timeline.push({
         type: 'no-team',
-        name: 'بدون فريق (حالي)',
+        name: 'no_team_current',
+        isCurrent: true,
         startDate: currentDate,
         endDate: null,
         durationDays: calculateWorkingDays(currentDate, now),
@@ -649,11 +650,25 @@ const getTeamHistory = async (employeeId) => {
 
     timeline.push({
       type: 'no-team',
-      name: 'بدون فريق',
+      name: 'no_team',
       startDate: currentDate,
       endDate: null,
       durationDays: calculateWorkingDays(currentDate, new Date()),
       achievement: Math.round(achievement)
+    });
+  }
+
+  // Add termination event as the most recent entry when employee is deactivated
+  if (!employee.isActive) {
+    const terminationDate = employee.endDate || employee.updatedAt || new Date();
+    timeline.push({
+      type: 'deactivated',
+      name: 'إنهاء الخدمة',
+      startDate: new Date(terminationDate),
+      endDate: null,
+      durationDays: 0,
+      achievement: 0,
+      isTermination: true
     });
   }
 

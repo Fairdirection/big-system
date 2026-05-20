@@ -4,17 +4,17 @@ const Claim = require('../models/claim.model');
 const Team = require('../models/team.model');
 const EmployeeTeamHistory = require('../models/employee-team-history.model');
 const employeeService = require('./employee.service');
-const { getQuarterBounds, calculateEmployeeQuarterDays, calculateWorkingDays } = require('../utils/quarter.utils');
+const { to30Day, getQuarterBounds, calculateEmployeeQuarterDays, calculateWorkingDays } = require('../utils/quarter.utils');
 
-const dashboardCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const dashboardCache = new Map(); // { quarterId → { data, expiresAt } }
 
-const clearDashboardCache = () => {
-  dashboardCache.clear();
-};
+const clearDashboardCache = () => dashboardCache.clear();
 
 const getDashboardStats = async (quarterId) => {
-  if (dashboardCache.has(quarterId)) {
-    return dashboardCache.get(quarterId);
+  const cached = dashboardCache.get(quarterId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
   }
 
   const { start, end } = getQuarterBounds(quarterId);
@@ -118,8 +118,8 @@ const getDashboardStats = async (quarterId) => {
     // Fallback if no history
     if (actualWorkingDays === 0 && emp.currentTeamId) {
       const joinDate = emp.teamJoinDate || emp.createdAt;
-      const effectiveStart = new Date(Math.max(start, new Date(joinDate)));
-      const effectiveEnd = new Date(Math.min(end, new Date()));
+      const effectiveStart = new Date(Math.max(start.getTime(), to30Day(joinDate).getTime()));
+      const effectiveEnd = new Date(Math.min(end.getTime(), to30Day(new Date()).getTime()));
       if (effectiveEnd > effectiveStart) {
         actualWorkingDays = calculateWorkingDays(effectiveStart, effectiveEnd);
       }
@@ -297,7 +297,7 @@ const getDashboardStats = async (quarterId) => {
       .slice(0, 5)
   };
 
-  dashboardCache.set(quarterId, result);
+  dashboardCache.set(quarterId, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
   return result;
 };
 

@@ -9,14 +9,15 @@ import { Sale } from '@core/models/sale.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash } from '@ng-icons/heroicons/outline';
+import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash, heroBanknotes } from '@ng-icons/heroicons/outline';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-sale-detail',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, TranslateModule],
   providers: [
-    provideIcons({ heroChevronRight, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash })
+    provideIcons({ heroChevronRight, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash, heroBanknotes })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -46,7 +47,7 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
             <div>
               <div class="flex items-center gap-3">
                 <h1 class="text-3xl font-display font-black text-sf-text tracking-tight">{{ s.saleNumber }}</h1>
-                <app-badge [color]="getStatusColor(s.status || '')">{{ translateStatus(s.status || '') }}</app-badge>
+                <app-badge [color]="getStatusColor(s.status || '')">{{ 'sale.status.' + s.status | translate }}</app-badge>
               </div>
               <p class="text-sf-muted font-medium mt-1">{{ s.projectName }} • وحدة {{ s.unitNumber }}</p>
             </div>
@@ -66,6 +67,11 @@ import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, he
                 <span>مطالبة بالعمولة</span>
               </button>
             }
+            <button [routerLink]="['/sales', s._id, 'commission']"
+                    class="btn btn-secondary px-5 py-2 flex items-center gap-2">
+              <ng-icon name="heroBanknotes"></ng-icon>
+              <span>معاينة العمولة</span>
+            </button>
             <button (click)="printSale()" class="btn btn-secondary px-5 py-2 flex items-center gap-2">
               <ng-icon name="heroPrinter"></ng-icon>
               <span>طباعة الإيصال</span>
@@ -222,6 +228,7 @@ export class SaleDetailComponent implements OnInit {
   private themeService = inject(ThemeService);
   private router = inject(Router);
   private toastService = inject(ToastService);
+  private translate = inject(TranslateService);
   sale = signal<Sale | null>(null);
   todayDate = new Date();
 
@@ -275,11 +282,11 @@ export class SaleDetailComponent implements OnInit {
 
     // Show a Success Toast with the Undo countdown action
     this.toastService.showWithUndo(
-      `تم حذف البيعة رقم ${s.saleNumber} بنجاح.`,
+      this.translate.instant('sale.detail.delete_success', { number: s.saleNumber }),
       () => {
         // UNDO callback: Navigate back to details and show recovery toast
         this.router.navigate(['/sales', s._id]);
-        this.toastService.showSuccess('تم استعادة المبيعة والتراجع عن الحذف.');
+        this.toastService.showSuccess(this.translate.instant('sale.detail.undo_success'));
       },
       () => {
         // COMMIT callback: silently execute the delete on backend database

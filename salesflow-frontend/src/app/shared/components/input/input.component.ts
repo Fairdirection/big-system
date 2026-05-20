@@ -17,7 +17,7 @@ import { CommonModule } from '@angular/common';
       @if (label) {
         <label class="text-sm font-bold text-sf-text font-body block text-right">
           {{ label }}
-          @if (required) { <span class="text-neon-pink mr-0.5">*</span> }
+          @if (required) { <span class="text-sf-error mr-0.5">*</span> }
         </label>
       }
 
@@ -36,7 +36,7 @@ import { CommonModule } from '@angular/common';
           [attr.step]="type === 'number' ? 'any' : null"
           (input)="onInput($event)"
           [class.pl-9]="prefixIcon"
-          [class.border-neon-pink]="hasError"
+          [class.border-sf-error]="hasError"
           [class.border-neon-purple/50]="isFocused && !hasError"
           [class.shadow-inner-purple]="isFocused && !hasError"
           [class.font-mono]="isAccounting || type === 'number'"
@@ -56,7 +56,7 @@ import { CommonModule } from '@angular/common';
         <p class="text-xs text-sf-muted/80 text-right">{{ hint }}</p>
       }
       @if (hasError && errorMessage) {
-        <p class="text-xs text-neon-pink flex items-center gap-1 justify-end">
+        <p class="text-xs text-sf-error flex items-center gap-1 justify-end">
           <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
           </svg>

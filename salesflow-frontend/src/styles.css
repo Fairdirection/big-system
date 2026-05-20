@@ -45,9 +45,9 @@ html.dark {
 /* Fair Direction global base */
 @layer base {
   html {
-    @apply bg-sf-bg text-sf-text font-body antialiased transition-all duration-300;
+    @apply bg-sf-bg text-sf-text font-body antialiased transition-colors duration-300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    zoom: 0.92;
+    font-size: 15px; /* replaces zoom: 0.92 — scales rem units correctly */
   }
 
   * {
@@ -91,11 +91,20 @@ html.dark {
   }
 
   .glass-card:hover {
-    @apply border-sf-primary/40 shadow-2xl;
-    transform: translateY(-4px);
-    box-shadow: 
-      0 25px 50px -12px rgba(var(--sf-primary), 0.12), 
-      0 8px 20px -8px rgba(var(--sf-primary), 0.08),
+    @apply border-sf-primary/30;
+    box-shadow:
+      0 16px 40px -12px rgba(0, 0, 0, 0.1),
+      0 4px 12px -6px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  /* Opt-in lift for individual item cards (not container panels) */
+  .glass-card-lift:hover {
+    @apply border-sf-primary/40;
+    transform: translateY(-3px);
+    box-shadow:
+      0 20px 40px -10px rgba(var(--sf-primary), 0.12),
+      0 6px 16px -6px rgba(var(--sf-primary), 0.07),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
@@ -171,6 +180,30 @@ html.dark {
     box-shadow: 0 8px 25px -5px rgba(var(--sf-error), 0.2);
   }
 
+  .btn-success {
+    @apply bg-sf-success/10 text-sf-success border border-sf-success/25 backdrop-blur-sm;
+  }
+  .btn-success:hover {
+    @apply bg-sf-success/20 border-sf-success/50 -translate-y-0.5 scale-[1.02];
+    box-shadow: 0 8px 25px -5px rgba(var(--sf-success), 0.2);
+  }
+
+  .btn-info {
+    @apply bg-sf-info/10 text-sf-info border border-sf-info/25 backdrop-blur-sm;
+  }
+  .btn-info:hover {
+    @apply bg-sf-info/20 border-sf-info/50 -translate-y-0.5 scale-[1.02];
+    box-shadow: 0 8px 25px -5px rgba(var(--sf-info), 0.2);
+  }
+
+  .btn-warning {
+    @apply bg-sf-warning/10 text-sf-warning border border-sf-warning/25 backdrop-blur-sm;
+  }
+  .btn-warning:hover {
+    @apply bg-sf-warning/20 border-sf-warning/50 -translate-y-0.5 scale-[1.02];
+    box-shadow: 0 8px 25px -5px rgba(var(--sf-warning), 0.2);
+  }
+
   .btn-ghost {
     @apply text-sf-muted hover:text-sf-text hover:bg-sf-elevated hover:scale-105;
   }
@@ -182,6 +215,19 @@ html.dark {
   /* Icon Buttons - Playful & Modern */
   .btn-icon {
     @apply transition-all duration-300 hover:scale-125 active:scale-90 hover:text-sf-primary cursor-pointer;
+  }
+
+  /* ── Keyboard focus rings (accessibility) ────────────────────────── */
+  .btn:focus-visible {
+    outline: 2px solid rgb(var(--sf-primary));
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid rgb(var(--sf-primary));
+    outline-offset: 0;
+    border-color: rgb(var(--sf-primary) / 0.6);
   }
 
   /* Status Badges - Unified with Color Theory */
@@ -240,6 +286,27 @@ html.dark {
   .table-sticky-header thead {
     @apply sticky top-0 z-10 bg-sf-surface/95 backdrop-blur-md shadow-sm;
   }
+}
+
+/* ── Stat-card number entrance animation ───────────────────────────────── */
+.animate-count-in {
+  animation: count-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes count-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.94); filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0)  scale(1);    filter: blur(0);   }
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--sf-elevated)) 25%,
+    rgb(var(--sf-border))   50%,
+    rgb(var(--sf-elevated)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
 
 /* Universal Print Stylesheet - Premium A4 Accounting Output */

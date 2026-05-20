@@ -1,17 +1,21 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ClientService } from '@core/services/client.service';
 import { Client } from '@core/models/client.model';
+import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroPlus, heroMagnifyingGlass, heroUserGroup, heroEnvelope, heroPhone, heroPencil, heroTrash } from '@ng-icons/heroicons/outline';
+import { heroPlus, heroUserGroup, heroEnvelope, heroPhone, heroPencil, heroTrash } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
+import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-client-list',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, RouterLink],
+  imports: [CommonModule, NgIconComponent, RouterLink, ListToolbarComponent, TranslateModule],
   providers: [
-    provideIcons({ heroPlus, heroMagnifyingGlass, heroUserGroup, heroEnvelope, heroPhone, heroPencil, heroTrash })
+    provideIcons({ heroPlus, heroUserGroup, heroEnvelope, heroPhone, heroPencil, heroTrash })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -19,23 +23,25 @@ import { RouterLink } from '@angular/router';
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">دليل العملاء</h1>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'client.list.title' | translate }}</h1>
           <p class="text-sf-muted font-medium mt-1">إدارة علاقات العملاء وسجل الاتصالات.</p>
         </div>
         <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2">
           <ng-icon name="heroPlus"></ng-icon>
-          <span>عميل جديد</span>
+          <span>{{ 'client.list.add' | translate }}</span>
         </button>
       </header>
 
-      <!-- Search Bar -->
-      <div class="bg-sf-surface p-4 rounded-2xl border border-sf-border shadow-sm">
-        <div class="relative w-full">
-          <ng-icon name="heroMagnifyingGlass" class="absolute right-4 top-1/2 -translate-y-1/2 text-sf-muted"></ng-icon>
-          <input type="text" (input)="onSearch($event)" placeholder="بحث بالاسم، الكود، أو معلومات الاتصال..." 
-                 class="w-full pr-11 pl-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 transition-all text-right">
-        </div>
-      </div>
+      <!-- Toolbar -->
+      <app-list-toolbar
+        placeholder="بحث بالاسم، الكود، أو معلومات الاتصال..."
+        [statusOptions]="statusOptions"
+        [activeStatus]="statusFilter()"
+        [count]="filteredClients().length"
+        [loading]="loading()"
+        (searchChange)="onSearch($event)"
+        (statusChange)="onStatusChange($event)"
+      />
 
       <!-- Client Table -->
       <div class="bg-sf-surface border border-sf-border shadow-sm rounded-2xl overflow-hidden">
@@ -100,11 +106,18 @@ import { RouterLink } from '@angular/router';
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="px-6 py-24 text-center">
-                    <div class="flex flex-col items-center justify-center opacity-40">
-                      <ng-icon name="heroUserGroup" class="text-5xl mb-4"></ng-icon>
-                      <h3 class="text-lg font-bold">لم يتم العثور على عملاء</h3>
-                      <p class="text-sm">ابدأ بإضافة أول عميل لك.</p>
+                  <td colspan="5" class="px-6 py-20 text-center">
+                    <div class="flex flex-col items-center justify-center gap-3">
+                      <div class="w-16 h-16 rounded-2xl bg-sf-elevated border border-sf-border border-dashed
+                                  flex items-center justify-center text-sf-subtle">
+                        <ng-icon name="heroUserGroup" class="text-2xl"></ng-icon>
+                      </div>
+                      <div>
+                        <h3 class="text-base font-bold text-sf-text">لا يوجد عملاء</h3>
+                        <p class="text-sm text-sf-muted mt-1">
+                          {{ statusFilter() !== 'all' ? 'لا يوجد عملاء بهذه الحالة.' : 'ابدأ بإضافة أول عميل لك.' }}
+                        </p>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -126,56 +139,65 @@ import { RouterLink } from '@angular/router';
   styles: [``]
 })
 export class ClientListComponent implements OnInit {
-  private clientService = inject(ClientService);
-  clients = signal<Client[]>([]);
-  loading = signal(true);
-  searchQuery = signal('');
+  private clientService  = inject(ClientService);
+  private confirmDialog  = inject(ConfirmDialogService);
+  private destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+
+  clients      = signal<Client[]>([]);
+  loading      = signal(true);
+  searchQuery  = signal('');
+  statusFilter = signal('all');
   filteredClients = signal<Client[]>([]);
 
-  ngOnInit() {
-    this.loadClients();
-  }
+  readonly statusOptions = [
+    { value: 'all',      label: 'الكل' },
+    { value: 'active',   label: 'نشط' },
+    { value: 'inactive', label: 'غير نشط' },
+  ];
+
+  ngOnInit() { this.loadClients(); }
 
   loadClients() {
     this.loading.set(true);
-    this.clientService.getClients().subscribe({
+    this.clientService.getClients().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.loading.set(false);
-        if (res.success) {
-          this.clients.set(res.data);
-          this.applyFilter();
-        }
+        if (res.success) { this.clients.set(res.data); this.applyFilter(); }
       },
-      error: () => this.loading.set(false)
+      error: () => this.loading.set(false),
     });
   }
 
-  onSearch(event: any) {
-    this.searchQuery.set(event.target.value);
-    this.applyFilter();
-  }
+  onSearch(query: string)       { this.searchQuery.set(query); this.applyFilter(); }
+  onStatusChange(status: string) { this.statusFilter.set(status); this.applyFilter(); }
 
   applyFilter() {
-    const query = this.searchQuery().toLowerCase();
-    if (!query) {
-      this.filteredClients.set(this.clients());
-      return;
-    }
+    const q  = this.searchQuery().toLowerCase();
+    const st = this.statusFilter();
 
-    this.filteredClients.set(
-      this.clients().filter(c => 
-        c.name?.toLowerCase().includes(query) ||
-        c.email?.toLowerCase().includes(query) ||
-        c.phone?.toLowerCase().includes(query) ||
-        c.code?.toLowerCase().includes(query)
-      )
+    let list = this.clients();
+    if (st === 'active')   list = list.filter(c => c.isActive);
+    if (st === 'inactive') list = list.filter(c => !c.isActive);
+    if (q) list = list.filter(c =>
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q) ||
+      c.code?.toLowerCase().includes(q),
     );
+    this.filteredClients.set(list);
   }
 
-  deleteClient(client: Client) {
-    if (confirm(`هل أنت متأكد من حذف العميل "${client.name}"؟`)) {
-      this.clientService.deleteClient(client._id).subscribe({
-        next: () => this.loadClients()
+  async deleteClient(client: Client) {
+    const ok = await this.confirmDialog.confirm({
+      title: this.translate.instant('client.list.delete_title'),
+      message: this.translate.instant('client.list.delete_msg'),
+      confirmLabel: this.translate.instant('common.delete'),
+      type: 'danger',
+    });
+    if (ok) {
+      this.clientService.deleteClient(client._id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => this.loadClients(),
       });
     }
   }

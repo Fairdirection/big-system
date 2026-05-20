@@ -91,6 +91,14 @@ export const routes: Routes = [
         title: 'Targets',
       },
       {
+        path: 'commissions',
+        loadComponent: () =>
+          import('./features/commissions/commissions.component').then(
+            m => m.CommissionsComponent
+          ),
+        title: 'العمولات والعلاوات',
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then(

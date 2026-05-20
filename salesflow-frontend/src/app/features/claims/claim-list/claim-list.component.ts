@@ -1,20 +1,26 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ClaimService } from '@core/services/claim.service';
 import { ToastService } from '@core/services/toast.service';
+import { ThemeService } from '@core/services/theme.service';
 import { Claim } from '@core/models/claim.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroChevronRight } from '@ng-icons/heroicons/outline';
+import { heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
+import { formatQuarter } from '@core/utils/quarter.utils';
+import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
+import { PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-claim-list',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink],
+  imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, ListToolbarComponent, PaginationComponent, TranslateModule],
   providers: [
-    provideIcons({ heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroChevronRight })
+    provideIcons({ heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -22,18 +28,35 @@ import { RouterLink } from '@angular/router';
       <!-- Header -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">مطالبات العمولات</h1>
-          <p class="text-sf-muted font-medium mt-1">تتبع وإدارة حالة التحصيل لجميع المبيعات المؤكدة.</p>
+          <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'claim.list.title' | translate }}</h1>
+          <p class="text-sf-muted font-medium mt-1 flex items-center gap-2">
+            تتبع وإدارة حالة التحصيل لجميع المبيعات المؤكدة.
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black bg-sf-primary/10 text-sf-primary border border-sf-primary/20">
+              <ng-icon name="heroCalendarDays" class="text-xs"></ng-icon>
+              {{ formatQ(themeService.currentQuarter()) }}
+            </span>
+          </p>
         </div>
         <button (click)="onSyncClaims()" class="btn btn-secondary flex items-center gap-2">
           <ng-icon name="heroArrowPath"></ng-icon>
-          <span>مزامنة المطالبات</span>
+          <span>{{ 'claim.list.sync_btn' | translate }}</span>
         </button>
       </header>
 
+      <!-- Unified Toolbar -->
+      <app-list-toolbar
+        placeholder="بحث برقم المطالبة، المبيعة أو العميل..."
+        [statusOptions]="statusOptions"
+        [activeStatus]="statusFilter()"
+        [count]="displayedClaims().length"
+        [loading]="loading()"
+        (searchChange)="onSearch($event)"
+        (statusChange)="onStatusChange($event)"
+      />
+
       <!-- Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" *ngIf="!loading(); else skeleton">
-        @for (claim of claims(); track claim._id) {
+        @for (claim of displayedClaims(); track claim._id) {
           <div [routerLink]="[claim._id]" 
                class="glass-card rounded-2xl border border-sf-border shadow-xl flex flex-col overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98] hover:border-sf-primary/40 transition-all duration-300 hover:shadow-glow-purple/5 group">
             <!-- Card Header -->
@@ -47,7 +70,7 @@ import { RouterLink } from '@angular/router';
                   <span class="text-[10px] font-black text-sf-muted uppercase tracking-tighter font-financial">{{ claim.saleNumber }}</span>
                 </div>
               </div>
-              <app-badge [color]="getStatusColor(claim.status)">{{ translateStatus(claim.status) }}</app-badge>
+              <app-badge [color]="getStatusColor(claim.status)">{{ 'claim.list.' + claim.status | translate }}</app-badge>
             </div>
 
             <!-- Card Body -->
@@ -89,35 +112,29 @@ import { RouterLink } from '@angular/router';
             </div>
           </div>
         } @empty {
-          <div class="col-span-full py-32 flex flex-col items-center justify-center text-sf-muted">
-            <ng-icon name="heroDocumentText" class="text-5xl mb-4 opacity-10"></ng-icon>
-            <h3 class="text-xl font-bold italic">لم يتم العثور على مطالبات نشطة</h3>
-            <p class="text-sm font-medium">يتم إنشاء المطالبات تلقائيًا من المبيعات المؤكدة.</p>
+          <div class="col-span-full py-20 flex flex-col items-center justify-center gap-3">
+            <div class="w-16 h-16 rounded-2xl bg-sf-elevated border border-sf-border border-dashed
+                        flex items-center justify-center text-sf-subtle">
+              <ng-icon name="heroDocumentText" class="text-2xl"></ng-icon>
+            </div>
+            <div class="text-center">
+              <h3 class="text-base font-bold text-sf-text">{{ 'claim.list.no_data' | translate }}</h3>
+              <p class="text-sm text-sf-muted mt-1">
+                {{ 'claim.list.no_data' | translate }}
+              </p>
+            </div>
           </div>
         }
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between p-6 bg-sf-surface/30 border border-sf-border rounded-2xl shadow-xl mt-8" *ngIf="totalPages() > 1 && !loading()">
-        <span class="text-xs font-bold text-sf-muted uppercase tracking-widest font-financial">
-          عرض {{ (currentPage() - 1) * limit() + 1 }} - {{ getMin(currentPage() * limit(), totalItems()) }} من أصل {{ totalItems() }} مطالبة
-        </span>
-        <div class="flex items-center gap-2">
-          <button (click)="prevPage()" 
-                  [disabled]="currentPage() === 1"
-                  class="p-2.5 bg-sf-bg border border-sf-border rounded-xl text-sf-muted hover:text-sf-primary hover:border-sf-primary/30 disabled:opacity-30 disabled:hover:text-sf-muted disabled:hover:border-sf-border transition-all active:scale-95 flex items-center justify-center">
-            <ng-icon name="heroChevronRight" class="text-lg rotate-180"></ng-icon>
-          </button>
-          <span class="px-4 py-2 bg-sf-primary/10 border border-sf-primary/20 rounded-xl text-xs font-black text-sf-primary font-financial">
-            الصفحة {{ currentPage() }} من {{ totalPages() }}
-          </span>
-          <button (click)="nextPage()" 
-                  [disabled]="currentPage() === totalPages()"
-                  class="p-2.5 bg-sf-bg border border-sf-border rounded-xl text-sf-muted hover:text-sf-primary hover:border-sf-primary/30 disabled:opacity-30 disabled:hover:text-sf-muted disabled:hover:border-sf-border transition-all active:scale-95 flex items-center justify-center">
-            <ng-icon name="heroChevronRight" class="text-lg"></ng-icon>
-          </button>
-        </div>
-      </div>
+      <app-pagination *ngIf="!loading()"
+        [currentPage]="currentPage()"
+        [totalPages]="effectiveTotalPages()"
+        [totalItems]="totalItems()"
+        [limit]="limit()"
+        (pageChange)="onPageChange($event)"
+      />
 
       <ng-template #skeleton>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -144,26 +161,68 @@ import { RouterLink } from '@angular/router';
 export class ClaimListComponent implements OnInit {
   private claimService = inject(ClaimService);
   private toastService = inject(ToastService);
-  claims = signal<Claim[]>([]);
-  loading = signal(true);
+  public themeService = inject(ThemeService);
+  private destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
-  // Pagination Signals
+  claims       = signal<Claim[]>([]);
+  loading      = signal(true);
+  searchQuery  = signal('');
+  statusFilter = signal('all');
+
   currentPage = signal(1);
-  limit = signal(6); // 6 cards fits beautiful on a 3-column grid
-  totalItems = signal(0);
-  totalPages = signal(1);
+  limit       = signal(6);
+  totalItems  = signal(0);
+  totalPages  = signal(1);
 
-  ngOnInit() {
-    this.loadClaims();
+  readonly statusOptions = [
+    { value: 'all',       label: 'الكل' },
+    { value: 'pending',   label: 'قيد الانتظار' },
+    { value: 'submitted', label: 'تم التقديم' },
+    { value: 'collected', label: 'محصلة' },
+    { value: 'disputed',  label: 'منازع عليها' },
+  ];
+
+  // Client-side filter on the loaded page (server-side when backend supports search param)
+  displayedClaims = computed(() => {
+    let list = this.claims();
+    const q  = this.searchQuery().toLowerCase();
+    const st = this.statusFilter();
+
+    if (st !== 'all') list = list.filter(c => c.status === st);
+    if (q) list = list.filter(c =>
+      c.claimNumber?.toLowerCase().includes(q) ||
+      (c as any).saleNumber?.toLowerCase().includes(q) ||
+      (c as any).clientName?.toLowerCase().includes(q),
+    );
+    return list;
+  });
+
+  // When a client-side filter is active, compute pages from filtered count rather than server total
+  effectiveTotalPages = computed(() => {
+    const hasFilter = this.searchQuery().trim().length > 0 || this.statusFilter() !== 'all';
+    if (hasFilter) return Math.max(1, Math.ceil(this.displayedClaims().length / this.limit()));
+    return this.totalPages();
+  });
+
+  constructor() {
+    effect(() => {
+      this.themeService.currentQuarter();
+      this.currentPage.set(1);
+      this.loadClaims();
+    });
   }
+
+  ngOnInit() {}
 
   loadClaims() {
     this.loading.set(true);
     const params: Record<string, string> = {
-      page: this.currentPage().toString(),
-      limit: this.limit().toString()
+      page:      this.currentPage().toString(),
+      limit:     this.limit().toString(),
+      quarterId: this.themeService.currentQuarter(),
     };
-    this.claimService.getClaims(params).subscribe({
+    this.claimService.getClaims(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.loading.set(false);
         if (res.success) {
@@ -174,45 +233,39 @@ export class ClaimListComponent implements OnInit {
           }
         }
       },
-      error: () => this.loading.set(false)
+      error: () => this.loading.set(false),
     });
   }
 
-  nextPage() {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update((p: number) => p + 1);
-      this.loadClaims();
-    }
+  onSearch(query: string)    { this.searchQuery.set(query); this.currentPage.set(1); }
+  onStatusChange(st: string) { this.statusFilter.set(st); this.currentPage.set(1); }
+
+  onPageChange(page: number) {
+    this.currentPage.set(page);
+    this.loadClaims();
   }
 
-  prevPage() {
-    if (this.currentPage() > 1) {
-      this.currentPage.update((p: number) => p - 1);
-      this.loadClaims();
-    }
-  }
-
-  getMin(a: number, b: number): number {
-    return Math.min(a, b);
-  }
+  nextPage() { this.onPageChange(this.currentPage() + 1); }
+  prevPage()  { this.onPageChange(this.currentPage() - 1); }
+  getMin(a: number, b: number) { return Math.min(a, b); }
 
   onSyncClaims() {
     this.loading.set(true);
-    this.claimService.syncClaims().subscribe({
+    this.claimService.syncClaims().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         // Reset to first page to see newly synced items
         this.currentPage.set(1);
         this.loadClaims();
         const count = res.data?.length || 0;
         this.toastService.showSuccess(
-          count > 0 
-            ? `تمت مزامنة المطالبات بنجاح! تم إنشاء ${count} مطالبة جديدة.` 
-            : 'مكتمل: جميع المطالبات قيد التشغيل بالفعل متزامنة بالكامل.'
+          count > 0
+            ? this.translate.instant('claim.list.synced', { count })
+            : this.translate.instant('claim.list.synced', { count: 0 })
         );
       },
       error: (err: any) => {
         this.loading.set(false);
-        this.toastService.showError(err.error?.message || 'حدث خطأ أثناء مزامنة المطالبات.');
+        this.toastService.showError(err.error?.message || this.translate.instant('common.error_generic'));
       }
     });
   }
@@ -235,5 +288,9 @@ export class ClaimListComponent implements OnInit {
       case 'disputed': return 'error';
       default: return 'gray';
     }
+  }
+
+  formatQ(q: string): string {
+    return formatQuarter(q);
   }
 }
