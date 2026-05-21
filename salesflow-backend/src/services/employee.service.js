@@ -308,7 +308,9 @@ const updateEmployee = async (id, data, reqQuarterId) => {
   if (data.isActive === false) {
     const today = new Date();
     data.endDate = data.endDate || today;
-    data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, data.endDate);
+    // Cap to today so a future endDate doesn't inflate the stored working days
+    const deactivationEnd = new Date(Math.min(new Date(data.endDate).getTime(), today.getTime()));
+    data.totalWorkingDays = calculateWorkingDays(data.hireDate || employee.hireDate, deactivationEnd);
 
     // If they belong to a team, pull them out and close their history
     if (employee.currentTeamId) {
@@ -625,11 +627,16 @@ const getTeamHistory = async (employeeId) => {
     }
   }
 
+  const now = new Date();
+  // Effective end: for inactive employees cap to today (future endDate means
+  // "scheduled termination" — we must not count days that haven't happened yet)
+  const effectiveEnd = (!employee.isActive && employee.endDate)
+    ? new Date(Math.min(new Date(employee.endDate).getTime(), now.getTime()))
+    : now;
+
   // If there's time left after the last record and employee is active
   if (currentDate && employee.isActive) {
-    const now = new Date();
     if (now > currentDate) {
-      // Calculate achievement for the current unassigned period
       const periodSales = sales.filter(s => new Date(s.contractDate) >= currentDate);
       const achievement = periodSales.reduce((sum, s) => {
         const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
@@ -647,7 +654,7 @@ const getTeamHistory = async (employeeId) => {
       });
     }
   } else if (!history.length && employee.isActive) {
-    // No history at all, count all sales
+    // Active employee with no history at all
     const achievement = sales.reduce((sum, s) => {
       const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
       return sum + (s.unitValue * (seller.sharePercentage / 100));
@@ -658,14 +665,32 @@ const getTeamHistory = async (employeeId) => {
       name: 'no_team',
       startDate: currentDate,
       endDate: null,
-      durationDays: calculateWorkingDays(currentDate, new Date()),
+      durationDays: calculateWorkingDays(currentDate, now),
       achievement: Math.round(achievement)
     });
+  } else if (!history.length && !employee.isActive && currentDate) {
+    // Inactive employee with no team history: show the unassigned period
+    // from hire date to effective end (capped to today)
+    const achievement = sales.reduce((sum, s) => {
+      const seller = s.sellers.find(sel => sel.employeeId.toString() === employeeId.toString());
+      return sum + (s.unitValue * (seller.sharePercentage / 100));
+    }, 0);
+
+    if (effectiveEnd > currentDate) {
+      timeline.push({
+        type: 'no-team',
+        name: 'no_team',
+        startDate: currentDate,
+        endDate: effectiveEnd,
+        durationDays: calculateWorkingDays(currentDate, effectiveEnd),
+        achievement: Math.round(achievement)
+      });
+    }
   }
 
   // Add termination event as the most recent entry when employee is deactivated
   if (!employee.isActive) {
-    const terminationDate = employee.endDate || employee.updatedAt || new Date();
+    const terminationDate = employee.endDate || employee.updatedAt || now;
     timeline.push({
       type: 'deactivated',
       name: 'إنهاء الخدمة',
@@ -678,9 +703,10 @@ const getTeamHistory = async (employeeId) => {
   }
 
   const result = timeline.reverse();
-  
-  // Calculate summary stats
-  const totalSeniority = calculateWorkingDays(employee.hireDate, new Date());
+
+  // Calculate summary stats — cap to effectiveEnd so future endDates
+  // don't inflate the seniority counter beyond today
+  const totalSeniority = calculateWorkingDays(employee.hireDate, effectiveEnd);
   const currentQuarter = getQuarterId(new Date());
   const quarterDays = calculateEmployeeQuarterDays(history, currentQuarter);
 
