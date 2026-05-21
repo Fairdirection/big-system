@@ -59,7 +59,7 @@ import { AvatarUploadComponent } from '@shared/components/avatar-upload/avatar-u
           <div class="flex items-center gap-4 sm:gap-5 min-w-0">
             <!-- Clickable avatar -->
             <button (click)="avatarUploadOpen.set(true)"
-                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl shrink-0 overflow-hidden shadow-premium group outline-none">
+                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl shrink-0 overflow-hidden shadow-premium group outline-none p-0 border-0">
               @if (emp.avatarUrl) {
                 <img [src]="emp.avatarUrl" class="w-full h-full object-cover transition-all group-hover:brightness-75" />
               } @else {

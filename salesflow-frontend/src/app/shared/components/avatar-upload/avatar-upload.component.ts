@@ -400,10 +400,11 @@ import { Observable } from 'rxjs';
 
     /* ── Avatar image ── */
     .avatar-img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 50%;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
@@ -763,14 +764,15 @@ export class AvatarUploadComponent implements OnInit {
       const url = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = size; canvas.height = size;
+        canvas.width = size;
+        canvas.height = size;
         const ctx = canvas.getContext('2d')!;
+        // Center-square crop — let CSS handle the circular display.
+        // Do NOT clip to circle here: JPEG has no transparency so
+        // an arc clip produces black corners that distort the image.
         const min = Math.min(img.width, img.height);
         const sx  = (img.width  - min) / 2;
         const sy  = (img.height - min) / 2;
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.clip();
         ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
         URL.revokeObjectURL(url);
         resolve(canvas.toDataURL('image/jpeg', quality));
