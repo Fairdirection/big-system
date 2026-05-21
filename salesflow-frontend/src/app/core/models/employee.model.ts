@@ -4,6 +4,8 @@ export interface Employee {
   _id: string;
   name: string;
   avatarUrl?: string | null;
+  avatarOriginalUrl?: string | null;
+  avatarCrop?: { panX: number, panY: number, zoom: number };
   employeeCode: string;
   department: Department;
   jobTitle: string;

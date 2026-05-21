@@ -942,8 +942,26 @@ const getPersonalTargetProgressOnly = async (employeeOrId, quarterId) => {
 
 const getTargetProgress = async (employeeId, quarterId) => {
   const employee = await Employee.findById(employeeId);
-  if (!employee || employee.department !== 'Sales') {
-    throw new Error('Employee not found or not in Sales department');
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+  if (employee.department !== 'Sales') {
+    return {
+      employeeId,
+      employeeName: employee.name,
+      code: employee.code,
+      quarterId,
+      fullTarget: 0,
+      adjustedTarget: 0,
+      achievedSales: 0,
+      achievedSalesValue: 0,
+      achievedCommission: 0,
+      achievementPercentage: 0,
+      gap: 0,
+      actualWorkingDays: 0,
+      sales: [],
+      notApplicable: true
+    };
   }
 
   const isSM = employee.seniorityLevel === 'SalesManager';

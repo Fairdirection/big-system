@@ -41,11 +41,17 @@ const changePassword = async (req, res, next) => {
 
 const updateAvatar = async (req, res, next) => {
   try {
-    const { avatarUrl } = req.body;
+    const { avatarUrl, avatarOriginalUrl, avatarCrop } = req.body;
     const User = require('../models/user.model');
+    
+    const updateData = {};
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl || null;
+    if (avatarOriginalUrl !== undefined) updateData.avatarOriginalUrl = avatarOriginalUrl || null;
+    if (avatarCrop !== undefined) updateData.avatarCrop = avatarCrop || null;
+    
     const updated = await User.findByIdAndUpdate(
       req.user.id,
-      { avatarUrl: avatarUrl ?? null },
+      updateData,
       { new: true }
     ).select('-passwordHash');
     if (!updated) return res.status(404).json({ success: false, message: 'User not found' });

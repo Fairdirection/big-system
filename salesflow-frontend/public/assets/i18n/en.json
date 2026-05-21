@@ -197,6 +197,7 @@
       "validation_error": "Please check the following fields:"
     },
     "detail": {
+      "quarter_back_now": "Back to current quarter",
       "edit_btn": "Edit Profile",
       "deactivate_btn": "Disable Account",
       "activate_btn": "Enable Account",
@@ -529,6 +530,11 @@
     "error_save": "An error occurred while saving. Please try again.",
     "error_remove": "An error occurred while removing the photo.",
     "saved_success": "Profile picture saved successfully!",
-    "removed_success": "Profile picture removed successfully."
+    "removed_success": "Profile picture removed successfully.",
+    "drag_hint": "Drag to reposition · Scroll to zoom",
+    "crop_save": "Crop & Save",
+    "reset": "Reset",
+    "choose_btn": "Change Photo",
+    "adjust": "Adjust Position"
   }
 }

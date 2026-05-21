@@ -30,6 +30,12 @@ const employeeSchema = new mongoose.Schema({
   phone:      { type: String, required: false, default: "" },
 
   avatarUrl: { type: String, default: null },              // base64 data URL or external URL
+  avatarOriginalUrl: { type: String, default: null },
+  avatarCrop: {
+    panX: { type: Number, default: 0 },
+    panY: { type: Number, default: 0 },
+    zoom: { type: Number, default: 1 }
+  },
 
   // Computed/cached
   totalWorkingDays:           { type: Number, default: 0 },

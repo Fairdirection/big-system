@@ -7,6 +7,12 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   role:         { type: String, enum: ['admin'], default: 'admin' },
   avatarUrl:    { type: String, default: null },              // base64 data URL or external URL
+  avatarOriginalUrl: { type: String, default: null },
+  avatarCrop: {
+    panX: { type: Number, default: 0 },
+    panY: { type: Number, default: 0 },
+    zoom: { type: Number, default: 1 }
+  },
   isActive:     { type: Boolean, default: true }
 }, { timestamps: true });
 

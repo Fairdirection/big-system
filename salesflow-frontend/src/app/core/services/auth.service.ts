@@ -58,9 +58,9 @@ export class AuthService {
       .pipe(tap((res) => this._currentUser.set(res.data)));
   }
 
-  updateAvatar(avatarUrl: string | null) {
+  updateAvatar(payload: { avatarUrl: string | null; avatarOriginalUrl?: string | null; avatarCrop?: any }) {
     return this.http
-      .patch<ApiResponse<User>>(`${environment.apiUrl}/auth/avatar`, { avatarUrl })
+      .patch<ApiResponse<User>>(`${environment.apiUrl}/auth/avatar`, payload)
       .pipe(tap((res) => this._currentUser.set(res.data)));
   }
 

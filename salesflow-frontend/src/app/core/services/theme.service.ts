@@ -11,7 +11,7 @@ export class ThemeService {
   isDark = computed(() => this._theme() === 'dark');
   currentTheme = this._theme.asReadonly();
   currentQuarter = this._quarter.asReadonly();
-  availableQuarters = signal(getAvailableQuarters());
+  availableQuarters = signal(getAvailableQuarters(2, 1));
   loading = signal(false);
 
   constructor() {

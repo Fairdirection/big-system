@@ -17,15 +17,25 @@ export function formatQuarter(quarterId: string): string {
   return `الربع ${qNum} - ${year}`;
 }
 
+/** Returns sorted unique years covered by getAvailableQuarters() */
+export function getAvailableYears(yearsBefore = 2, yearsAfter = 1): number[] {
+  const current = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = current + yearsAfter; y >= current - yearsBefore; y--) years.push(y);
+  return years;
+}
+
 /**
- * Generates only the 4 quarters of the current year
+ * Generates all quarters from `startYear` through `endYear` (inclusive),
+ * ordered newest-first so the current quarter appears at the top of selectors.
  */
-export function getAvailableQuarters(): string[] {
+export function getAvailableQuarters(yearsBefore = 2, yearsAfter = 1): string[] {
   const currentYear = new Date().getFullYear();
-  return [
-    `Q1-${currentYear}`,
-    `Q2-${currentYear}`,
-    `Q3-${currentYear}`,
-    `Q4-${currentYear}`,
-  ];
+  const quarters: string[] = [];
+  for (let y = currentYear + yearsAfter; y >= currentYear - yearsBefore; y--) {
+    for (let q = 4; q >= 1; q--) {
+      quarters.push(`Q${q}-${y}`);
+    }
+  }
+  return quarters;
 }

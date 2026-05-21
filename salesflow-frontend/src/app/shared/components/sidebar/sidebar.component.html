@@ -140,6 +140,8 @@
     @if (avatarUploadOpen()) {
       <app-avatar-upload
         [currentAvatar]="currentUser()?.avatarUrl"
+        [currentOriginalAvatar]="currentUser()?.avatarOriginalUrl"
+        [currentCrop]="currentUser()?.avatarCrop"
         (close)="avatarUploadOpen.set(false)"
         (saved)="avatarUploadOpen.set(false)">
       </app-avatar-upload>

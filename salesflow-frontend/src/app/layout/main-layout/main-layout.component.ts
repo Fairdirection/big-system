@@ -33,7 +33,7 @@ import { LanguageService } from '@core/services/language.service';
         [class.lg:left-20]="!sidebarExpanded() && !langService.isRtl()"
       />
 
-      <div class="flex pt-16 h-full relative z-10">
+      <div class="flex pt-16 h-full relative">
         <!-- Sidebar -->
         <app-sidebar />
 

@@ -14,7 +14,14 @@
       "Bash(Get-ChildItem *)",
       "Bash(cd C:\\\\Users\\\\FT 2025\\\\Music\\\\full_system\\\\salesflow-backend *)",
       "Bash(npm install *)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'feat: default employee list view to table, grid available via toggle *)",
+      "Bash(git commit -m 'fix: prevent avatar circle from rendering as oval *)",
+      "Bash(git commit -m 'fix: aurora ring escaping above photo — move container to inline styles *)",
+      "Bash(xargs cat)",
+      "Bash(npx tsc *)"
     ]
   }
 }
