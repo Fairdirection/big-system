@@ -15,28 +15,39 @@ import {
   heroCalendar, heroBriefcase, heroClock, heroIdentification, heroTrophy, heroChartBar,
   heroUsers, heroXMark, heroCheck, heroHashtag, heroMapPin, heroBuildingOffice,
   heroPencilSquare, heroCalendarDays, heroExclamationTriangle, heroNoSymbol,
-  heroUserGroup, heroArrowPath, heroSparkles
+  heroUserGroup, heroArrowPath, heroSparkles, heroCamera
 } from '@ng-icons/heroicons/outline';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '@core/services/language.service';
+import { AvatarUploadComponent } from '@shared/components/avatar-upload/avatar-upload.component';
 
 @Component({
   selector: 'app-employee-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, RouterLink, CurrencyEgpPipe, TranslateModule],
+  imports: [CommonModule, FormsModule, NgIconComponent, RouterLink, CurrencyEgpPipe, TranslateModule, AvatarUploadComponent],
   providers: [
     provideIcons({
       heroChevronLeft, heroChevronRight, heroPencil, heroTrash, heroEnvelope, heroPhone,
       heroCalendar, heroBriefcase, heroClock, heroIdentification, heroTrophy, heroChartBar,
       heroUsers, heroXMark, heroCheck, heroHashtag, heroMapPin, heroBuildingOffice,
       heroPencilSquare, heroCalendarDays, heroExclamationTriangle, heroNoSymbol,
-      heroUserGroup, heroArrowPath, heroSparkles
+      heroUserGroup, heroArrowPath, heroSparkles, heroCamera
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- Avatar upload modal -->
+    @if (avatarUploadOpen()) {
+      <app-avatar-upload
+        [currentAvatar]="employee()?.avatarUrl"
+        [employeeId]="employee()?._id"
+        (close)="avatarUploadOpen.set(false)"
+        (saved)="onAvatarSaved($event)">
+      </app-avatar-upload>
+    }
+
     <div class="space-y-8 animate-fade-in pb-20" *ngIf="employee() as emp">
       <!-- Header -->
       <header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -44,17 +55,23 @@ import { LanguageService } from '@core/services/language.service';
           <button (click)="goBack()" class="p-2 hover:bg-sf-surface rounded-xl transition-colors">
             <ng-icon name="heroChevronRight" class="text-xl"></ng-icon>
           </button>
-          
+
           <div class="flex items-center gap-4 sm:gap-5 min-w-0">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl shrink-0 overflow-hidden shadow-premium">
+            <!-- Clickable avatar -->
+            <button (click)="avatarUploadOpen.set(true)"
+                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl shrink-0 overflow-hidden shadow-premium group outline-none">
               @if (emp.avatarUrl) {
-                <img [src]="emp.avatarUrl" class="w-full h-full object-cover" />
+                <img [src]="emp.avatarUrl" class="w-full h-full object-cover transition-all group-hover:brightness-75" />
               } @else {
-                <div class="w-full h-full bg-sf-primary/10 flex items-center justify-center text-sf-primary text-2xl sm:text-3xl font-display font-black">
+                <div class="w-full h-full bg-sf-primary/10 flex items-center justify-center text-sf-primary text-2xl sm:text-3xl font-display font-black transition-all group-hover:bg-sf-primary/20">
                   {{ emp.name.charAt(0) }}
                 </div>
               }
-            </div>
+              <!-- Camera badge -->
+              <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ng-icon name="heroCamera" class="text-white text-xl"></ng-icon>
+              </div>
+            </button>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
                 <h1 class="text-2xl sm:text-3xl font-display font-black text-sf-text tracking-tight truncate leading-tight">{{ emp.name }}</h1>
@@ -596,10 +613,11 @@ export class EmployeeDetailComponent implements OnInit {
   private translate       = inject(TranslateService);
   private langService     = inject(LanguageService);
 
-  employee = signal<Employee | null>(null);
-  stats    = signal<any>(null);
-  history  = signal<any[]>([]);
-  sales    = signal<any[]>([]);
+  employee         = signal<Employee | null>(null);
+  stats            = signal<any>(null);
+  history          = signal<any[]>([]);
+  sales            = signal<any[]>([]);
+  avatarUploadOpen = signal(false);
 
   // Deactivation panel
   deactivateOpen    = signal(false);
@@ -758,6 +776,11 @@ export class EmployeeDetailComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/employees']);
+  }
+
+  onAvatarSaved(avatarUrl: string | null) {
+    const emp = this.employee();
+    if (emp) this.employee.set({ ...emp, avatarUrl: avatarUrl ?? undefined });
   }
 
   async deleteEmployee() {

@@ -6,7 +6,9 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '@core/services/auth.service';
+import { EmployeeService } from '@core/services/employee.service';
 import { ToastService } from '@core/services/toast.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-avatar-upload',
@@ -678,13 +680,17 @@ import { ToastService } from '@core/services/toast.service';
 })
 export class AvatarUploadComponent implements OnInit {
   currentAvatar = input<string | null | undefined>(null);
+  /** Pass an employee ID to save to that employee instead of the logged-in user. */
+  employeeId    = input<string | null | undefined>(null);
+
   close  = output<void>();
   saved  = output<string | null>();
 
-  private auth       = inject(AuthService);
-  private toast      = inject(ToastService);
-  private translate  = inject(TranslateService);
-  private destroyRef = inject(DestroyRef);
+  private auth            = inject(AuthService);
+  private employeeService = inject(EmployeeService);
+  private toast           = inject(ToastService);
+  private translate       = inject(TranslateService);
+  private destroyRef      = inject(DestroyRef);
 
   preview   = signal<string | null>(null);
   isDragging = signal(false);
@@ -777,37 +783,42 @@ export class AvatarUploadComponent implements OnInit {
     const avatarUrl = this.preview();
     if (!avatarUrl || this.saving()) return;
     this.saving.set(true);
-    this.auth.updateAvatar(avatarUrl)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.saving.set(false);
-          this.toast.showSuccess(this.translate.instant('avatar.saved_success'));
-          this.saved.emit(avatarUrl);
-          this.close.emit();
-        },
-        error: () => {
-          this.saving.set(false);
-          this.error.set(this.translate.instant('avatar.error_save'));
-        }
-      });
+    this.persist(avatarUrl).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.toast.showSuccess(this.translate.instant('avatar.saved_success'));
+        this.saved.emit(avatarUrl);
+        this.close.emit();
+      },
+      error: () => {
+        this.saving.set(false);
+        this.error.set(this.translate.instant('avatar.error_save'));
+      }
+    });
   }
 
   removeAvatar() {
     this.saving.set(true);
-    this.auth.updateAvatar(null)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.saving.set(false);
-          this.toast.showSuccess(this.translate.instant('avatar.removed_success'));
-          this.saved.emit(null);
-          this.close.emit();
-        },
-        error: () => {
-          this.saving.set(false);
-          this.error.set(this.translate.instant('avatar.error_remove'));
-        }
-      });
+    this.persist(null).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.toast.showSuccess(this.translate.instant('avatar.removed_success'));
+        this.saved.emit(null);
+        this.close.emit();
+      },
+      error: () => {
+        this.saving.set(false);
+        this.error.set(this.translate.instant('avatar.error_remove'));
+      }
+    });
+  }
+
+  /** Route save to employee service or auth service depending on context. */
+  private persist(avatarUrl: string | null): Observable<any> {
+    const empId = this.employeeId();
+    if (empId) {
+      return this.employeeService.updateEmployee(empId, { avatarUrl } as any);
+    }
+    return this.auth.updateAvatar(avatarUrl);
   }
 }
