@@ -278,7 +278,7 @@ export class EmployeeListComponent implements OnInit {
   statusFilter      = signal<'active' | 'inactive' | 'all'>('active');
   loading           = signal(true);
   filteredEmployees = signal<EmployeeWithQuarterlyTarget[]>([]);
-  viewMode          = signal<'card' | 'table'>('card');
+  viewMode          = signal<'card' | 'table'>('table');
   currentQuarter    = this.themeService.currentQuarter;
 
   readonly statusOptions = [
