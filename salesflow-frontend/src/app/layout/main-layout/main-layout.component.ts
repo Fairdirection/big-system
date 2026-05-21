@@ -24,9 +24,13 @@ import { LanguageService } from '@core/services/language.service';
 
       <!-- Navbar -->
       <app-navbar
-        class="fixed top-0 left-0 z-40 transition-[right] duration-300 w-full lg:w-auto"
-        [class.lg:right-72]="sidebarExpanded()"
-        [class.lg:right-20]="!sidebarExpanded()"
+        class="fixed top-0 z-40 transition-all duration-300 w-full lg:w-auto"
+        [class.left-0]="langService.isRtl()"
+        [class.right-0]="!langService.isRtl()"
+        [class.lg:right-72]="sidebarExpanded() && langService.isRtl()"
+        [class.lg:right-20]="!sidebarExpanded() && langService.isRtl()"
+        [class.lg:left-72]="sidebarExpanded() && !langService.isRtl()"
+        [class.lg:left-20]="!sidebarExpanded() && !langService.isRtl()"
       />
 
       <div class="flex pt-16 h-full relative z-10">
@@ -38,8 +42,10 @@ import { LanguageService } from '@core/services/language.service';
           class="flex-1 min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8
                  pb-24 lg:pb-8
                  transition-[margin] duration-300 ease-in-out w-full lg:w-auto"
-          [class.lg:mr-72]="sidebarExpanded()"
-          [class.lg:mr-20]="!sidebarExpanded()">
+          [class.lg:mr-72]="sidebarExpanded() && langService.isRtl()"
+          [class.lg:mr-20]="!sidebarExpanded() && langService.isRtl()"
+          [class.lg:ml-72]="sidebarExpanded() && !langService.isRtl()"
+          [class.lg:ml-20]="!sidebarExpanded() && !langService.isRtl()">
           <div class="max-w-[1600px] mx-auto">
             <!-- Breadcrumb (auto-generates from route, hidden on root pages) -->
             <div class="mb-5">
