@@ -53,21 +53,24 @@ import { Observable } from 'rxjs';
         <!-- ── AVATAR STAGE ── -->
         <div class="stage">
 
-          <!-- Aurora ring layers -->
-          <div class="ring-track">
+          <!-- Aurora ring + drop zone share one absolutely-sized container
+               so the rings are ALWAYS relative to this 220×220 box -->
+          <div style="position:relative;width:220px;height:220px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+
+            <!-- Aurora ring layers (absolute inside the 220×220 box) -->
             <div class="ring-aurora" [class.ring-drag]="isDragging()"></div>
             <div class="ring-aurora ring-aurora-2" [class.ring-drag]="isDragging()"></div>
             <div class="ring-dots" [class.ring-drag]="isDragging()"></div>
-          </div>
 
-          <!-- Drop zone / preview -->
-          <div class="drop-zone group"
-               [class.dragging]="isDragging()"
-               [class.has-image]="!!preview()"
-               (dragover)="onDragOver($event)"
-               (dragleave)="onDragLeave()"
-               (drop)="onDrop($event)"
-               (click)="fileInput.click()">
+            <!-- Drop zone / preview (centred flex child, explicit 210×210) -->
+            <div class="drop-zone group"
+                 style="position:relative;width:210px;height:210px;flex-shrink:0;"
+                 [class.dragging]="isDragging()"
+                 [class.has-image]="!!preview()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave()"
+                 (drop)="onDrop($event)"
+                 (click)="fileInput.click()">
 
             <!-- Shimmer sweep (plays after image loads) -->
             @if (shimmer()) {
@@ -114,7 +117,9 @@ import { Observable } from 'rxjs';
                 }
               </div>
             }
-          </div>
+          </div><!-- /drop-zone -->
+
+          </div><!-- /220×220 container -->
 
           <!-- Format hint -->
           <p class="format-hint">{{ 'avatar.format_hint' | translate }}</p>
@@ -333,15 +338,8 @@ import { Observable } from 'rxjs';
     }
 
     /* ── Aurora Ring ── */
-    .ring-track {
-      position: relative;
-      width: 220px;
-      height: 220px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    /* .ring-track removed — container now uses inline styles to guarantee
+       position:relative and explicit 220×220 dimensions. */
     .ring-aurora {
       position: absolute;
       inset: -4px;
@@ -380,13 +378,9 @@ import { Observable } from 'rxjs';
     @keyframes aurora-spin { to { transform: rotate(360deg); } }
 
     /* ── Drop zone ── */
-    /* Use explicit pixel dimensions instead of inset so the circle
-       can never inherit an ancestor's width and become an oval. */
+    /* Position/size come from inline styles on the element so they
+       cannot be overridden by specificity or scoping issues. */
     .drop-zone {
-      position: relative;
-      width: 210px;
-      height: 210px;
-      flex-shrink: 0;
       border-radius: 50%;
       cursor: pointer;
       overflow: hidden;
