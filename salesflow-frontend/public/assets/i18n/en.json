@@ -49,7 +49,7 @@
     "user": "User"
   },
   "brand": {
-    "name": "fair direction",
+    "name": "Fair Direction",
     "tagline": "The Intelligent Real Estate Sales Platform"
   },
   "auth": {
@@ -69,6 +69,14 @@
   },
   "dashboard": {
     "title": "Actual Performance Metrics",
+    "performance_subtitle": "Actual performance metrics",
+    "greeting_morning": "Good Morning",
+    "greeting_afternoon": "Good Afternoon",
+    "greeting_evening": "Good Evening",
+    "quick_new_sale": "New Sale",
+    "quick_claims": "Claims",
+    "quick_targets": "Targets",
+    "quick_team": "Team",
     "total_revenue": "Total Revenue",
     "commissions_due": "Accrued Commissions",
     "total_sales": "Total Sales",
@@ -87,21 +95,36 @@
     "collection_status": "Collection Status",
     "claimed_commissions": "Claimed Commissions",
     "collected": "Collected",
+    "collected_label": "Collected",
     "pending": "Pending",
+    "pending_label": "Pending",
     "target_ring": "Target Achievement",
     "target_ring_sub": "Quarterly goal achievement rate",
+    "target_ring_label": "Target",
     "team_perf": "Team Performance",
-    "team_perf_sub": "Revenue distribution by team for sales employees",
+    "team_perf_sub": "Revenue distribution by team — sales employees",
+    "members_perf": "Member Performance",
+    "sales_count": "{{count}} sales",
+    "no_team_data": "No performance data",
+    "no_team_data_sub": "Add new sales to see team statistics.",
     "needs_attention": "Needs Attention",
     "pending_claims": "pending claim",
     "pending_claims_plural": "pending claims",
     "inactive_employees": "inactive employee",
     "view_claims": "View Claims",
-    "view_employees": "View Employees"
+    "view_employees": "View Employees",
+    "target_excellent": "Excellent — Target exceeded",
+    "target_good": "Good — On track",
+    "target_average": "Average — Needs effort",
+    "target_below": "Below target — Review plan",
+    "target_no_data": "No data yet",
+    "attention_pending_claims": "{{count}} claim(s) pending",
+    "attention_low_target": "Only {{pct}}% of target achieved"
   },
   "employee": {
     "list": {
       "title": "Employees",
+      "subtitle": "Manage team members, departments, and sales targets.",
       "add": "Add Employee",
       "no_data": "No employees match this search.",
       "target_progress": "Target Progress",
@@ -463,6 +486,25 @@
     "deleted_success": "Setting deleted successfully!",
     "password_changed": "Your password has been updated successfully!",
     "quarter_changed": "Active financial quarter changed successfully!"
+  },
+  "department": {
+    "Sales": "Sales",
+    "Operations": "Operations",
+    "Marketing": "Marketing",
+    "Finance": "Finance",
+    "IT": "IT",
+    "HR": "Human Resources",
+    "TopManagement": "Top Management"
+  },
+  "seniority": {
+    "Fresh": "Junior",
+    "BA": "Associate (BA)",
+    "BC": "Consultant (BC)",
+    "Senior": "Senior",
+    "SV": "Supervisor",
+    "TeamLeader": "Team Leader",
+    "SalesManager": "Sales Manager",
+    "unspecified": "Unspecified"
   },
   "history": {
     "team": "Team",

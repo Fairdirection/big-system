@@ -4,7 +4,7 @@ import { DashboardService, DashboardStats } from '@core/services/dashboard.servi
 import { ThemeService } from '@core/services/theme.service';
 import { AuthService } from '@core/services/auth.service';
 import { LanguageService } from '@core/services/language.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { formatQuarter } from '@core/utils/quarter.utils';
 import { ApiResponse } from '@core/models/api-response.model';
 import { StatCardComponent } from '@shared/components/stat-card/stat-card.component';
@@ -48,10 +48,10 @@ import {
         <div>
           <p class="text-xs font-bold text-sf-muted uppercase tracking-widest mb-1">{{ currentDate }}</p>
           <h1 class="text-2xl sm:text-3xl font-display font-black text-sf-text tracking-tight">
-            {{ greeting }}،
-            <span class="text-sf-primary">{{ (currentUser()?.name ?? 'مرحباً').split(' ')[0] }}</span>
+            {{ greeting }},
+            <span class="text-sf-primary">{{ (currentUser()?.name ?? '...').split(' ')[0] }}</span>
           </h1>
-          <p class="text-sf-muted font-medium mt-1 text-sm">مقاييس الأداء الفعلي · {{ formatQ(currentQuarter()) }}</p>
+          <p class="text-sf-muted font-medium mt-1 text-sm">{{ 'dashboard.performance_subtitle' | translate }} · {{ formatQ(currentQuarter()) }}</p>
         </div>
 
         <!-- Quarter chip -->
@@ -64,7 +64,7 @@ import {
 
       <!-- ── Quick Actions ──────────────────────────────────────────────── -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        @for (action of quickActions; track action.label) {
+        @for (action of quickActions; track action.labelKey) {
           <a [routerLink]="action.link"
              class="group flex items-center gap-3 p-4 glass-card rounded-2xl border border-sf-border
                     hover:border-sf-primary/40 hover:bg-sf-primary/5 transition-all duration-200">
@@ -74,7 +74,7 @@ import {
                         transition-all duration-200">
               <ng-icon [name]="action.icon" class="text-base"></ng-icon>
             </div>
-            <span class="text-xs font-bold text-sf-text leading-tight">{{ action.label }}</span>
+            <span class="text-xs font-bold text-sf-text leading-tight">{{ action.labelKey | translate }}</span>
           </a>
         }
       </div>
@@ -105,8 +105,8 @@ import {
 
         <div [style.animation-delay]="'0ms'">
           <app-stat-card
-            title="إجمالي الإيرادات"
-            subtitle="العمولات المستحقة"
+            [title]="'dashboard.total_revenue' | translate"
+            [subtitle]="'dashboard.commissions_due' | translate"
             [value]="data.totalRevenue"
             [isCurrency]="true"
             icon="heroBanknotes"
@@ -117,8 +117,8 @@ import {
 
         <div [style.animation-delay]="'80ms'">
           <app-stat-card
-            title="إجمالي المبيعات"
-            subtitle="عدد الوحدات المباعة"
+            [title]="'dashboard.total_sales' | translate"
+            [subtitle]="'dashboard.units_sold' | translate"
             [value]="data.totalSales"
             icon="heroShoppingBag"
             color="blue"
@@ -127,8 +127,8 @@ import {
 
         <div [style.animation-delay]="'160ms'">
           <app-stat-card
-            title="تحقيق المستهدف"
-            subtitle="النسبة من الهدف الربعي"
+            [title]="'dashboard.target_achievement' | translate"
+            [subtitle]="'dashboard.target_pct' | translate"
             [value]="(data.targetCompletion || 0) + '%'"
             icon="heroArrowTrendingUp"
             color="pink"
@@ -137,8 +137,8 @@ import {
 
         <div [style.animation-delay]="'240ms'">
           <app-stat-card
-            title="حجم المبيعات"
-            subtitle="إجمالي قيمة العقود"
+            [title]="'dashboard.sales_volume' | translate"
+            [subtitle]="'dashboard.total_contracts' | translate"
             [value]="data.totalVolume"
             [isCurrency]="true"
             icon="heroBriefcase"
@@ -148,8 +148,8 @@ import {
 
         <div [style.animation-delay]="'320ms'">
           <app-stat-card
-            title="العملاء النشطون"
-            subtitle="خدموا هذا الربع"
+            [title]="'dashboard.active_clients' | translate"
+            [subtitle]="'dashboard.served_quarter' | translate"
             [value]="data.totalClients"
             icon="heroUsers"
             color="cyan"
@@ -164,8 +164,8 @@ import {
         <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-sf-border space-y-4 relative overflow-hidden">
           <div class="flex items-center justify-between">
             <div>
-              <h3 class="text-base font-display font-bold text-sf-text">منحنى الأداء المالي</h3>
-              <p class="text-[10px] text-sf-muted mt-0.5">بيانات الربع الحالي مقسمة شهرياً</p>
+              <h3 class="text-base font-display font-bold text-sf-text">{{ 'dashboard.chart_title' | translate }}</h3>
+              <p class="text-[10px] text-sf-muted mt-0.5">{{ 'dashboard.chart_subtitle' | translate }}</p>
             </div>
             <div class="flex items-center gap-1 p-1 bg-sf-bg/60 border border-sf-border rounded-xl">
               <button (click)="chartMetric.set('revenue')"
@@ -173,14 +173,14 @@ import {
                       [class.text-sf-primary]="chartMetric() === 'revenue'"
                       [class.shadow-sm]="chartMetric() === 'revenue'"
                       class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
-                الإيرادات
+                {{ 'dashboard.revenue' | translate }}
               </button>
               <button (click)="chartMetric.set('volume')"
                       [class.bg-sf-surface]="chartMetric() === 'volume'"
                       [class.text-sf-primary]="chartMetric() === 'volume'"
                       [class.shadow-sm]="chartMetric() === 'volume'"
                       class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sf-muted hover:text-sf-text transition-all">
-                الحجم
+                {{ 'dashboard.volume' | translate }}
               </button>
             </div>
           </div>
@@ -242,7 +242,7 @@ import {
             } @else {
               <div class="absolute inset-0 flex flex-col items-center justify-center opacity-30">
                 <ng-icon name="heroChartBar" class="text-3xl mb-2"></ng-icon>
-                <p class="text-xs">لا توجد بيانات بعد</p>
+                <p class="text-xs">{{ 'dashboard.no_data' | translate }}</p>
               </div>
             }
           </div>
@@ -250,8 +250,8 @@ import {
 
         <!-- Claims Ring -->
         <div class="glass-card p-6 rounded-2xl border border-sf-border flex flex-col">
-          <h3 class="text-sm font-display font-bold text-sf-text mb-1">حالة التحصيل</h3>
-          <p class="text-[10px] text-sf-muted mb-4">العمولات المطالب بها</p>
+          <h3 class="text-sm font-display font-bold text-sf-text mb-1">{{ 'dashboard.collection_status' | translate }}</h3>
+          <p class="text-[10px] text-sf-muted mb-4">{{ 'dashboard.claimed_commissions' | translate }}</p>
 
           <div class="flex flex-col items-center flex-1 justify-center">
             <div class="relative w-32 h-32">
@@ -269,18 +269,18 @@ import {
                 <span class="text-xl font-black text-sf-text font-mono-numbers">
                   {{ (data.collectedClaims || 0) / ((data.pendingClaims || 0) + (data.collectedClaims || 0) || 1) | percent }}
                 </span>
-                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">محصل</span>
+                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">{{ 'dashboard.collected' | translate }}</span>
               </div>
             </div>
 
             <div class="grid grid-cols-2 w-full gap-2 mt-5">
               <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border text-center">
                 <p class="text-base font-bold text-sf-success font-mono-numbers">{{ data.collectedClaims }}</p>
-                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">محصلة</p>
+                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">{{ 'dashboard.collected_label' | translate }}</p>
               </div>
               <div class="p-2.5 bg-sf-bg rounded-xl border border-sf-border text-center">
                 <p class="text-base font-bold text-sf-warning font-mono-numbers">{{ data.pendingClaims }}</p>
-                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">معلقة</p>
+                <p class="text-[9px] font-black text-sf-muted uppercase mt-0.5">{{ 'dashboard.pending_label' | translate }}</p>
               </div>
             </div>
           </div>
@@ -288,8 +288,8 @@ import {
 
         <!-- Target Achievement Ring -->
         <div class="glass-card p-6 rounded-2xl border border-sf-border flex flex-col">
-          <h3 class="text-sm font-display font-bold text-sf-text mb-1">إنجاز المستهدف</h3>
-          <p class="text-[10px] text-sf-muted mb-4">نسبة تحقيق الهدف الربعي</p>
+          <h3 class="text-sm font-display font-bold text-sf-text mb-1">{{ 'dashboard.target_ring' | translate }}</h3>
+          <p class="text-[10px] text-sf-muted mb-4">{{ 'dashboard.target_ring_sub' | translate }}</p>
 
           <div class="flex flex-col items-center flex-1 justify-center">
             <div class="relative w-32 h-32">
@@ -310,7 +310,7 @@ import {
                 <span class="text-xl font-black text-sf-text font-mono-numbers">
                   {{ data.targetCompletion || 0 }}%
                 </span>
-                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">المستهدف</span>
+                <span class="text-[9px] font-black text-sf-muted uppercase tracking-widest">{{ 'dashboard.target_ring_label' | translate }}</span>
               </div>
             </div>
 
@@ -328,8 +328,8 @@ import {
       <div class="glass-card p-6 rounded-2xl border border-sf-border">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h3 class="text-base font-display font-bold text-sf-text">أداء الفرق</h3>
-            <p class="text-[10px] text-sf-muted mt-0.5">توزيع الإيراد حسب الفريق لموظفي السيلز</p>
+            <h3 class="text-base font-display font-bold text-sf-text">{{ 'dashboard.team_perf' | translate }}</h3>
+            <p class="text-[10px] text-sf-muted mt-0.5">{{ 'dashboard.team_perf_sub' | translate }}</p>
           </div>
           <span class="text-[10px] bg-sf-primary/10 text-sf-primary px-2.5 py-1 rounded-full font-black border border-sf-primary/20">
             {{ formatQ(currentQuarter()) }}
@@ -358,14 +358,14 @@ import {
                   </div>
                 </div>
                 <div class="flex justify-between text-[9px] font-bold text-sf-muted uppercase">
-                  <span>{{ team.salesCount }} مبيعة</span>
+                  <span>{{ 'dashboard.sales_count' | translate : { count: team.salesCount } }}</span>
                   <span>{{ ((team.revenue / (data.totalRevenue || 1)) * 100) | number:'1.0-1' }}%</span>
                 </div>
               </div>
 
               <!-- Members -->
               <div class="pt-3 border-t border-sf-border/30 space-y-2.5">
-                <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest">أداء الأعضاء</p>
+                <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest">{{ 'dashboard.members_perf' | translate }}</p>
                 @for (member of team.membersPerformance; track member.employeeId) {
                   <div class="space-y-1">
                     <div class="flex justify-between items-center">
@@ -399,8 +399,8 @@ import {
                 <ng-icon name="heroChartBar" class="text-xl"></ng-icon>
               </div>
               <div class="text-center">
-                <p class="text-sm font-bold text-sf-text">لا توجد بيانات أداء</p>
-                <p class="text-xs text-sf-muted mt-1">أضف مبيعات جديدة لتظهر إحصائيات الفرق.</p>
+                <p class="text-sm font-bold text-sf-text">{{ 'dashboard.no_team_data' | translate }}</p>
+                <p class="text-xs text-sf-muted mt-1">{{ 'dashboard.no_team_data_sub' | translate }}</p>
               </div>
             </div>
           }
@@ -443,6 +443,7 @@ export class DashboardComponent {
   private themeService     = inject(ThemeService);
   private authService      = inject(AuthService);
   private langService      = inject(LanguageService);
+  private translate        = inject(TranslateService);
 
   stats          = signal<DashboardStats | null>(null);
   currentQuarter = this.themeService.currentQuarter;
@@ -453,17 +454,17 @@ export class DashboardComponent {
   chartData    = signal<Array<{ label: string; revenue: number; volume: number }>>([]);
 
   readonly quickActions = [
-    { label: 'مبيعة جديدة',  icon: 'heroPlus',         link: '/sales/new' },
-    { label: 'المطالبات',     icon: 'heroDocumentText', link: '/claims' },
-    { label: 'المستهدفات',    icon: 'heroChartBar',     link: '/targets' },
-    { label: 'الفريق',        icon: 'heroUsers',        link: '/employees' },
+    { labelKey: 'dashboard.quick_new_sale', icon: 'heroPlus',         link: '/sales/new' },
+    { labelKey: 'dashboard.quick_claims',   icon: 'heroDocumentText', link: '/claims' },
+    { labelKey: 'dashboard.quick_targets',  icon: 'heroChartBar',     link: '/targets' },
+    { labelKey: 'dashboard.quick_team',     icon: 'heroUsers',        link: '/employees' },
   ];
 
   get greeting(): string {
     const h = new Date().getHours();
-    if (h < 12) return 'صباح الخير';
-    if (h < 18) return 'مساء الخير';
-    return 'مساء النور';
+    if (h < 12) return this.translate.instant('dashboard.greeting_morning');
+    if (h < 18) return this.translate.instant('dashboard.greeting_afternoon');
+    return this.translate.instant('dashboard.greeting_evening');
   }
 
   get currentDate(): string {
@@ -477,7 +478,7 @@ export class DashboardComponent {
     if ((data.pendingClaims || 0) > 0) {
       items.push({
         icon: 'heroClock',
-        label: `${data.pendingClaims} مطالبة قيد الانتظار`,
+        label: this.translate.instant('dashboard.attention_pending_claims', { count: data.pendingClaims }),
         link: '/claims',
         type: 'warning',
       });
@@ -485,7 +486,7 @@ export class DashboardComponent {
     if ((data.targetCompletion || 0) > 0 && (data.targetCompletion || 0) < 60) {
       items.push({
         icon: 'heroExclamationTriangle',
-        label: `إنجاز ${data.targetCompletion}% فقط من المستهدف`,
+        label: this.translate.instant('dashboard.attention_low_target', { pct: data.targetCompletion }),
         link: '/targets',
         type: 'error',
       });
@@ -494,11 +495,11 @@ export class DashboardComponent {
   }
 
   getTargetLabel(pct: number): string {
-    if (pct >= 90) return 'ممتاز — تجاوزت المستهدف';
-    if (pct >= 70) return 'جيد — في المسار الصحيح';
-    if (pct >= 50) return 'متوسط — يحتاج جهداً';
-    if (pct > 0)   return 'دون المستوى — راجع الخطة';
-    return 'لا توجد بيانات بعد';
+    if (pct >= 90) return this.translate.instant('dashboard.target_excellent');
+    if (pct >= 70) return this.translate.instant('dashboard.target_good');
+    if (pct >= 50) return this.translate.instant('dashboard.target_average');
+    if (pct > 0)   return this.translate.instant('dashboard.target_below');
+    return this.translate.instant('dashboard.target_no_data');
   }
 
   constructor() {
@@ -532,15 +533,14 @@ export class DashboardComponent {
       quarterNumber = parseInt(q.split('-')[0].replace('Q', '')) || 1;
     }
     
-    // Arabic Month names for each quarter
-    const quarterMonths: Record<number, string[]> = {
-      1: ['يناير (أول الربع)', 'فبراير (منتصف الربع)', 'مارس (نهاية الربع)'],
-      2: ['أبريل (أول الربع)', 'مايو (منتصف الربع)', 'يونيو (نهاية الربع)'],
-      3: ['يوليو (أول الربع)', 'أغسطس (منتصف الربع)', 'سبتمبر (نهاية الربع)'],
-      4: ['أكتوبر (أول الربع)', 'نوفمبر (منتصف الربع)', 'ديسمبر (نهاية الربع)']
-    };
-    
-    const months = quarterMonths[quarterNumber] || quarterMonths[1];
+    // Month names derived from locale to support Arabic/English toggle
+    const locale = this.langService.currentLocale();
+    const quarterStartMonth: Record<number, number> = { 1: 0, 2: 3, 3: 6, 4: 9 };
+    const startMonth = quarterStartMonth[quarterNumber] ?? 0;
+    const months = [0, 1, 2].map(offset => {
+      const d = new Date(2026, startMonth + offset, 1);
+      return d.toLocaleDateString(locale, { month: 'long' });
+    });
     
     // Distribute total stats values dynamically to create a realistic, eye-friendly financial trend
     const totalRev = stats.totalRevenue || 0;

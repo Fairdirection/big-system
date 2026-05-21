@@ -23,7 +23,7 @@ import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { environment } from '@env/environment';
 import { formatQuarter } from '@core/utils/quarter.utils';
 import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface EmployeeWithQuarterlyTarget extends Employee {
   _quarterlyTarget?: number | null;   // adjusted target for active quarter
@@ -48,7 +48,7 @@ interface EmployeeWithQuarterlyTarget extends Employee {
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'employee.list.title' | translate }}</h1>
-          <p class="text-sf-muted font-medium mt-1 text-sm">إدارة أعضاء الفريق، الأقسام، ومستهدفات المبيعات.</p>
+          <p class="text-sf-muted font-medium mt-1 text-sm">{{ 'employee.list.subtitle' | translate }}</p>
         </div>
         <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 self-start sm:self-auto">
           <ng-icon name="heroPlus"></ng-icon>
@@ -271,6 +271,7 @@ export class EmployeeListComponent implements OnInit {
   private themeService = inject(ThemeService);
   private http = inject(HttpClient);
   private destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
   employees         = signal<EmployeeWithQuarterlyTarget[]>([]);
   searchTerm        = signal('');
@@ -402,29 +403,15 @@ export class EmployeeListComponent implements OnInit {
   }
 
   translateDepartment(dept: string): string {
-    const map: Record<string, string> = {
-      'Sales': 'المبيعات',
-      'Operations': 'العمليات',
-      'Marketing': 'التسويق',
-      'Finance': 'المالية',
-      'IT': 'تكنولوجيا المعلومات',
-      'HR': 'الموارد البشرية',
-      'TopManagement': 'الإدارة العليا'
-    };
-    return map[dept] || dept;
+    const key = `department.${dept}`;
+    const translated = this.translate.instant(key);
+    return translated !== key ? translated : dept;
   }
 
   translateSeniority(level: string | undefined): string {
-    if (!level) return 'غير محدد';
-    const map: Record<string, string> = {
-      'Fresh': 'مبتدئ',
-      'BA': 'مساعد (BA)',
-      'BC': 'استشاري (BC)',
-      'Senior': 'سينيور',
-      'SV': 'مشرف',
-      'TeamLeader': 'قائد فريق',
-      'SalesManager': 'مدير مبيعات'
-    };
-    return map[level] || level;
+    if (!level) return this.translate.instant('seniority.unspecified');
+    const key = `seniority.${level}`;
+    const translated = this.translate.instant(key);
+    return translated !== key ? translated : level;
   }
 }
