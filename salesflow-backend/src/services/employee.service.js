@@ -370,39 +370,40 @@ const updateEmployee = async (id, data, reqQuarterId) => {
     const newTeamId = data.currentTeamId ? data.currentTeamId.toString() : null;
 
     if (newTeamId !== oldTeamId) {
-      const today = new Date();
-      const quarterId = getQuarterId(today);
+      // Use teamJoinDate as the single boundary so old leave and new join share the same date.
+      // Using two different dates (today vs teamJoinDate) was creating phantom no-team gaps.
+      const switchDate = data.teamJoinDate ? new Date(data.teamJoinDate) : new Date();
+      const quarterId  = getQuarterId(switchDate);
 
-      // 1. Pull from old team
+      // 1. Pull from old team — close at switchDate
       if (oldTeamId) {
         await Team.findByIdAndUpdate(oldTeamId, { $pull: { memberIds: employee._id } });
         await EmployeeTeamHistory.findOneAndUpdate(
           { employeeId: employee._id, teamId: oldTeamId, leaveDate: null },
-          { leaveDate: today }
+          { leaveDate: switchDate }
         );
       }
 
-      // 2. Push to new team
+      // 2. Push to new team — open at the same switchDate
       if (newTeamId) {
         const team = await Team.findById(newTeamId);
         if (team) {
           data.managerId = team.teamLeaderId;
         }
         await Team.findByIdAndUpdate(newTeamId, { $addToSet: { memberIds: employee._id } });
-        // Close any other open histories
+        // Close any remaining open history records at switchDate
         await EmployeeTeamHistory.updateMany(
           { employeeId: employee._id, leaveDate: null },
-          { leaveDate: today }
+          { leaveDate: switchDate }
         );
-        // Create new history
+        // Create new history starting at switchDate (no gap)
         await EmployeeTeamHistory.create({
           employeeId: employee._id,
           teamId: newTeamId,
-          joinDate: data.teamJoinDate || today,
+          joinDate: switchDate,
           quarterId
         });
       } else {
-        // If they are removed from a team, reset their managerId to a placeholder/topManager
         const topManager = await Employee.findOne({ department: 'TopManagement', isActive: true });
         data.managerId = topManager ? topManager._id : '69f60230c2120b7ce02988dd';
       }
@@ -575,8 +576,12 @@ const getTeamHistory = async (employeeId) => {
   for (const record of history) {
     const joinDate = new Date(record.joinDate);
     
-    // Check for gap between currentDate and joinDate
-    if (joinDate > currentDate) {
+    // Check for gap between currentDate and joinDate.
+    // Skip gaps of ≤ 1 day — these are date-boundary artefacts from old data where
+    // leaveDate and the next joinDate were stored one day apart instead of matching.
+    const gapMs = joinDate.getTime() - currentDate.getTime();
+    const gapDays = gapMs / (1000 * 60 * 60 * 24);
+    if (gapDays > 1) {
       timeline.push({
         type: 'no-team',
         isInitial: currentDate.getTime() === employee.hireDate.getTime(),
@@ -584,7 +589,7 @@ const getTeamHistory = async (employeeId) => {
         startDate: currentDate,
         endDate: joinDate,
         durationDays: calculateWorkingDays(currentDate, joinDate) - 1,
-        achievement: 0 // Gap periods have 0 achievement usually, but we could check sales here too if needed
+        achievement: 0
       });
     }
 
