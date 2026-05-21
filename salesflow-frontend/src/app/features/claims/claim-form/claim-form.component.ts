@@ -740,9 +740,9 @@ export class ClaimFormComponent implements OnInit {
           
           <div class="header">
             <div class="logo-area" style="display: flex; align-items: center; gap: 15px;">
-              <img src="/logo.png" alt="Fair Direction Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px;" />
+              <img src="/logo.png" alt="fair direction Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px;" />
               <div>
-                <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #3b82f6;">فير دايركشن</h1>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #3b82f6;">الاتجاه العادل</h1>
                 <p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">المنصة الذكية لإدارة مبيعات العقارات</p>
               </div>
             </div>
@@ -756,7 +756,7 @@ export class ClaimFormComponent implements OnInit {
           <div class="parties">
             <div class="party-box">
               <h4>الجهة المستحقة للعمولة</h4>
-              <p class="title">شركة فير دايركشن للتطوير العقاري (Fair Direction)</p>
+              <p class="title">شركة الاتجاه العادل للتطوير العقاري (fair direction)</p>
               <p>الموقع الإلكتروني: fairdirection.com</p>
               <p>رقم مبيعة مرجعي: ${c.saleNumber}</p>
             </div>
@@ -810,7 +810,7 @@ export class ClaimFormComponent implements OnInit {
           ` : ''}
 
           <div class="footer-note">
-            <p>تم توليد هذه الوثيقة آلياً من نظام فير دايركشن لإدارة المبيعات العقارية. جميع الحقوق محفوظة لعام ٢٠٢٦.</p>
+            <p>تم توليد هذه الوثيقة آلياً من نظام الاتجاه العادل لإدارة المبيعات العقارية. جميع الحقوق محفوظة لعام ٢٠٢٦.</p>
           </div>
         </div>
         <script>

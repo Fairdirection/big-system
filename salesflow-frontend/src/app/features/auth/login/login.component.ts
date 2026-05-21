@@ -32,11 +32,11 @@ import { InputComponent } from '@shared/components/input/input.component';
         <div class="relative z-10">
           <div class="inline-flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-glow-purple border border-sf-border/40">
-              <img src="/logo.png" alt="Fair Direction Logo" class="w-full h-full object-contain rounded-xl" />
+              <img src="/logo.png" alt="fair direction Logo" class="w-full h-full object-contain rounded-xl" />
             </div>
             <div>
-              <h3 class="text-lg font-display font-black text-sf-text tracking-tight">فير دايركشن</h3>
-              <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest">Fair Direction Premium</p>
+              <h3 class="text-lg font-display font-black text-sf-text tracking-tight">الاتجاه العادل</h3>
+              <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest">fair direction Premium</p>
             </div>
           </div>
         </div>
@@ -103,9 +103,9 @@ import { InputComponent } from '@shared/components/input/input.component';
         <!-- Mobile Branding (Logo header displayed only on mobile screens) -->
         <div class="lg:hidden text-center mb-8">
           <div class="w-14 h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-glow-purple mx-auto mb-4 border border-sf-border/30 animate-pulse">
-            <img src="/logo.png" alt="Fair Direction Logo" class="w-full h-full object-contain rounded-xl" />
+            <img src="/logo.png" alt="fair direction Logo" class="w-full h-full object-contain rounded-xl" />
           </div>
-          <h1 class="text-2xl font-display font-black text-sf-text tracking-tight">فير دايركشن</h1>
+          <h1 class="text-2xl font-display font-black text-sf-text tracking-tight">الاتجاه العادل</h1>
           <p class="text-[9px] font-black text-sf-subtle uppercase tracking-widest mt-1">المنصة الذكية للمبيعات العقارية</p>
         </div>
 

@@ -27,14 +27,14 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
         <div class="hidden print:flex items-center justify-between pb-6 border-b-2 border-slate-900/10 mb-8 text-right font-financial">
           <div class="space-y-1.5">
             <h1 class="text-2xl font-black text-slate-900">مستند تسوية عمولة مبيعات</h1>
-            <p class="text-xs font-bold text-slate-500">شركة Fair Direction للتسويق العقاري</p>
+            <p class="text-xs font-bold text-slate-500">شركة الاتجاه العادل للتسويق العقاري</p>
             <p class="text-[10px] text-slate-400 font-mono-numbers">تاريخ المستند: {{ todayDate | date:'medium' }}</p>
           </div>
           <div class="flex flex-col items-center gap-1">
             <div class="w-14 h-14 bg-white p-1.5 rounded-xl border border-slate-200 flex items-center justify-center shadow-sm">
-              <img src="/logo.png" alt="Fair Direction Logo" class="w-full h-full object-contain" />
+              <img src="/logo.png" alt="fair direction Logo" class="w-full h-full object-contain" />
             </div>
-            <span class="text-[10px] font-black text-slate-900 tracking-wider">FAIR DIRECTION</span>
+            <span class="text-[10px] font-black text-slate-900 tracking-wider">fair direction</span>
           </div>
         </div>
 

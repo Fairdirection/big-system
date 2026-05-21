@@ -18,7 +18,7 @@ export const routes: Routes = [
           import('./features/auth/login/login.component').then(
             m => m.LoginComponent
           ),
-        title: 'Fair Direction — Login',
+        title: 'fair direction — Login',
       },
       {
         path: 'change-password',
