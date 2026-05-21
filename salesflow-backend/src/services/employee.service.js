@@ -193,7 +193,10 @@ const getEmployees = async (query) => {
     sort.createdAt = -1;
   }
 
-  const paginatedResult = await paginate(Employee, filter, { page, limit, sort, populate: 'currentTeamId managerId' });
+  // Cap at 500; default to 500 (not 20) so the employee list never silently
+  // truncates small teams when no limit is passed from the frontend.
+  const safeLimit = Math.min(parseInt(limit) || 500, 500);
+  const paginatedResult = await paginate(Employee, filter, { page, limit: safeLimit, sort, populate: 'currentTeamId managerId' });
   
   // Enrich with dynamic quarterly target progress if they are in Sales and requested
   if (paginatedResult && paginatedResult.data && includePerformance === 'true') {

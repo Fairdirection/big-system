@@ -301,7 +301,7 @@ export class EmployeeListComponent implements OnInit {
     this.themeService.loading.set(true);
     this.loading.set(true);
 
-    this.employeeService.getEmployees().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.employeeService.getEmployees({ limit: '500' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: res => {
         if (res.success) {
           const baseEmployees: EmployeeWithQuarterlyTarget[] = res.data.map(e => ({
