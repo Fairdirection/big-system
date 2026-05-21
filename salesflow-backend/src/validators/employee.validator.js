@@ -25,7 +25,8 @@ const createEmployeeSchema = Joi.object({
   endDate: Joi.date().optional().allow(null),
   email: Joi.string().email().optional().allow(null, ''),
   phone: Joi.string().optional().allow(null, ''),
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
+  avatarUrl: Joi.string().allow(null, '').optional()
 });
 
 const updateEmployeeSchema = Joi.object({
@@ -53,7 +54,8 @@ const updateEmployeeSchema = Joi.object({
   endDate: Joi.date().optional().allow(null),
   email: Joi.string().email().optional().allow(null, ''),
   phone: Joi.string().optional().allow(null, ''),
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
+  avatarUrl: Joi.string().allow(null, '').optional()
 });
 
 const transferTeamSchema = Joi.object({
