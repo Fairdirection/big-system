@@ -380,9 +380,13 @@ import { Observable } from 'rxjs';
     @keyframes aurora-spin { to { transform: rotate(360deg); } }
 
     /* ── Drop zone ── */
+    /* Use explicit pixel dimensions instead of inset so the circle
+       can never inherit an ancestor's width and become an oval. */
     .drop-zone {
-      position: absolute;
-      inset: 5px;
+      position: relative;
+      width: 210px;
+      height: 210px;
+      flex-shrink: 0;
       border-radius: 50%;
       cursor: pointer;
       overflow: hidden;
