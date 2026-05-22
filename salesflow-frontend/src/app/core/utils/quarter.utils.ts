@@ -8,12 +8,14 @@ export function getQuarterId(date: Date): string {
 }
 
 /**
- * Formats quarter ID for display — e.g. "Q2-2026" -> "الربع 2 - 2026"
+ * Formats quarter ID for display.
+ * ar: "الربع 2 - 2026" | en: "Q2 - 2026"
  */
-export function formatQuarter(quarterId: string): string {
+export function formatQuarter(quarterId: string, lang: 'ar' | 'en' = 'ar'): string {
   if (!quarterId) return '';
   const [q, year] = quarterId.split('-');
   const qNum = q.replace('Q', '');
+  if (lang === 'en') return `Q${qNum} - ${year}`;
   return `الربع ${qNum} - ${year}`;
 }
 

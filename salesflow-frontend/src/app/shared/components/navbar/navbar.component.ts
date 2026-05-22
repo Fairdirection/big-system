@@ -35,12 +35,11 @@ export class NavbarComponent {
     return this.translate.instant(role ? `roles.${role}` : 'roles.user');
   });
 
+  formattedQuarter = computed(() => {
+    const lang = this.langService.currentLang() === 'ar' ? 'ar' : 'en';
+    return formatQuarter(this.theme.currentQuarter(), lang);
+  });
+
   toggleTheme() { this.theme.toggle(); }
   toggleMobileMenu() { this.layout.toggleMobileMenu(); }
-
-  onQuarterChange(event: Event) {
-    this.theme.setQuarter((event.target as HTMLSelectElement).value);
-  }
-
-  formatQ(q: string) { return formatQuarter(q); }
 }

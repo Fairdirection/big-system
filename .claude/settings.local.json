@@ -21,7 +21,13 @@
       "Bash(git commit -m 'fix: prevent avatar circle from rendering as oval *)",
       "Bash(git commit -m 'fix: aurora ring escaping above photo — move container to inline styles *)",
       "Bash(xargs cat)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(tree *)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-backend\\\\src\" -Recurse | Select-Object FullName | ForEach-Object {$_.FullName -replace [regex]::Escape\\(\"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-backend\\\\src\\\\\"\\), \"\"} | Select-Object -First 100)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-frontend\\\\src\" -Recurse | Select-Object FullName | ForEach-Object {$_.FullName -replace [regex]::Escape\\(\"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-frontend\\\\src\\\\\"\\), \"\"} | Select-Object -First 150)",
+      "Bash(Select-Object -First 30)",
+      "Bash(Find D:FairDirection_ProjectsFairdirection_SaaSsalesflow-frontendsrcappcoreutils *)",
+      "Bash(Find D:FairDirection_ProjectsFairdirection_SaaSsalesflow-frontendsrcappsharedcomponentsnavbar *)"
     ]
   }
 }

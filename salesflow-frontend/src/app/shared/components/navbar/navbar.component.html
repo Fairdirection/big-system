@@ -12,19 +12,13 @@
     </div>
     <span class="font-display font-black text-sf-text text-xl tracking-tighter">{{ 'brand.name' | translate }}</span>
   </div>
-  <!-- Global Quarter Selector -->
-  <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-sf-bg/60 border border-sf-border/40 shadow-sm hover:border-sf-primary/40 transition-all">
-    <ng-icon name="heroCalendar" class="text-sf-primary text-base sm:text-lg"></ng-icon>
-    <div class="hidden sm:block">
-      <p class="text-[8px] font-black text-sf-muted leading-tight">{{ 'nav.quarter' | translate }}</p>
+  <!-- Active Quarter Badge -->
+  <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sf-bg/60 border border-sf-primary/25 shadow-sm">
+    <ng-icon name="heroCalendar" class="text-sf-primary text-base flex-shrink-0"></ng-icon>
+    <div class="flex flex-col leading-none">
+      <span class="hidden sm:block text-[8px] font-bold text-sf-muted leading-tight">{{ 'nav.quarter' | translate }}</span>
+      <span class="text-xs font-black text-sf-primary tracking-wide">{{ formattedQuarter() }}</span>
     </div>
-    <select [value]="theme.currentQuarter()" 
-            (change)="onQuarterChange($event)" 
-            class="bg-transparent text-sf-text text-xs font-black outline-none border-none cursor-pointer focus:ring-0 pr-1 py-0 select-custom font-sans dir-rtl text-right">
-      @for (q of theme.availableQuarters(); track q) {
-        <option [value]="q" class="bg-sf-surface text-sf-text font-semibold text-xs">{{ formatQ(q) }}</option>
-      }
-    </select>
   </div>
 
   <div class="flex-1"></div>

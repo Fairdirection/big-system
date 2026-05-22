@@ -452,6 +452,7 @@
     "subtitle": "Easily customize your dashboard, dropdown values, security preferences, and language settings.",
     "tab_lists": "Dropdown Values",
     "tab_regional": "Language & Region",
+    "tab_quarter": "Active Quarter",
     "tab_commission": "Commission Rules & Policy",
     "tab_security": "Security & Authentication",
     "sub_sources": "Sales Sources",
@@ -486,7 +487,9 @@
     "saved_success": "New setting added successfully!",
     "deleted_success": "Setting deleted successfully!",
     "password_changed": "Your password has been updated successfully!",
-    "quarter_changed": "Active financial quarter changed successfully!"
+    "quarter_changed": "Active financial quarter changed successfully!",
+    "current_quarter_badge": "Current",
+    "quarter_section_desc": "Set the active financial quarter used across all reports, targets, and commission calculations."
   },
   "department": {
     "Sales": "Sales",

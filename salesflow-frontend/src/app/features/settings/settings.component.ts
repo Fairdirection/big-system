@@ -1,14 +1,14 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SettingService, Setting } from '@core/services/setting.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { 
   heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
-  heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle
+  heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle, heroCalendarDays
 } from '@ng-icons/heroicons/outline';
 import { ThemeService } from '@core/services/theme.service';
-import { formatQuarter } from '@core/utils/quarter.utils';
+import { formatQuarter, getAvailableYears, getQuarterId } from '@core/utils/quarter.utils';
 import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '@core/services/language.service';
@@ -18,9 +18,9 @@ import { LanguageService } from '@core/services/language.service';
   standalone: true,
   imports: [CommonModule, NgIconComponent, ReactiveFormsModule, TranslateModule],
   providers: [
-    provideIcons({ 
+    provideIcons({
       heroCog6Tooth, heroShieldCheck, heroSwatch, heroGlobeAlt, heroPlus, heroCheck, heroXMark,
-      heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle
+      heroBriefcase, heroClock, heroUsers, heroSparkles, heroLightBulb, heroInformationCircle, heroCalendarDays
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,9 +59,17 @@ import { LanguageService } from '@core/services/language.service';
             {{ 'settings.tab_regional' | translate }}
           </button>
 
+          <button (click)="activeTab.set('quarter')"
+                  [class]="activeTab() === 'quarter' ?
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' :
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
+            <ng-icon name="heroCalendarDays" class="text-lg"></ng-icon>
+            {{ 'settings.tab_quarter' | translate }}
+          </button>
+
           <button (click)="activeTab.set('commissionRules')"
-                  [class]="activeTab() === 'commissionRules' ? 
-                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' : 
+                  [class]="activeTab() === 'commissionRules' ?
+                  'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl bg-sf-primary/10 text-sf-primary border border-sf-primary/20 text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap shadow-sm' :
                   'flex-1 min-w-[130px] lg:min-w-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-3.5 rounded-2xl hover:bg-sf-surface text-sf-muted hover:text-sf-text text-xs sm:text-sm font-bold transition-all text-center lg:text-right whitespace-nowrap border border-transparent'">
             <ng-icon name="heroBriefcase" class="text-lg"></ng-icon>
             {{ 'settings.tab_commission' | translate }}
@@ -319,15 +327,6 @@ import { LanguageService } from '@core/services/language.service';
                     </select>
                   </div>
 
-                  <!-- Active Quarter Selection -->
-                  <div class="space-y-2">
-                    <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الربع المالي النشط (المستهدف)</label>
-                    <select [value]="themeService.currentQuarter()" (change)="onQuarterChange($event)" class="w-full px-4 py-3 bg-sf-bg border border-sf-border rounded-xl text-sm focus:ring-2 focus:ring-sf-primary/50 outline-none transition-all font-semibold text-sf-text">
-                      @for (q of themeService.availableQuarters(); track q) {
-                        <option [value]="q" [selected]="q === themeService.currentQuarter()">{{ formatQ(q) }}</option>
-                      }
-                    </select>
-                  </div>
                 </div>
 
                 <div class="flex justify-start pt-4">
@@ -337,6 +336,72 @@ import { LanguageService } from '@core/services/language.service';
                   </button>
                 </div>
               </form>
+            </section>
+
+          </div>
+
+          <!-- TAB: ACTIVE FINANCIAL QUARTER -->
+          <div *ngIf="activeTab() === 'quarter'" class="space-y-8 animate-fade-in">
+            <section class="glass-card p-6 sm:p-8 rounded-3xl border border-sf-border shadow-2xl space-y-6 text-right">
+              <div class="pb-4 border-b border-sf-border/30 flex items-center gap-3">
+                <div class="p-2.5 rounded-xl bg-sf-primary/10 text-sf-primary">
+                  <ng-icon name="heroCalendarDays" class="text-xl"></ng-icon>
+                </div>
+                <div>
+                  <h3 class="text-lg font-display font-bold text-sf-text">{{ 'settings.quarter_label' | translate }}</h3>
+                  <p class="text-xs text-sf-muted mt-0.5">{{ 'settings.quarter_section_desc' | translate }}</p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <!-- Year Pills — horizontally scrollable, scales to any number of years -->
+                <div class="relative">
+                  <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                    @for (year of availableYears; track year) {
+                      <button type="button" (click)="selectedYear.set(year)"
+                        [class]="selectedYear() === year
+                          ? 'flex-shrink-0 px-4 py-2 rounded-xl bg-sf-primary text-white text-sm font-black border border-sf-primary/60 transition-all'
+                          : 'flex-shrink-0 px-4 py-2 rounded-xl bg-sf-surface border border-sf-border text-sf-muted hover:text-sf-text hover:border-sf-primary/40 text-sm font-bold transition-all'">
+                        {{ year }}
+                      </button>
+                    }
+                  </div>
+                  <!-- Fade hint on the right edge when content overflows -->
+                  <div class="pointer-events-none absolute inset-y-0 end-0 w-8 bg-gradient-to-l from-sf-bg/80 to-transparent rounded-r-xl"></div>
+                </div>
+
+                <!-- Quarter Pills (dir=ltr keeps Q1 left regardless of language) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" dir="ltr">
+                  @for (qId of quartersForYear(); track qId) {
+                    <button type="button" (click)="selectQuarter(qId)"
+                      [class]="themeService.currentQuarter() === qId
+                        ? 'relative flex flex-col items-center justify-center gap-1 p-4 rounded-2xl bg-sf-primary/10 border-2 border-sf-primary text-sf-primary scale-[1.02] transition-all min-h-[88px]'
+                        : 'relative flex flex-col items-center justify-center gap-1 p-4 rounded-2xl bg-sf-surface border border-sf-border text-sf-muted hover:text-sf-text hover:border-sf-primary/40 transition-all min-h-[88px]'">
+
+                      <!-- "Current" badge -->
+                      @if (qId === todayQuarter) {
+                        <span class="absolute top-2 end-2 px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md text-[9px] font-black leading-none">
+                          {{ 'settings.current_quarter_badge' | translate }}
+                        </span>
+                      }
+
+                      <!-- Q label -->
+                      <span class="text-sm font-black" [dir]="langService.currentLang() === 'ar' ? 'rtl' : 'ltr'">
+                        {{ langService.currentLang() === 'ar'
+                            ? ('الربع ' + qId.split('-')[0].replace('Q',''))
+                            : qId.split('-')[0] }}
+                      </span>
+
+                      <!-- Month range subtitle -->
+                      <span class="text-[10px] font-semibold opacity-60 text-center leading-tight">
+                        {{ langService.currentLang() === 'ar'
+                            ? quarterMonthRanges[qId.split('-')[0]].ar
+                            : quarterMonthRanges[qId.split('-')[0]].en }}
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
             </section>
           </div>
 
@@ -763,15 +828,26 @@ export class SettingsComponent implements OnInit {
   private fb = inject(FormBuilder);
   public themeService = inject(ThemeService);
   private translate = inject(TranslateService);
-  private langService = inject(LanguageService);
+  public langService = inject(LanguageService);
 
   settings = signal<Setting[]>([]);
-  activeTab = signal<'lists' | 'regional' | 'commissionRules' | 'security'>('lists');
+  activeTab = signal<'lists' | 'regional' | 'quarter' | 'commissionRules' | 'security'>('lists');
   activeListSubTab = signal<'saleSource' | 'collectionPercentage' | 'invoiceType' | 'tax'>('saleSource');
   showModal = signal(false);
   currentType = signal<string>('');
   saveSuccessMessage = signal<string | null>(null);
   is2faEnabled = signal(localStorage.getItem('sf_2fa') === 'true');
+
+  readonly availableYears: number[] = getAvailableYears(2, 1);
+  selectedYear = signal<number>(parseInt(this.themeService.currentQuarter().split('-')[1], 10));
+  readonly todayQuarter: string = getQuarterId(new Date());
+  quartersForYear = computed<string[]>(() => [1, 2, 3, 4].map(q => `Q${q}-${this.selectedYear()}`));
+  readonly quarterMonthRanges: Record<string, { en: string; ar: string }> = {
+    Q1: { en: 'Jan – Mar', ar: 'يناير – مارس' },
+    Q2: { en: 'Apr – Jun', ar: 'أبريل – يونيو' },
+    Q3: { en: 'Jul – Sep', ar: 'يوليو – سبتمبر' },
+    Q4: { en: 'Oct – Dec', ar: 'أكتوبر – ديسمبر' },
+  };
 
   commissionRules = signal<any>(null);
   selectedSeniority = signal<string>('BA');
@@ -965,13 +1041,14 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  onQuarterChange(event: any) {
-    this.themeService.setQuarter(event.target.value);
+  selectQuarter(quarterId: string): void {
+    this.themeService.setQuarter(quarterId);
+    this.selectedYear.set(parseInt(quarterId.split('-')[1], 10));
     this.showToast(this.translate.instant('settings.quarter_changed'));
   }
 
   formatQ(q: string): string {
-    return formatQuarter(q);
+    return formatQuarter(q, this.langService.currentLang() === 'ar' ? 'ar' : 'en');
   }
 
   getRoleLabel(role: string): string {
