@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, effect, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { DashboardService, DashboardStats } from '@core/services/dashboard.service';
 import { ThemeService } from '@core/services/theme.service';
@@ -46,19 +47,19 @@ import {
       <!-- ── Header: Greeting + Quarter ───────────────────────────────── -->
       <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p class="text-xs font-bold text-sf-muted uppercase tracking-widest mb-1">{{ currentDate }}</p>
+          <p class="text-xs font-bold text-sf-muted uppercase tracking-widest mb-1">{{ currentDate() }}</p>
           <h1 class="text-2xl sm:text-3xl font-display font-black text-sf-text tracking-tight">
-            {{ greeting }},
+            {{ greeting() }},
             <span class="text-sf-primary">{{ (currentUser()?.name ?? '...').split(' ')[0] }}</span>
           </h1>
-          <p class="text-sf-muted font-medium mt-1 text-sm">{{ 'dashboard.performance_subtitle' | translate }} · {{ formatQ(currentQuarter()) }}</p>
+          <p class="text-sf-muted font-medium mt-1 text-sm">{{ 'dashboard.performance_subtitle' | translate }} · {{ formattedQuarter() }}</p>
         </div>
 
         <!-- Quarter chip -->
         <div class="flex items-center gap-2 px-4 py-2.5 bg-sf-surface border border-sf-border
                     rounded-xl shadow-sm self-start sm:self-auto">
           <ng-icon name="heroClock" class="text-sf-primary text-base"></ng-icon>
-          <span class="text-sm font-bold text-sf-text">{{ formatQ(currentQuarter()) }}</span>
+          <span class="text-sm font-bold text-sf-text">{{ formattedQuarter() }}</span>
         </div>
       </header>
 
@@ -80,9 +81,9 @@ import {
       </div>
 
       <!-- ── Needs Attention ────────────────────────────────────────────── -->
-      @if (needsAttention(data).length > 0) {
+      @if (needsAttentionList().length > 0) {
         <div class="flex flex-wrap gap-2">
-          @for (item of needsAttention(data); track item.label) {
+          @for (item of needsAttentionList(); track item.label) {
             <a [routerLink]="item.link"
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold
                       transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
@@ -201,11 +202,11 @@ import {
                 <line x1="50" y1="30"  x2="450" y2="30"  stroke="currentColor" class="text-sf-border/20" stroke-dasharray="4" />
                 <line x1="50" y1="100" x2="450" y2="100" stroke="currentColor" class="text-sf-border/20" stroke-dasharray="4" />
                 <line x1="50" y1="170" x2="450" y2="170" stroke="currentColor" class="text-sf-border/30" />
-                <path [attr.d]="getChartAreaPoints()" fill="url(#cg)" class="transition-all duration-500" />
-                <path [attr.d]="getChartPoints()" fill="none" stroke="url(#csg)" stroke-width="3.5"
+                <path [attr.d]="chartAreaPath()" fill="url(#cg)" class="transition-all duration-500" />
+                <path [attr.d]="chartPath()" fill="none" stroke="url(#csg)" stroke-width="3.5"
                       stroke-linecap="round" class="transition-all duration-500" />
                 @for (d of chartData(); track $index; let i = $index) {
-                  @let c = getPointCoords(i);
+                  @let c = chartPointsList()[i];
                   @if (hoveredIndex() === i) {
                     <circle [attr.cx]="c.x" [attr.cy]="c.y" r="13" fill="rgb(var(--sf-primary))" fill-opacity="0.15" class="pointer-events-none" />
                   }
@@ -219,7 +220,7 @@ import {
 
               @if (hoveredIndex() !== null) {
                 @let ai = hoveredIndex()!;
-                @let c  = getPointCoords(ai);
+                @let c  = chartPointsList()[ai];
                 @let it = chartData()[ai];
                 <div class="absolute glass-ultra p-3 rounded-xl border border-sf-primary/30 shadow-xl
                             pointer-events-none z-20 text-right"
@@ -318,7 +319,7 @@ import {
                [class.text-sf-success]="(data.targetCompletion || 0) >= 90"
                [class.text-sf-warning]="(data.targetCompletion || 0) >= 60 && (data.targetCompletion || 0) < 90"
                [class.text-sf-error]="(data.targetCompletion || 0) < 60">
-              {{ getTargetLabel(data.targetCompletion || 0) }}
+              {{ targetLabel() }}
             </p>
           </div>
         </div>
@@ -332,7 +333,7 @@ import {
             <p class="text-[10px] text-sf-muted mt-0.5">{{ 'dashboard.team_perf_sub' | translate }}</p>
           </div>
           <span class="text-[10px] bg-sf-primary/10 text-sf-primary px-2.5 py-1 rounded-full font-black border border-sf-primary/20">
-            {{ formatQ(currentQuarter()) }}
+            {{ formattedQuarter() }}
           </span>
         </div>
 
@@ -444,6 +445,7 @@ export class DashboardComponent {
   private authService      = inject(AuthService);
   private langService      = inject(LanguageService);
   private translate        = inject(TranslateService);
+  private destroyRef       = inject(DestroyRef);
 
   stats          = signal<DashboardStats | null>(null);
   currentQuarter = this.themeService.currentQuarter;
@@ -460,21 +462,12 @@ export class DashboardComponent {
     { labelKey: 'dashboard.quick_team',     icon: 'heroUsers',        link: '/employees' },
   ];
 
-  get greeting(): string {
-    const h = new Date().getHours();
-    if (h < 12) return this.translate.instant('dashboard.greeting_morning');
-    if (h < 18) return this.translate.instant('dashboard.greeting_afternoon');
-    return this.translate.instant('dashboard.greeting_evening');
-  }
+  formattedQuarter = computed(() => formatQuarter(this.currentQuarter()));
 
-  get currentDate(): string {
-    return new Date().toLocaleDateString(this.langService.currentLocale(), {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    });
-  }
-
-  needsAttention(data: DashboardStats): { icon: string; label: string; link: string; type: 'warning' | 'error' }[] {
+  needsAttentionList = computed(() => {
+    const data = this.stats();
     const items: { icon: string; label: string; link: string; type: 'warning' | 'error' }[] = [];
+    if (!data) return items;
     if ((data.pendingClaims || 0) > 0) {
       items.push({
         icon: 'heroClock',
@@ -492,15 +485,59 @@ export class DashboardComponent {
       });
     }
     return items;
-  }
+  });
 
-  getTargetLabel(pct: number): string {
+  targetLabel = computed(() => {
+    const pct = this.stats()?.targetCompletion || 0;
     if (pct >= 90) return this.translate.instant('dashboard.target_excellent');
     if (pct >= 70) return this.translate.instant('dashboard.target_good');
     if (pct >= 50) return this.translate.instant('dashboard.target_average');
     if (pct > 0)   return this.translate.instant('dashboard.target_below');
     return this.translate.instant('dashboard.target_no_data');
-  }
+  });
+
+  chartPointsList = computed(() => {
+    const data = this.chartData();
+    if (data.length === 0) return [];
+    const metric = this.chartMetric();
+    const values = data.map(d => metric === 'revenue' ? d.revenue : d.volume);
+    const maxVal = Math.max(...values, 1);
+    
+    return data.map((d, i) => {
+      const val = metric === 'revenue' ? d.revenue : d.volume;
+      const x = 50 + i * 200;
+      const y = 160 - (val / maxVal) * 120;
+      return { x, y };
+    });
+  });
+
+  chartPath = computed(() => {
+    const pts = this.chartPointsList();
+    if (pts.length < 3) return '';
+    const p0 = pts[0];
+    const p1 = pts[1];
+    const p2 = pts[2];
+    return `M ${p0.x} ${p0.y} C ${p0.x + 80} ${p0.y}, ${p1.x - 80} ${p1.y}, ${p1.x} ${p1.y} C ${p1.x + 80} ${p1.y}, ${p2.x - 80} ${p2.y}, ${p2.x} ${p2.y}`;
+  });
+
+  chartAreaPath = computed(() => {
+    const curve = this.chartPath();
+    if (!curve) return '';
+    return `${curve} L 450 170 L 50 170 Z`;
+  });
+
+  greeting = computed(() => {
+    const h = new Date().getHours();
+    if (h < 12) return this.translate.instant('dashboard.greeting_morning');
+    if (h < 18) return this.translate.instant('dashboard.greeting_afternoon');
+    return this.translate.instant('dashboard.greeting_evening');
+  });
+
+  currentDate = computed(() => {
+    return new Date().toLocaleDateString(this.langService.currentLocale(), {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+  });
 
   constructor() {
     effect(() => { this.loadStats(this.currentQuarter()); });
@@ -509,7 +546,7 @@ export class DashboardComponent {
   loadStats(quarterId: string) {
     this.themeService.loading.set(true);
     this.stats.set(null); // Force skeleton
-    this.dashboardService.getStats(quarterId).subscribe({
+    this.dashboardService.getStats(quarterId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: ApiResponse<DashboardStats>) => {
         this.themeService.loading.set(false);
         if (res.success) {
@@ -561,52 +598,5 @@ export class DashboardComponent {
     });
     
     this.chartData.set(data);
-  }
-
-  getChartPoints(): string {
-    const data = this.chartData();
-    if (data.length === 0) return '';
-    
-    const metric = this.chartMetric();
-    const values = data.map(d => metric === 'revenue' ? d.revenue : d.volume);
-    const maxVal = Math.max(...values, 1);
-    
-    // Scale values to Y: 40 to 160 (height 200)
-    const points = data.map((d, i) => {
-      const val = metric === 'revenue' ? d.revenue : d.volume;
-      const x = 50 + i * 200;
-      const y = 160 - (val / maxVal) * 120;
-      return { x, y };
-    });
-    
-    const p0 = points[0];
-    const p1 = points[1];
-    const p2 = points[2];
-    
-    return `M ${p0.x} ${p0.y} C ${p0.x + 80} ${p0.y}, ${p1.x - 80} ${p1.y}, ${p1.x} ${p1.y} C ${p1.x + 80} ${p1.y}, ${p2.x - 80} ${p2.y}, ${p2.x} ${p2.y}`;
-  }
-
-  getChartAreaPoints(): string {
-    const curve = this.getChartPoints();
-    if (!curve) return '';
-    return `${curve} L 450 170 L 50 170 Z`;
-  }
-
-  getPointCoords(index: number) {
-    const data = this.chartData();
-    if (data.length === 0) return { x: 0, y: 0 };
-    
-    const metric = this.chartMetric();
-    const values = data.map(d => metric === 'revenue' ? d.revenue : d.volume);
-    const maxVal = Math.max(...values, 1);
-    const val = metric === 'revenue' ? data[index].revenue : data[index].volume;
-    
-    const x = 50 + index * 200;
-    const y = 160 - (val / maxVal) * 120;
-    return { x, y };
-  }
-
-  formatQ(q: string) {
-    return formatQuarter(q);
   }
 }

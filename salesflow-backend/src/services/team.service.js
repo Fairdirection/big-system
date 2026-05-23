@@ -417,14 +417,19 @@ const getTeamTargetSummary = async (teamId, quarterId) => {
   const currentMemberIds = (team.memberIds || []).map(m => m._id ? m._id.toString() : m.toString());
   const uniqueMemberIds = [...new Set([...historyMemberIds, ...currentMemberIds])];
 
-  for (const memberId of uniqueMemberIds) {
-    if (!mongoose.isValidObjectId(memberId)) continue;
+  const memberPromises = uniqueMemberIds.map(async (memberId) => {
+    if (!mongoose.isValidObjectId(memberId)) return null;
     
     // Check if member is the team leader (we process them separately)
-    if (team.teamLeaderId && team.teamLeaderId._id.toString() === memberId) continue;
+    if (team.teamLeaderId && team.teamLeaderId._id.toString() === memberId) return null;
 
     // Use our precise team-specific performance helper!
-    const memberPerf = await getTeamMemberPerformance(memberId, team._id, quarterId);
+    return await getTeamMemberPerformance(memberId, team._id, quarterId);
+  });
+
+  const memberResults = await Promise.all(memberPromises);
+
+  for (const memberPerf of memberResults) {
     if (!memberPerf) continue;
 
     totalAdjustedTarget += memberPerf.adjustedTarget || 0;

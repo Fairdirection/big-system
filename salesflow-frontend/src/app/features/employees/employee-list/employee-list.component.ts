@@ -38,6 +38,7 @@ import { AvatarFrameComponent } from "@shared/components/avatar-frame/avatar-fra
 interface EmployeeWithQuarterlyTarget extends Employee {
   _quarterlyTarget?: number | null; // adjusted target for active quarter
   _hasCustomTarget?: boolean; // true when a custom override exists in DB
+  _fullTarget?: number | null; // original target before any team leader adjustments
 }
 
 @Component({
@@ -1022,9 +1023,9 @@ export class EmployeeListComponent implements OnInit {
     baseEmployees: EmployeeWithQuarterlyTarget[],
     quarterId: string,
   ) {
-    // Fetch the fast target overrides which contains per-employee quarterly targets
+    // Fetch the target summary which contains computed targets for all sales employees
     this.http
-      .get<any>(`${environment.apiUrl}/targets/overrides`, {
+      .get<any>(`${environment.apiUrl}/targets/summary`, {
         params: { quarterId },
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1033,15 +1034,16 @@ export class EmployeeListComponent implements OnInit {
           this.themeService.loading.set(false);
           this.loading.set(false);
 
-          if (res.success && res.data) {
+          if (res.success && res.data && res.data.employees) {
             const targetMap = new Map<
               string,
-              { adjusted: number | null; hasCustom: boolean }
+              { adjusted: number | null; full: number | null; hasCustom: boolean }
             >();
-            for (const override of res.data) {
-              targetMap.set(override.employeeId?.toString(), {
-                adjusted: override.target ?? null,
-                hasCustom: true,
+            for (const empData of res.data.employees) {
+              targetMap.set(empData.employeeId?.toString(), {
+                adjusted: empData.adjustedTarget ?? null,
+                full: empData.fullTarget ?? null,
+                hasCustom: empData.hasCustomTarget ?? false,
               });
             }
 
@@ -1050,6 +1052,7 @@ export class EmployeeListComponent implements OnInit {
               return {
                 ...emp,
                 _quarterlyTarget: t ? t.adjusted : null,
+                _fullTarget: t ? t.full : null,
                 _hasCustomTarget: t ? t.hasCustom : false,
               };
             });
@@ -1065,8 +1068,13 @@ export class EmployeeListComponent implements OnInit {
       });
   }
 
-  /** Returns the effective display target — quarterly override if set, otherwise baseline. */
+  /** Returns the effective display target computed by the backend. */
   getEffectiveTarget(emp: EmployeeWithQuarterlyTarget): number {
+    if (emp.seniorityLevel === 'TeamLeader' || emp.seniorityLevel === 'SalesManager') {
+      if (emp._fullTarget !== null && emp._fullTarget !== undefined && emp._fullTarget > 0) {
+        return emp._fullTarget;
+      }
+    }
     if (emp._quarterlyTarget !== null && emp._quarterlyTarget !== undefined) {
       return emp._quarterlyTarget;
     }

@@ -276,7 +276,7 @@ import { BackupManagementComponent } from "./components/backup-management.compon
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  @for (s of getSettingsByType("saleSource"); track s._id) {
+                  @for (s of saleSourceSettings(); track s._id) {
                     <div
                       class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group"
                     >
@@ -345,7 +345,7 @@ import { BackupManagementComponent } from "./components/backup-management.compon
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   @for (
-                    s of getSettingsByType("collectionPercentage");
+                    s of collectionPercentageSettings();
                     track s._id
                   ) {
                     <div
@@ -411,7 +411,7 @@ import { BackupManagementComponent } from "./components/backup-management.compon
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  @for (s of getSettingsByType("invoiceType"); track s._id) {
+                  @for (s of invoiceTypeSettings(); track s._id) {
                     <div
                       class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group"
                     >
@@ -475,7 +475,7 @@ import { BackupManagementComponent } from "./components/backup-management.compon
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  @for (s of getSettingsByType("tax"); track s._id) {
+                  @for (s of taxSettings(); track s._id) {
                     <div
                       class="flex items-center justify-between p-4 bg-sf-bg/40 rounded-2xl border border-sf-border/70 hover:border-sf-primary/30 transition-all group"
                     >
@@ -1560,6 +1560,11 @@ export class SettingsComponent implements OnInit {
   activeListSubTab = signal<
     "saleSource" | "collectionPercentage" | "invoiceType" | "tax"
   >("saleSource");
+
+  saleSourceSettings = computed(() => this.getSettingsByType("saleSource"));
+  collectionPercentageSettings = computed(() => this.getSettingsByType("collectionPercentage"));
+  invoiceTypeSettings = computed(() => this.getSettingsByType("invoiceType"));
+  taxSettings = computed(() => this.getSettingsByType("tax"));
   showModal = signal(false);
   currentType = signal<string>("");
   saveSuccessMessage = signal<string | null>(null);

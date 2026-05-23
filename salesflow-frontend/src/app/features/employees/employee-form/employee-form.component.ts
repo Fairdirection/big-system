@@ -359,9 +359,11 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الفريق الحالي</label>
               <select formControlName="currentTeamId" class="w-full px-4 py-2.5 bg-sf-bg border border-sf-border rounded-xl text-sm text-sf-text h-[42px] focus:ring-2 focus:ring-sf-primary/50 outline-none">
                 <option [ngValue]="null">لا ينتمي لأي فريق</option>
-                <option *ngFor="let team of regularTeams()" [value]="team._id">
-                  {{ team.name }} (قائد الفريق: {{ team.teamLeaderId?.name || 'غير معين' }})
-                </option>
+                @for (team of regularTeams(); track team._id) {
+                  <option [value]="team._id">
+                    {{ team.name }} (قائد الفريق: {{ team.teamLeaderId?.name || 'غير معين' }})
+                  </option>
+                }
               </select>
               <p class="text-[10px] text-sf-muted mr-1">الفريق الذي سينضم إليه مسؤول المبيعات الحالي</p>
             </div>
@@ -373,9 +375,11 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                 <option *ngIf="salesManagers().length === 0" [value]="ceoEmployee()?._id || '69f60230c2120b7ce02988dd'">
                   المدير العام ({{ ceoEmployee()?.name || 'الإدارة العليا' }})
                 </option>
-                <option *ngFor="let mgr of salesManagers()" [value]="mgr._id">
-                  {{ mgr.name }} (كود: {{ mgr.code || 'بدون كود' }})
-                </option>
+                @for (mgr of salesManagers(); track mgr._id) {
+                  <option [value]="mgr._id">
+                    {{ mgr.name }} (كود: {{ mgr.code || 'بدون كود' }})
+                  </option>
+                }
               </select>
               <p class="text-[10px] text-sf-muted mr-1">مدير المبيعات الذي يتبعه قائد الفريق الحالي</p>
             </div>
@@ -384,37 +388,39 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             <div *ngIf="seniorityLevel() === 'TeamLeader'" class="space-y-4 col-span-full">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">أعضاء الفريق (مسؤولو المبيعات النشطون)</label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                <div *ngFor="let member of unassignedSellers()" (click)="toggleTeamMember(member._id)"
-                     class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
-                     [class.bg-sf-primary/10]="isTeamMemberSelected(member._id)"
-                     [class.border-sf-primary/50]="isTeamMemberSelected(member._id)"
-                     [class.border-sf-border]="!isTeamMemberSelected(member._id)"
-                     [class.bg-sf-surface]="!isTeamMemberSelected(member._id)">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-sf-border">
-                      @if (member.avatarUrl) {
-                        <img [src]="member.avatarUrl" class="w-full h-full object-cover" />
-                      } @else {
-                        <div class="w-full h-full bg-sf-bg flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
-                          {{ member.name.charAt(0) }}
-                        </div>
-                      }
+                @for (member of unassignedSellers(); track member._id) {
+                  <div (click)="toggleTeamMember(member._id)"
+                       class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
+                       [class.bg-sf-primary/10]="isTeamMemberSelected(member._id)"
+                       [class.border-sf-primary/50]="isTeamMemberSelected(member._id)"
+                       [class.border-sf-border]="!isTeamMemberSelected(member._id)"
+                       [class.bg-sf-surface]="!isTeamMemberSelected(member._id)">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-sf-border">
+                        @if (member.avatarUrl) {
+                          <img [src]="member.avatarUrl" class="w-full h-full object-cover" />
+                        } @else {
+                          <div class="w-full h-full bg-sf-bg flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
+                            {{ member.name.charAt(0) }}
+                          </div>
+                        }
+                      </div>
+                      <div>
+                        <span class="text-xs font-bold text-sf-text block">{{ member.name }}</span>
+                        <span class="text-[9px] text-sf-muted block">الرتبة: {{ member.seniorityLevel }} (كود: {{ member.code || 'بدون كود' }})</span>
+                        <span class="text-[10px] font-bold block mt-1" [class.text-sf-primary]="member.currentTeamId" [class.text-sf-muted]="!member.currentTeamId">
+                          الفريق الحالي: {{ getEmployeeTeamName(member) }}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span class="text-xs font-bold text-sf-text block">{{ member.name }}</span>
-                      <span class="text-[9px] text-sf-muted block">الرتبة: {{ member.seniorityLevel }} (كود: {{ member.code || 'بدون كود' }})</span>
-                      <span class="text-[10px] font-bold block mt-1" [class.text-sf-primary]="member.currentTeamId" [class.text-sf-muted]="!member.currentTeamId">
-                        الفريق الحالي: {{ getEmployeeTeamName(member) }}
-                      </span>
+                    <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
+                         [class.bg-sf-primary]="isTeamMemberSelected(member._id)"
+                         [class.border-sf-primary]="isTeamMemberSelected(member._id)"
+                         [class.border-sf-border]="!isTeamMemberSelected(member._id)">
+                      <ng-icon *ngIf="isTeamMemberSelected(member._id)" name="heroCheck" class="text-white text-xs"></ng-icon>
                     </div>
                   </div>
-                  <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
-                       [class.bg-sf-primary]="isTeamMemberSelected(member._id)"
-                       [class.border-sf-primary]="isTeamMemberSelected(member._id)"
-                       [class.border-sf-border]="!isTeamMemberSelected(member._id)">
-                    <ng-icon *ngIf="isTeamMemberSelected(member._id)" name="heroCheck" class="text-white text-xs"></ng-icon>
-                  </div>
-                </div>
+                }
                 <div *ngIf="unassignedSellers().length === 0" class="col-span-full py-8 text-center border-2 border-dashed border-sf-border rounded-2xl bg-sf-surface/20">
                   <p class="text-xs font-bold text-sf-muted uppercase tracking-widest">لا يوجد مسؤولو مبيعات متاحين للإضافة حالياً</p>
                 </div>
@@ -425,28 +431,30 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             <div *ngIf="isSalesManager()" class="space-y-4 col-span-full">
               <label class="text-xs font-black text-sf-muted uppercase tracking-widest mr-1">الفرق الخاضعة لإدارة هذا المدير</label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                <div *ngFor="let team of regularTeams()" (click)="toggleManagedTeam(team._id)"
-                     class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
-                     [class.bg-sf-primary/10]="isManagedTeamSelected(team._id)"
-                     [class.border-sf-primary/50]="isManagedTeamSelected(team._id)"
-                     [class.border-sf-border]="!isManagedTeamSelected(team._id)"
-                     [class.bg-sf-surface]="!isManagedTeamSelected(team._id)">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
-                      {{ team.name.charAt(0) }}
+                @for (team of regularTeams(); track team._id) {
+                  <div (click)="toggleManagedTeam(team._id)"
+                       class="p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
+                       [class.bg-sf-primary/10]="isManagedTeamSelected(team._id)"
+                       [class.border-sf-primary/50]="isManagedTeamSelected(team._id)"
+                       [class.border-sf-border]="!isManagedTeamSelected(team._id)"
+                       [class.bg-sf-surface]="!isManagedTeamSelected(team._id)">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-sf-bg border border-sf-border flex items-center justify-center text-xs font-black text-sf-primary group-hover:bg-sf-primary group-hover:text-white transition-colors">
+                        {{ team.name.charAt(0) }}
+                      </div>
+                      <div>
+                        <span class="text-xs font-bold text-sf-text block">{{ team.name }}</span>
+                        <span class="text-[9px] text-sf-muted block">قائد الفريق: {{ team.teamLeaderId?.name || 'غير معين' }}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span class="text-xs font-bold text-sf-text block">{{ team.name }}</span>
-                      <span class="text-[9px] text-sf-muted block">قائد الفريق: {{ team.teamLeaderId?.name || 'غير معين' }}</span>
+                    <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
+                         [class.bg-sf-primary]="isManagedTeamSelected(team._id)"
+                         [class.border-sf-primary]="isManagedTeamSelected(team._id)"
+                         [class.border-sf-border]="!isManagedTeamSelected(team._id)">
+                      <ng-icon *ngIf="isManagedTeamSelected(team._id)" name="heroCheck" class="text-white text-xs"></ng-icon>
                     </div>
                   </div>
-                  <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
-                       [class.bg-sf-primary]="isManagedTeamSelected(team._id)"
-                       [class.border-sf-primary]="isManagedTeamSelected(team._id)"
-                       [class.border-sf-border]="!isManagedTeamSelected(team._id)">
-                    <ng-icon *ngIf="isManagedTeamSelected(team._id)" name="heroCheck" class="text-white text-xs"></ng-icon>
-                  </div>
-                </div>
+                }
                 <div *ngIf="regularTeams().length === 0" class="col-span-full py-8 text-center border-2 border-dashed border-sf-border rounded-2xl bg-sf-surface/20">
                   <p class="text-xs font-bold text-sf-muted uppercase tracking-widest">لا يوجد فرق مبيعات نشطة حالياً</p>
                 </div>
@@ -460,7 +468,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
         <div class="glass-card p-8 rounded-3xl border border-sf-border shadow-2xl space-y-12 animate-pulse">
           <div class="h-8 w-48 bg-sf-surface skeleton rounded-lg"></div>
           <div class="grid grid-cols-2 gap-8">
-            <div class="h-16 bg-sf-surface skeleton rounded-xl" *ngFor="let i of [1,2,3,4,5,6]"></div>
+            @for (i of [1,2,3,4,5,6]; track i) {
+              <div class="h-16 bg-sf-surface skeleton rounded-xl"></div>
+            }
           </div>
         </div>
       </ng-template>

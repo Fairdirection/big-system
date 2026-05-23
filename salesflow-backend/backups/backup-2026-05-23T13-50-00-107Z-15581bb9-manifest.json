@@ -1,9 +1,9 @@
 {
-  "backupId": "bbde6547-a334-4206-8de1-12dc106fc9b4",
-  "backupName": "backup-2026-05-22T17-06-59-451Z-bbde6547",
-  "timestamp": "2026-05-22T17:07:01.797Z",
+  "backupId": "15581bb9-dfef-4389-88ec-7a97b54000e5",
+  "backupName": "backup-2026-05-23T13-50-00-107Z-15581bb9",
+  "timestamp": "2026-05-23T13:50:01.571Z",
   "database": {
-    "path": "D:\\FairDirection_Projects\\Fairdirection_SaaS\\salesflow-backend\\backups\\database\\backup-2026-05-22T17-06-59-451Z-bbde6547",
+    "path": "C:\\Users\\FT 2025\\Music\\full_system\\salesflow-backend\\backups\\database\\backup-2026-05-23T13-50-00-107Z-15581bb9",
     "collections": {
       "quarterlytargets": {
         "documentCount": 41
@@ -49,10 +49,10 @@
       }
     },
     "mongoVersion": "8.0.23",
-    "size": "603.6 KB"
+    "size": "603.7 KB"
   },
   "files": {
-    "path": "D:\\FairDirection_Projects\\Fairdirection_SaaS\\salesflow-backend\\backups\\files\\backup-2026-05-22T17-06-59-451Z-bbde6547",
+    "path": "C:\\Users\\FT 2025\\Music\\full_system\\salesflow-backend\\backups\\files\\backup-2026-05-23T13-50-00-107Z-15581bb9",
     "size": "0 B"
   },
   "status": "success",

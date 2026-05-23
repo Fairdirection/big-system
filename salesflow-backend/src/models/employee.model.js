@@ -46,5 +46,7 @@ const employeeSchema = new mongoose.Schema({
 
 employeeSchema.index({ department: 1, isActive: 1 });
 employeeSchema.index({ currentTeamId: 1 });
+employeeSchema.index({ managerId: 1 }); // Added for SalesManager target calculations
+employeeSchema.index({ name: 'text', code: 'text', email: 'text' }); // Added for regex search replacement
 
 module.exports = mongoose.model('Employee', employeeSchema);

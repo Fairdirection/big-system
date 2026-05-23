@@ -593,30 +593,6 @@
   },
   {
     "_id": {
-      "$oid": "6a0f005d9d9e674c2c2f76a4"
-    },
-    "employeeId": {
-      "$oid": "6a0dc0623fcee5398689e536"
-    },
-    "teamId": {
-      "$oid": "6a0dbf173fcee5398689e534"
-    },
-    "joinDate": {
-      "$date": "2026-01-01T00:00:00Z"
-    },
-    "leaveDate": null,
-    "workingDaysInTeam": 0,
-    "quarterId": "Q1-2026",
-    "createdAt": {
-      "$date": "2026-05-21T12:53:49.529Z"
-    },
-    "updatedAt": {
-      "$date": "2026-05-21T12:53:49.529Z"
-    },
-    "__v": 0
-  },
-  {
-    "_id": {
       "$oid": "6a0f04019d9e674c2c2f76a5"
     },
     "employeeId": {
@@ -636,6 +612,30 @@
     },
     "updatedAt": {
       "$date": "2026-05-21T13:09:21.354Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a11ae5a368d74375c6a7a93"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0623fcee5398689e536"
+    },
+    "teamId": {
+      "$oid": "6a0dbf173fcee5398689e534"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 143,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-23T13:40:42.846Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-23T13:43:19.759Z"
     },
     "__v": 0
   }

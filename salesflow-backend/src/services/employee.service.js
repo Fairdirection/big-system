@@ -179,11 +179,7 @@ const getEmployees = async (query) => {
   }
   
   if (search) {
-    filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { code: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } }
-    ];
+    filter.$text = { $search: search };
   }
 
   const sort = {};
@@ -201,8 +197,24 @@ const getEmployees = async (query) => {
   // Enrich with dynamic quarterly target progress if they are in Sales and requested
   if (paginatedResult && paginatedResult.data && includePerformance === 'true') {
     const currentQuarter = query.quarterId || getQuarterId(new Date());
+    
+    // PRELOAD ALL TARGETS FOR THIS PAGE to avoid N+1 query inside the loop
+    const QuarterlyTarget = require('../models/quarterly-target.model');
+    const employeeIds = paginatedResult.data.map(emp => emp._id);
+    const customTargets = await QuarterlyTarget.find({ 
+      employeeId: { $in: employeeIds }, 
+      quarterId: currentQuarter 
+    }).lean();
+    
+    const targetMap = new Map();
+    for (const ct of customTargets) {
+      targetMap.set(ct.employeeId.toString(), ct.target);
+    }
+
     const enrichedDocs = [];
-    for (const emp of paginatedResult.data) {
+    
+    // We still have getTargetProgress which is slightly heavy, but run it in parallel!
+    const performancePromises = paginatedResult.data.map(async (emp) => {
       const empObj = emp.toObject ? emp.toObject() : emp;
       if (empObj.isActive === false && !empObj.endDate) {
         empObj.endDate = empObj.updatedAt || new Date();
@@ -210,10 +222,9 @@ const getEmployees = async (query) => {
 
       if (empObj.department === 'Sales') {
         try {
-          const QuarterlyTarget = require('../models/quarterly-target.model');
-          const customTarget = await QuarterlyTarget.findOne({ employeeId: empObj._id, quarterId: currentQuarter });
-          if (customTarget && customTarget.target !== undefined && customTarget.target !== null) {
-            empObj.target = customTarget.target;
+          const ctValue = targetMap.get(empObj._id.toString());
+          if (ctValue !== undefined && ctValue !== null) {
+            empObj.target = ctValue;
             empObj.hasCustomTarget = true;
           }
           const progress = await getTargetProgress(empObj._id, currentQuarter);
@@ -226,9 +237,10 @@ const getEmployees = async (query) => {
           empObj.adjustedTarget = empObj.target;
         }
       }
-      enrichedDocs.push(empObj);
-    }
-    paginatedResult.data = enrichedDocs;
+      return empObj;
+    });
+    
+    paginatedResult.data = await Promise.all(performancePromises);
   }
   
   return paginatedResult;
@@ -978,11 +990,9 @@ const getTargetProgress = async (employeeId, quarterId) => {
     });
 
     if (teamLeaders.length > 0) {
-      const teamLeadersProgress = [];
-      for (const leader of teamLeaders) {
-        const leaderProgress = await getTargetProgress(leader._id.toString(), quarterId);
-        teamLeadersProgress.push(leaderProgress);
-      }
+      const teamLeadersProgress = await Promise.all(
+        teamLeaders.map(leader => getTargetProgress(leader._id.toString(), quarterId))
+      );
 
       let totalFullTarget = 0;
       let totalAdjustedTarget = 0;
@@ -1032,31 +1042,21 @@ const getTargetProgress = async (employeeId, quarterId) => {
     const team = await Team.findOne({ teamLeaderId: employeeId, isActive: true }).populate('memberIds');
     const teamMembers = team ? team.memberIds.filter(m => m._id.toString() !== employeeId && m.isActive) : [];
 
-    if (team && teamMembers.length > 0) {
-      const membersProgress = [];
-      let totalFullTarget = 0;
-      let totalAdjustedTarget = 0;
-      let totalAchievedSales = 0;
-      let totalAchievedCommission = 0;
+    if (team) {
+      const teamService = require('./team.service');
+      const teamSummary = await teamService.getTeamTargetSummary(team._id, quarterId);
 
-      for (const member of teamMembers) {
-        const memberProgress = await getTargetProgress(member._id.toString(), quarterId);
-        totalFullTarget += Math.round(memberProgress.fullTarget);
-        totalAdjustedTarget += Math.round(memberProgress.adjustedTarget);
-        totalAchievedSales += Math.round(memberProgress.achievedSalesValue || memberProgress.achievedSales || 0);
-        totalAchievedCommission += Math.round(memberProgress.achievedCommission || 0);
-        membersProgress.push(memberProgress);
-      }
-
-      // TeamLeader's own personal target is 0 since they have a team, but their personal sales are added
       const personalProgress = await getPersonalTargetProgressOnly(employee, quarterId);
       personalProgress.fullTarget = 0;
       personalProgress.adjustedTarget = 0;
 
-      totalAchievedSales += personalProgress.achievedSales;
-      totalAchievedCommission += personalProgress.achievedCommission;
-
-      const achievementPercentage = totalAdjustedTarget > 0 ? (totalAchievedSales / totalAdjustedTarget) * 100 : 0;
+      let totalFullTarget = 0;
+      let totalAchievedCommission = 0;
+      for (const m of teamSummary.membersProgress) {
+        totalFullTarget += m.fullTarget || 0;
+        totalAchievedCommission += m.achievedCommission || 0;
+      }
+      totalAchievedCommission += personalProgress.achievedCommission || 0;
 
       result = {
         employeeId,
@@ -1065,15 +1065,15 @@ const getTargetProgress = async (employeeId, quarterId) => {
         quarterId,
         fullTarget: Math.round(totalFullTarget),
         actualWorkingDays: personalProgress.actualWorkingDays,
-        adjustedTarget: Math.round(totalAdjustedTarget),
-        achievedSales: Math.round(totalAchievedSales),
-        achievedSalesValue: Math.round(totalAchievedSales),
+        adjustedTarget: teamSummary.totalAdjustedTarget,
+        achievedSales: teamSummary.totalAchieved,
+        achievedSalesValue: teamSummary.totalAchieved,
         achievedCommission: Math.round(totalAchievedCommission),
-        achievementPercentage: Math.round(achievementPercentage * 10) / 10,
-        gap: Math.round(Math.max(0, totalAdjustedTarget - totalAchievedSales)),
-        teamMembersCount: teamMembers.length,
+        achievementPercentage: teamSummary.overallAchievementPercentage,
+        gap: Math.max(0, teamSummary.totalAdjustedTarget - teamSummary.totalAchieved),
+        teamMembersCount: teamSummary.membersProgress.length > 0 ? teamSummary.membersProgress.length - 1 : 0,
         personalProgress,
-        membersProgress
+        membersProgress: teamSummary.membersProgress
       };
     } else {
       // Exceptional case: TeamLeader without team members -> individual target mode

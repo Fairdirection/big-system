@@ -114,50 +114,51 @@ import {
         <h3 class="text-xl font-display font-black text-sf-text px-2">تفاصيل أداء أعضاء الفريق</h3>
         
         <div class="grid grid-cols-1 gap-6">
-          <div *ngFor="let member of perf.membersProgress" 
-               class="glass-card rounded-3xl border border-sf-border shadow-xl overflow-hidden transition-all duration-500"
-               [class.ring-2]="expandedMember() === member.employeeId"
-               [class.ring-sf-primary/20]="expandedMember() === member.employeeId">
-            
-            <!-- Member Header (Summary) -->
-            <div (click)="toggleExpand(member.employeeId)" 
-                 class="p-6 cursor-pointer hover:bg-sf-surface/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div class="flex items-center gap-5">
-                <div class="w-14 h-14 rounded-2xl bg-sf-bg border border-sf-border flex items-center justify-center text-sf-primary text-xl font-black shadow-inner">
-                  {{ member.name.charAt(0) }}
+          @for (member of perf.membersProgress; track member.employeeId) {
+            <div class="glass-card rounded-3xl border border-sf-border shadow-xl overflow-hidden transition-all duration-500"
+                 [class.ring-2]="expandedMember() === member.employeeId"
+                 [class.ring-sf-primary/20]="expandedMember() === member.employeeId">
+              
+              <!-- Member Header (Summary) -->
+              <div (click)="toggleExpand(member.employeeId)" 
+                   class="p-6 cursor-pointer hover:bg-sf-surface/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                  <div class="w-14 h-14 rounded-2xl bg-sf-bg border border-sf-border flex items-center justify-center text-sf-primary text-xl font-black shadow-inner">
+                    {{ member.name.charAt(0) }}
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-sf-text tracking-tight">{{ member.name }}</h4>
+                    <div class="flex items-center gap-3 mt-1 text-[10px] font-black text-sf-muted uppercase">
+                      <span>كود: {{ member.code }}</span>
+                      <span class="opacity-30">•</span>
+                      <span class="text-sf-primary">المستهدف: {{ member.adjustedTarget | currencyEgp }}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 class="text-lg font-bold text-sf-text tracking-tight">{{ member.name }}</h4>
-                  <div class="flex items-center gap-3 mt-1 text-[10px] font-black text-sf-muted uppercase">
-                    <span>كود: {{ member.code }}</span>
-                    <span class="opacity-30">•</span>
-                    <span class="text-sf-primary">المستهدف: {{ member.adjustedTarget | currencyEgp }}</span>
+
+                <div class="flex items-center gap-8">
+                  <div class="text-right">
+                    <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-1">المحقق</p>
+                    <p class="text-lg font-black text-sf-success">{{ member.achieved | currencyEgp }}</p>
+                  </div>
+                  
+                  <div class="w-32">
+                     <div class="flex justify-between items-center mb-1.5">
+                       <span class="text-[10px] font-black text-sf-muted uppercase">الإنجاز</span>
+                       <span class="text-[10px] font-black text-sf-primary">{{ member.achievementPercentage | number:'1.0-1' }}%</span>
+                     </div>
+                     <div class="h-2 w-full bg-sf-bg border border-sf-border rounded-full overflow-hidden">
+                       <div class="h-full bg-sf-primary transition-all duration-1000" [style.width.%]="member.achievementPercentage"></div>
+                     </div>
+                  </div>
+
+                  <div class="w-10 h-10 rounded-xl bg-sf-surface border border-sf-border flex items-center justify-center text-sf-muted transition-transform"
+                       [class.rotate-180]="expandedMember() === member.employeeId">
+                    <ng-icon name="heroChevronDown"></ng-icon>
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-8">
-                <div class="text-right">
-                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-wider mb-1">المحقق</p>
-                  <p class="text-lg font-black text-sf-success">{{ member.achieved | currencyEgp }}</p>
-                </div>
-                
-                <div class="w-32">
-                   <div class="flex justify-between items-center mb-1.5">
-                     <span class="text-[10px] font-black text-sf-muted uppercase">الإنجاز</span>
-                     <span class="text-[10px] font-black text-sf-primary">{{ member.achievementPercentage | number:'1.0-1' }}%</span>
-                   </div>
-                   <div class="h-2 w-full bg-sf-bg border border-sf-border rounded-full overflow-hidden">
-                     <div class="h-full bg-sf-primary transition-all duration-1000" [style.width.%]="member.achievementPercentage"></div>
-                   </div>
-                </div>
-
-                <div class="w-10 h-10 rounded-xl bg-sf-surface border border-sf-border flex items-center justify-center text-sf-muted transition-transform"
-                     [class.rotate-180]="expandedMember() === member.employeeId">
-                  <ng-icon name="heroChevronDown"></ng-icon>
-                </div>
-              </div>
-            </div>
 
             <!-- Member Details (Sales List) -->
             <div *ngIf="expandedMember() === member.employeeId" 
@@ -235,7 +236,8 @@ import {
                 }
               </div>
             </div>
-          </div>
+            </div>
+          }
         </div>
       </div>
     </div>

@@ -30,5 +30,7 @@ const claimSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 claimSchema.index({ status: 1 });
+claimSchema.index({ isActive: 1, status: 1 }); // Used by dashboard
+claimSchema.index({ claimNumber: 'text', clientName: 'text', saleNumber: 'text', projectName: 'text' }); // Added for regex search replacement
 
 module.exports = mongoose.model('Claim', claimSchema);

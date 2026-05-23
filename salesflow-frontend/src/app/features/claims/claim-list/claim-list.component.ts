@@ -183,25 +183,11 @@ export class ClaimListComponent implements OnInit {
     { value: 'disputed',  label: 'منازع عليها' },
   ];
 
-  // Client-side filter on the loaded page (server-side when backend supports search param)
   displayedClaims = computed(() => {
-    let list = this.claims();
-    const q  = this.searchQuery().toLowerCase();
-    const st = this.statusFilter();
-
-    if (st !== 'all') list = list.filter(c => c.status === st);
-    if (q) list = list.filter(c =>
-      c.claimNumber?.toLowerCase().includes(q) ||
-      (c as any).saleNumber?.toLowerCase().includes(q) ||
-      (c as any).clientName?.toLowerCase().includes(q),
-    );
-    return list;
+    return this.claims();
   });
 
-  // When a client-side filter is active, compute pages from filtered count rather than server total
   effectiveTotalPages = computed(() => {
-    const hasFilter = this.searchQuery().trim().length > 0 || this.statusFilter() !== 'all';
-    if (hasFilter) return Math.max(1, Math.ceil(this.displayedClaims().length / this.limit()));
     return this.totalPages();
   });
 
@@ -222,6 +208,15 @@ export class ClaimListComponent implements OnInit {
       limit:     this.limit().toString(),
       quarterId: this.themeService.currentQuarter(),
     };
+    
+    if (this.statusFilter() !== 'all') {
+      params['status'] = this.statusFilter();
+    }
+    
+    if (this.searchQuery().trim()) {
+      params['search'] = this.searchQuery().trim();
+    }
+
     this.claimService.getClaims(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.loading.set(false);

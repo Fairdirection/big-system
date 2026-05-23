@@ -87,4 +87,8 @@ saleSchema.index({ clientId: 1, status: 1, contractDate: -1 });
 // فهرس مركب لحساب عمولات البائعين فورياً لتقارير الأداء
 saleSchema.index({ 'sellers.employeeId': 1, status: 1 });
 
+// Indexes added for performance
+saleSchema.index({ contractDate: -1 });
+saleSchema.index({ saleNumber: 'text', projectName: 'text', clientName: 'text' });
+
 module.exports = mongoose.model('Sale', saleSchema);
