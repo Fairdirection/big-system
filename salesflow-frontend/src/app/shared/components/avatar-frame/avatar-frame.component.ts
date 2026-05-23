@@ -984,174 +984,70 @@ const COLORS: Record<string, { bg: string; text: string }> = {
               }
 
               @default {
-                <!-- Outer marching ring -->
+                <!-- Outer dashed ring -->
                 <circle
                   cx="50"
                   cy="50"
-                  r="46"
-                  stroke="#7c3aed"
-                  stroke-width="0.8"
-                  stroke-dasharray="4 5"
+                  r="45"
+                  stroke="#D4537E"
+                  stroke-width="1"
+                  stroke-dasharray="6 4"
                   class="af-hr-run"
                 />
-                <!-- DNA double helix + rung dots spinning CW -->
-                <g class="af-hr-cw">
-                  <!-- Strand A -->
-                  <path
-                    d="M50,4.2 C60,4.2 68.3,13.3 68.3,23.3 C68.3,33.3 60,42.5 50,42.5
-                            C40,42.5 31.7,51.7 31.7,61.7 C31.7,71.7 40,80.8 50,80.8
-                            C60,80.8 68.3,71.7 68.3,61.7 C68.3,51.7 60,42.5 50,42.5
-                            C40,42.5 31.7,33.3 31.7,23.3 C31.7,13.3 40,4.2 50,4.2Z"
-                    stroke="#a855f7"
-                    stroke-width="1.2"
-                    fill="none"
-                    stroke-dasharray="6 3"
-                  />
-                  <!-- Strand B -->
-                  <path
-                    d="M50,8.3 C58.3,8.3 65,16.7 65,26.7 C65,36.7 58.3,43.3 50,43.3
-                            C41.7,43.3 35,51.7 35,61.7 C35,70 41.7,76.7 50,76.7
-                            C58.3,76.7 65,70 65,61.7 C65,51.7 58.3,43.3 50,43.3
-                            C41.7,43.3 35,36.7 35,26.7 C35,16.7 41.7,8.3 50,8.3Z"
-                    stroke="#c084fc"
-                    stroke-width="0.7"
-                    fill="none"
-                    stroke-dasharray="3 6"
-                    opacity="0.6"
-                  />
-                  <!-- Rung dots -->
-                  <circle
-                    cx="50"
-                    cy="15"
-                    r="2.5"
-                    fill="#7c3aed"
-                    class="af-fl1"
-                  />
-                  <circle cx="64" cy="27" r="2" fill="#a855f7" class="af-fl2" />
-                  <circle
-                    cx="64"
-                    cy="50"
-                    r="2.5"
-                    fill="#7c3aed"
-                    class="af-fl3"
-                  />
-                  <circle cx="64" cy="73" r="2" fill="#a855f7" class="af-fl4" />
-                  <circle
-                    cx="50"
-                    cy="85"
-                    r="2.5"
-                    fill="#7c3aed"
-                    class="af-fl1"
-                  />
-                  <circle cx="36" cy="73" r="2" fill="#a855f7" class="af-fl2" />
-                  <circle
-                    cx="36"
-                    cy="50"
-                    r="2.5"
-                    fill="#7c3aed"
-                    class="af-fl3"
-                  />
-                  <circle cx="36" cy="27" r="2" fill="#a855f7" class="af-fl4" />
-                </g>
-                <!-- Inner concentric arcs reverse spin -->
-                <g class="af-hr-ccw">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="35"
-                    stroke="#6d28d9"
-                    stroke-width="0.8"
-                    stroke-dasharray="10 6"
-                    fill="none"
-                  />
-                  <path
-                    d="M50,15 A35,35 0 0,1 85,50"
-                    stroke="#a855f7"
-                    stroke-width="1.5"
-                    fill="none"
-                    stroke-linecap="round"
-                    opacity="0.5"
-                  />
-                  <path
-                    d="M85,50 A35,35 0 0,1 50,85"
-                    stroke="#a855f7"
-                    stroke-width="1.5"
-                    fill="none"
-                    stroke-linecap="round"
-                    opacity="0.5"
-                  />
-                </g>
-                <!-- Innermost static ring -->
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="29"
-                  stroke="#4c1d95"
-                  stroke-width="0.7"
-                  stroke-dasharray="2 4"
-                />
-                <!-- Centre bloom — 6 petals pulsing -->
+
+                <!-- Minimalist dots around the circle - cardinal directions -->
+                <!-- top -->
+                <circle cx="50" cy="6" r="2" fill="#D4537E" />
+                <circle cx="50" cy="4" r="1.2" fill="#F4C0D1" />
+
+                <!-- top-right -->
+                <circle cx="77" cy="16" r="1.8" fill="#D4537E" />
+                <circle cx="80" cy="13" r="1" fill="#F4C0D1" />
+
+                <!-- right -->
+                <circle cx="94" cy="50" r="2" fill="#D4537E" />
+                <circle cx="96" cy="50" r="1.2" fill="#F4C0D1" />
+
+                <!-- bottom-right -->
+                <circle cx="77" cy="84" r="1.8" fill="#D4537E" />
+                <circle cx="80" cy="87" r="1" fill="#F4C0D1" />
+
+                <!-- bottom -->
+                <circle cx="50" cy="94" r="2" fill="#D4537E" />
+                <circle cx="50" cy="96" r="1.2" fill="#F4C0D1" />
+
+                <!-- bottom-left -->
+                <circle cx="23" cy="84" r="1.8" fill="#D4537E" />
+                <circle cx="20" cy="87" r="1" fill="#F4C0D1" />
+
+                <!-- left -->
+                <circle cx="6" cy="50" r="2" fill="#D4537E" />
+                <circle cx="4" cy="50" r="1.2" fill="#F4C0D1" />
+
+                <!-- top-left -->
+                <circle cx="23" cy="16" r="1.8" fill="#D4537E" />
+                <circle cx="20" cy="13" r="1" fill="#F4C0D1" />
+
+                <!-- Center heart with heartbeat animation -->
                 <g class="af-sp">
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
+                  <!-- Heart outline -->
+                  <path
+                    d="M50 68 C50 68 35 57 35 46 C35 39 40 35 46 37 C48 38 50 41 50 43 C50 41 52 38 54 37 C60 35 65 39 65 46 C65 57 50 68 50 68Z"
+                    stroke="#D4537E"
+                    stroke-width="1.5"
+                    fill="none"
                   />
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
-                    transform="rotate(60,50,50)"
-                  />
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
-                    transform="rotate(120,50,50)"
-                  />
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
-                    transform="rotate(180,50,50)"
-                  />
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
-                    transform="rotate(240,50,50)"
-                  />
-                  <ellipse
-                    cx="50"
-                    cy="40"
-                    rx="3"
-                    ry="6"
-                    fill="#7c3aed"
-                    opacity="0.5"
-                    transform="rotate(300,50,50)"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="4.2"
-                    fill="#a855f7"
-                    opacity="0.7"
-                  />
+                  <!-- HR text in center -->
+                  <text
+                    x="50"
+                    y="56"
+                    text-anchor="middle"
+                    font-size="10"
+                    font-weight="600"
+                    fill="#D4537E"
+                  >
+                    HR
+                  </text>
                 </g>
               }
             }
