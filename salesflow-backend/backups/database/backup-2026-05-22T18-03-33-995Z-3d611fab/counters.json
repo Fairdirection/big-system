@@ -1,0 +1,10 @@
+[
+  {
+    "_id": "CLM_claimNumber",
+    "sequence_value": 2
+  },
+  {
+    "_id": "SALE_saleNumber",
+    "sequence_value": 5
+  }
+]

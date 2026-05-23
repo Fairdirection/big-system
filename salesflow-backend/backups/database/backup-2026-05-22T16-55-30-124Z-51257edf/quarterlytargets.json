@@ -1,0 +1,699 @@
+[
+  {
+    "_id": {
+      "$oid": "6a049c96439149f76c864612"
+    },
+    "quarterId": "Q2-2026",
+    "employeeId": {
+      "$oid": "6a03439b1b9d1947798c84b4"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-13T15:45:20.324Z"
+    },
+    "target": 2300000,
+    "updatedAt": {
+      "$date": "2026-05-13T15:45:20.324Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a049e90439149f76c8646b6"
+    },
+    "employeeId": {
+      "$oid": "6a049e8a5affe5f8adb76d51"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-13T15:53:46.768Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-13T15:53:46.768Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a049f1d439149f76c8648bd"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a049f175affe5f8adb76d53"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-13T15:56:07.276Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-13T16:07:28.744Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a059a81439149f76c8680f1"
+    },
+    "employeeId": {
+      "$oid": "6a03439b1b9d1947798c84b4"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-14T09:48:49.378Z"
+    },
+    "target": 18000000,
+    "updatedAt": {
+      "$date": "2026-05-14T09:48:49.378Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a059aa7439149f76c8680f3"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a033af21b9d1947798c84b2"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-14T09:49:27.791Z"
+    },
+    "target": 27000000,
+    "updatedAt": {
+      "$date": "2026-05-14T09:49:27.791Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a059ba3439149f76c868131"
+    },
+    "employeeId": {
+      "$oid": "6a059ba3bce4090f831fb2f6"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-14T09:53:39.665Z"
+    },
+    "target": 24000000,
+    "updatedAt": {
+      "$date": "2026-05-14T10:38:31.591Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a05a5e7439149f76c8682d1"
+    },
+    "quarterId": "Q2-2026",
+    "employeeId": {
+      "$oid": "6a059ba3bce4090f831fb2f6"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-14T10:37:27.777Z"
+    },
+    "target": 24000000,
+    "updatedAt": {
+      "$date": "2026-05-14T10:37:27.777Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a05b012439149f76c8685e7"
+    },
+    "employeeId": {
+      "$oid": "6a05b0112b63ab1271ab2040"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-14T11:20:50.088Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-14T11:20:50.088Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0aecd4439149f76c895931"
+    },
+    "employeeId": {
+      "$oid": "6a032a64757eafbdcfba8bac"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-18T10:41:22.668Z"
+    },
+    "target": 2000000,
+    "updatedAt": {
+      "$date": "2026-05-18T10:41:22.668Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0af87e439149f76c8962dd"
+    },
+    "employeeId": {
+      "$oid": "6a033af21b9d1947798c84b2"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-18T11:31:08.681Z"
+    },
+    "target": 2000000,
+    "updatedAt": {
+      "$date": "2026-05-18T11:32:15.101Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0c64be439149f76c8a0f92"
+    },
+    "employeeId": {
+      "$oid": "6a0c64bda953db9ba33766cb"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-19T13:25:18.049Z"
+    },
+    "target": 2000000,
+    "updatedAt": {
+      "$date": "2026-05-19T13:25:18.049Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0c6513439149f76c8a0fc7"
+    },
+    "quarterId": "Q2-2026",
+    "employeeId": {
+      "$oid": "6a0c6513a953db9ba33766cc"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-19T13:26:43.864Z"
+    },
+    "target": 25000000,
+    "updatedAt": {
+      "$date": "2026-05-19T13:29:33.548Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dbf18536729b20a826bc9"
+    },
+    "employeeId": {
+      "$oid": "6a0dbf173fcee5398689e533"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:03:03.505Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:03:03.505Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc02c536729b20a826cb3"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a0dc0293fcee5398689e535"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:07:38.710Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:07:38.710Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc065536729b20a826cf2"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a0dc0623fcee5398689e536"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:08:35.242Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:08:35.242Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc0e0536729b20a826d42"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0de3fcee5398689e538"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:10:39.047Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:10:39.047Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc141536729b20a826d90"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a0dc1403fcee5398689e53a"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:12:16.309Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:12:16.309Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc167536729b20a826da0"
+    },
+    "employeeId": {
+      "$oid": "6a0dc1663fcee5398689e53b"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:12:54.792Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T14:12:54.792Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc21f536729b20a826e16"
+    },
+    "employeeId": {
+      "$oid": "6a0dc21e3fcee5398689e53c"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:15:58.100Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T13:51:30.703Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc248536729b20a826e45"
+    },
+    "employeeId": {
+      "$oid": "6a0dc2473fcee5398689e53d"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:16:39.320Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T09:44:11.604Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc3d3536729b20a826f37"
+    },
+    "employeeId": {
+      "$oid": "6a0dc3cf3fcee5398689e53e"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:23:13.352Z"
+    },
+    "target": 27000000,
+    "updatedAt": {
+      "$date": "2026-05-21T10:03:27.408Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc459536729b20a826fd9"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a0dc4583fcee5398689e53f"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:25:28.708Z"
+    },
+    "target": 18000000,
+    "updatedAt": {
+      "$date": "2026-05-21T10:03:47.572Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc539536729b20a82709f"
+    },
+    "employeeId": {
+      "$oid": "6a0dc537c3bc3b715f64ad1d"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:29:12.050Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-21T09:42:13.311Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc863536729b20a82729a"
+    },
+    "employeeId": {
+      "$oid": "6a0dc862c3bc3b715f64ad1f"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:42:42.119Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-21T09:40:31.747Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc8e2536729b20a827309"
+    },
+    "quarterId": "Q1-2026",
+    "employeeId": {
+      "$oid": "6a0dc8e1c3bc3b715f64ad21"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:44:49.940Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-21T10:00:30.044Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc949536729b20a82734f"
+    },
+    "employeeId": {
+      "$oid": "6a0dc948c3bc3b715f64ad23"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T14:46:32.899Z"
+    },
+    "target": 50000000,
+    "updatedAt": {
+      "$date": "2026-05-21T13:43:05.745Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dcd1f536729b20a8275ce"
+    },
+    "employeeId": {
+      "$oid": "6a0dcd1e3ac181b350c27094"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T15:02:54.111Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T15:02:54.111Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0dcdaa536729b20a82761f"
+    },
+    "employeeId": {
+      "$oid": "6a0dcda93ac181b350c27097"
+    },
+    "quarterId": "Q1-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-20T15:05:13.638Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-20T15:05:13.638Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0eda23536729b20a82f057"
+    },
+    "employeeId": {
+      "$oid": "6a0eda227d7300244312cf04"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T10:10:42.253Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T10:10:42.253Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0eda62536729b20a82f076"
+    },
+    "quarterId": "Q2-2026",
+    "employeeId": {
+      "$oid": "6a0dc0293fcee5398689e535"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T10:11:44.950Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T12:21:38.244Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0ee312536729b20a82f535"
+    },
+    "employeeId": {
+      "$oid": "6a0ee3107d7300244312cf06"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T10:48:49.062Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T10:54:28.433Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0ee866536729b20a82f8a7"
+    },
+    "employeeId": {
+      "$oid": "6a0ee8657d7300244312cf09"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T11:11:33.248Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T11:11:33.248Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0ef27f536729b20a82ff44"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0623fcee5398689e536"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T11:54:38.693Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T11:54:38.693Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0ef4c4536729b20a8300ad"
+    },
+    "employeeId": {
+      "$oid": "6a0ef4c38cc8f26fb0ea5aee"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:04:19.106Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T12:04:19.106Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0ef86b536729b20a8302cb"
+    },
+    "employeeId": {
+      "$oid": "6a0ef86a8cc8f26fb0ea5aef"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:19:54.160Z"
+    },
+    "target": 21000000,
+    "updatedAt": {
+      "$date": "2026-05-21T12:20:14.156Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0efa27536729b20a8303cd"
+    },
+    "employeeId": {
+      "$oid": "6a0efa268cc8f26fb0ea5af1"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:27:18.216Z"
+    },
+    "target": 27000000,
+    "updatedAt": {
+      "$date": "2026-05-21T12:27:18.216Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0efea3536729b20a83069f"
+    },
+    "employeeId": {
+      "$oid": "6a0dbf173fcee5398689e533"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:46:26.138Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T12:46:26.138Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0efec0536729b20a8306b3"
+    },
+    "quarterId": "Q2-2026",
+    "employeeId": {
+      "$oid": "6a0dc948c3bc3b715f64ad23"
+    },
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:46:55.272Z"
+    },
+    "target": 2666000000,
+    "updatedAt": {
+      "$date": "2026-05-21T13:30:14.719Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0eff3d536729b20a83070a"
+    },
+    "employeeId": {
+      "$oid": "6a0eff3c9d9e674c2c2f76a2"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T12:49:00.321Z"
+    },
+    "target": 18000000,
+    "updatedAt": {
+      "$date": "2026-05-21T12:49:00.321Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0f03d1536729b20a830a0e"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0de3fcee5398689e538"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T13:08:32.607Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T13:08:32.607Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "6a0f13f7536729b20a8314f6"
+    },
+    "employeeId": {
+      "$oid": "6a0dc21e3fcee5398689e53c"
+    },
+    "quarterId": "Q2-2026",
+    "__v": 0,
+    "createdAt": {
+      "$date": "2026-05-21T14:17:26.020Z"
+    },
+    "target": 0,
+    "updatedAt": {
+      "$date": "2026-05-21T14:35:40.296Z"
+    }
+  }
+]

@@ -309,6 +309,176 @@ html.dark {
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
+/* ── Avatar Frame Animations ────────────────────────────────────────────── */
+@keyframes spin-slow  { from { transform: rotate(0deg);    } to { transform: rotate(360deg);  } }
+@keyframes spin-rev   { from { transform: rotate(0deg);    } to { transform: rotate(-360deg); } }
+@keyframes pulse-ring { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dash-flow  { to { stroke-dashoffset: -40; } }
+
+.avatar-spin-slow { animation: spin-slow  8s  linear       infinite; transform-origin: 45px 45px; }
+.avatar-spin-12   { animation: spin-slow  12s linear       infinite; transform-origin: 45px 45px; }
+.avatar-spin-rev  { animation: spin-rev   6s  linear       infinite; transform-origin: 45px 45px; }
+.avatar-pulse     { animation: pulse-ring 2.5s ease-in-out infinite; }
+.avatar-dash-flow { animation: dash-flow  1.5s linear      infinite; }
+
+/* Short-name aliases used directly in AvatarFrameComponent SVGs */
+.dash-anim { animation: dash-flow 1.5s linear infinite; }
+.spin-slow  { animation: spin-slow 8s  linear infinite; transform-origin: 45px 45px; }
+.spin-rev   { animation: spin-rev  6s  linear infinite; transform-origin: 45px 45px; }
+
+/* ── Employee Rank Frame System v2 ──────────────────────────────────────── */
+/* --emp-r and --emp-ring-w are set per-card via Angular [style] binding    */
+:root {
+  --emp-r: 148 163 184;
+  --emp-ring-w: 0px;
+}
+
+/* ── Gradient card border (replaces plain glass-card border) ── */
+.emp-card-frame {
+  border: 1.5px solid transparent;
+  backdrop-filter: blur(12px);
+  background:
+    linear-gradient(
+      160deg,
+      rgb(var(--sf-surface) / 0.98) 0%,
+      rgb(var(--sf-surface) / 0.94) 100%
+    ) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(var(--emp-r) / 0.5)  0%,
+      rgb(var(--emp-r) / 0.08) 45%,
+      rgb(var(--emp-r) / 0.45) 100%
+    ) border-box;
+  box-shadow:
+    0 8px 32px -8px rgba(0, 0, 0, 0.08),
+    0 4px 12px -6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.emp-card-frame:hover {
+  background:
+    linear-gradient(
+      160deg,
+      rgb(var(--sf-surface) / 0.99) 0%,
+      rgb(var(--sf-surface) / 0.96) 100%
+    ) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(var(--emp-r) / 0.75) 0%,
+      rgb(var(--emp-r) / 0.18) 45%,
+      rgb(var(--emp-r) / 0.70) 100%
+    ) border-box;
+  box-shadow:
+    0 16px 40px -8px rgba(0, 0, 0, 0.12),
+    0 6px 16px -6px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 0 28px rgb(var(--emp-r) / 0.14);
+  transform: translateY(-2px);
+}
+
+/* ── Conic-gradient avatar ring (Apple-style sweep) ── */
+.emp-avatar-wrap {
+  flex-shrink: 0;
+  padding: var(--emp-ring-w);
+  border-radius: calc(12px + var(--emp-ring-w));
+  background: conic-gradient(
+    from 200deg at 50% 50%,
+    rgb(var(--emp-r))       0%,
+    rgb(var(--emp-r) / 0.1) 38%,
+    rgb(var(--emp-r) / 0.1) 62%,
+    rgb(var(--emp-r))       100%
+  );
+}
+
+.emp-avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Avatar initials background — rank-colored gradient ── */
+.emp-avatar-initials {
+  background: linear-gradient(
+    135deg,
+    rgb(var(--emp-r)) 0%,
+    rgb(var(--emp-r) / 0.65) 100%
+  );
+}
+
+/* ── Prestige glow — SV and TeamLeader only ── */
+.emp-avatar-glow {
+  box-shadow:
+    0 0 0 1px rgb(var(--emp-r) / 0.18),
+    0 0 16px rgb(var(--emp-r) / 0.38),
+    0 0 40px rgb(var(--emp-r) / 0.16);
+}
+
+/* ── Header accent band ── */
+.emp-header-band {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--emp-r) / 0.09) 0%,
+    transparent 100%
+  );
+}
+
+/* ── Accent strip with glow ── */
+.emp-accent-strip {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--emp-r))       0%,
+    rgb(var(--emp-r) / 0.5) 100%
+  );
+  box-shadow: 2px 0 14px rgb(var(--emp-r) / 0.4);
+}
+
+/* ── Tier chip ── */
+.emp-tier-chip {
+  color: rgb(var(--emp-r));
+  border-color: rgb(var(--emp-r) / 0.35);
+  background-color: rgb(var(--emp-r) / 0.1);
+}
+
+/* ── Tier pip dot ── */
+.emp-pip {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: rgb(var(--emp-r));
+  flex-shrink: 0;
+}
+
+/* ── Decorative SVG frame overlay ── */
+.emp-frame-svg {
+  transition: opacity 0.25s ease;
+}
+.group:hover .emp-frame-svg {
+  opacity: 1 !important;
+}
+
+/* ── TeamLeader exclusive diagonal micro-texture ── */
+.emp-exclusive-texture {
+  position: relative;
+}
+.emp-exclusive-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--emp-r) / 0.028) 0px,
+    rgb(var(--emp-r) / 0.028) 1px,
+    transparent 1px,
+    transparent 6px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Universal Print Stylesheet - Premium A4 Accounting Output */
 @media print {
   /* Reset background and text color for perfect printing */

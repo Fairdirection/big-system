@@ -27,7 +27,18 @@
       "PowerShell(Get-ChildItem -Path \"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-frontend\\\\src\" -Recurse | Select-Object FullName | ForEach-Object {$_.FullName -replace [regex]::Escape\\(\"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\\\\salesflow-frontend\\\\src\\\\\"\\), \"\"} | Select-Object -First 150)",
       "Bash(Select-Object -First 30)",
       "Bash(Find D:FairDirection_ProjectsFairdirection_SaaSsalesflow-frontendsrcappcoreutils *)",
-      "Bash(Find D:FairDirection_ProjectsFairdirection_SaaSsalesflow-frontendsrcappsharedcomponentsnavbar *)"
+      "Bash(Find D:FairDirection_ProjectsFairdirection_SaaSsalesflow-frontendsrcappsharedcomponentsnavbar *)",
+      "Bash(cd /d \"D:\\\\FairDirection_Projects\\\\Fairdirection_SaaS\")",
+      "Bash(findstr \"router\\\\.\" salesflow-backend\\\\src\\\\routes\\\\backup.routes.js)",
+      "Bash(npm run *)",
+      "Bash(where mongoexport *)",
+      "Bash(node -e \"require\\('./src/services/backup.service'\\)\")",
+      "Bash(node -e \"const fs = require\\('fs'\\).promises; fs.readdir\\('.', { recursive: true }\\).then\\(\\(\\) => console.log\\('recursive readdir works'\\)\\).catch\\(e => console.error\\('recursive readdir FAILS:', e.message\\)\\)\")",
+      "Bash(node -e \"const { EJSON } = require\\('bson'\\); console.log\\('bson EJSON available, version:', require\\('bson/package.json'\\).version\\)\")",
+      "Bash(node -e \"const { EJSON } = require\\('bson'\\); console.log\\('bson ok'\\)\")",
+      "Bash(node -e \"require\\('./src/services/backup.service'\\); console.log\\('OK'\\)\")",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const p=JSON.parse\\(d\\);console.log\\('scripts:',JSON.stringify\\(p.scripts,null,2\\)\\);console.log\\('nodemonConfig:',JSON.stringify\\(p.nodemonConfig,null,2\\)\\)}\\)\")",
+      "Bash(dir uploads *)"
     ]
   }
 }

@@ -1,0 +1,46 @@
+[
+  {
+    "_id": "69f9e9a7011db1e1ad13375e",
+    "name": "Adham",
+    "email": "adham54732@gmail.com",
+    "passwordHash": "$2b$10$YmdQlwJeV1L/bKpXMUUm..U5Lni58ggkpLu33UTJJmfj6o6MJQI0u",
+    "role": "admin",
+    "isActive": true,
+    "createdAt": "2026-05-05T12:59:19.139Z",
+    "updatedAt": "2026-05-05T12:59:19.139Z",
+    "__v": 0
+  },
+  {
+    "_id": "69f9e9a7011db1e1ad13375f",
+    "name": "System Admin",
+    "email": "admin@salesflow.com",
+    "passwordHash": "$2b$10$YmdQlwJeV1L/bKpXMUUm..5OzgZfU8PL6dxEh7AQ5pZjrMdjTeC3q",
+    "role": "admin",
+    "isActive": true,
+    "createdAt": "2026-05-05T12:59:19.340Z",
+    "updatedAt": "2026-05-05T12:59:19.340Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fdc5b2c61ac24d8da5c850",
+    "name": "Ahmed Zidan",
+    "email": "ahmed.zidan@salesflow.com",
+    "passwordHash": "$2b$10$yNxvNk0WZSDNW6G8iknW..UZF8XtoewqboUyrkegGmTY/SGSKrFUu",
+    "role": "admin",
+    "isActive": true,
+    "createdAt": "2026-05-08T11:14:58.112Z",
+    "updatedAt": "2026-05-08T11:14:58.112Z",
+    "__v": 0
+  },
+  {
+    "_id": "69fdc5b2c61ac24d8da5c851",
+    "name": "Ahmed Zidan",
+    "email": "zidan@salesflow.com",
+    "passwordHash": "$2b$10$yNxvNk0WZSDNW6G8iknW..UZF8XtoewqboUyrkegGmTY/SGSKrFUu",
+    "role": "admin",
+    "isActive": true,
+    "createdAt": "2026-05-08T11:14:58.301Z",
+    "updatedAt": "2026-05-08T11:14:58.301Z",
+    "__v": 0
+  }
+]

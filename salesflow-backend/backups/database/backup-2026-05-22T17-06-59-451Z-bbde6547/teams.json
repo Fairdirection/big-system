@@ -1,0 +1,161 @@
+[
+  {
+    "_id": {
+      "$oid": "6a0afdef2e37da47f4d9abc2"
+    },
+    "name": "فريق الصقور",
+    "teamLeaderId": {
+      "$oid": "6a0afdef2e37da47f4d9abc0"
+    },
+    "memberIds": [],
+    "isActive": false,
+    "createdAt": {
+      "$date": "2026-05-18T11:54:23.485Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-19T13:25:36.960Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0afdef2e37da47f4d9abc1"
+    },
+    "name": "فريق النخبة",
+    "teamLeaderId": {
+      "$oid": "6a0afdef2e37da47f4d9abbf"
+    },
+    "memberIds": [],
+    "isActive": false,
+    "createdAt": {
+      "$date": "2026-05-18T11:54:23.485Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-19T13:25:39.934Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0c6513a953db9ba33766cd"
+    },
+    "name": "مى محمد",
+    "teamLeaderId": {
+      "$oid": "6a0c6513a953db9ba33766cc"
+    },
+    "memberIds": [],
+    "isActive": false,
+    "createdAt": {
+      "$date": "2026-05-19T13:26:43.996Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-19T13:28:45.489Z"
+    },
+    "__v": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a0c65bda953db9ba33766cf"
+    },
+    "name": "مى محمد",
+    "teamLeaderId": {
+      "$oid": "6a0c6513a953db9ba33766cc"
+    },
+    "memberIds": [],
+    "isActive": false,
+    "createdAt": {
+      "$date": "2026-05-19T13:29:33.755Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-20T14:03:44.898Z"
+    },
+    "__v": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a0dbf173fcee5398689e534"
+    },
+    "name": "عبدالرحمن خالد",
+    "teamLeaderId": {
+      "$oid": "6a0dbf173fcee5398689e533"
+    },
+    "memberIds": [
+      {
+        "$oid": "6a0dc0623fcee5398689e536"
+      },
+      {
+        "$oid": "6a0dc0de3fcee5398689e538"
+      }
+    ],
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-05-20T14:03:03.652Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-22T15:25:39.425Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "name": "شريف صبري محمد",
+    "teamLeaderId": {
+      "$oid": "6a0dc0623fcee5398689e536"
+    },
+    "memberIds": [
+      {
+        "$oid": "6a0dc4583fcee5398689e53f"
+      },
+      {
+        "$oid": "6a0eda227d7300244312cf04"
+      },
+      {
+        "$oid": "6a0dcda93ac181b350c27097"
+      }
+    ],
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-05-20T14:08:36.962Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T13:25:14.831Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "name": "مي عبد العزيز",
+    "teamLeaderId": {
+      "$oid": "6a0dc0de3fcee5398689e538"
+    },
+    "memberIds": [
+      {
+        "$oid": "6a0dc3cf3fcee5398689e53e"
+      },
+      {
+        "$oid": "6a0dc537c3bc3b715f64ad1d"
+      },
+      {
+        "$oid": "6a0dc862c3bc3b715f64ad1f"
+      },
+      {
+        "$oid": "6a0dc948c3bc3b715f64ad23"
+      },
+      {
+        "$oid": "6a0dc8e1c3bc3b715f64ad21"
+      }
+    ],
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-05-20T14:10:39.215Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T12:51:56.850Z"
+    },
+    "__v": 0
+  }
+]

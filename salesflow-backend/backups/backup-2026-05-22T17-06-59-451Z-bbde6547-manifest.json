@@ -1,0 +1,60 @@
+{
+  "backupId": "bbde6547-a334-4206-8de1-12dc106fc9b4",
+  "backupName": "backup-2026-05-22T17-06-59-451Z-bbde6547",
+  "timestamp": "2026-05-22T17:07:01.797Z",
+  "database": {
+    "path": "D:\\FairDirection_Projects\\Fairdirection_SaaS\\salesflow-backend\\backups\\database\\backup-2026-05-22T17-06-59-451Z-bbde6547",
+    "collections": {
+      "quarterlytargets": {
+        "documentCount": 41
+      },
+      "users": {
+        "documentCount": 4
+      },
+      "claims": {
+        "documentCount": 3
+      },
+      "teams": {
+        "documentCount": 7
+      },
+      "employees": {
+        "documentCount": 23
+      },
+      "counters": {
+        "documentCount": 2
+      },
+      "settings": {
+        "documentCount": 20
+      },
+      "forms": {
+        "documentCount": 0
+      },
+      "clients": {
+        "documentCount": 5
+      },
+      "employeeteamhistories": {
+        "documentCount": 26
+      },
+      "quarterlysettlements": {
+        "documentCount": 0
+      },
+      "auditlogs": {
+        "documentCount": 2
+      },
+      "commissionpayouts": {
+        "documentCount": 0
+      },
+      "sales": {
+        "documentCount": 0
+      }
+    },
+    "mongoVersion": "8.0.23",
+    "size": "603.6 KB"
+  },
+  "files": {
+    "path": "D:\\FairDirection_Projects\\Fairdirection_SaaS\\salesflow-backend\\backups\\files\\backup-2026-05-22T17-06-59-451Z-bbde6547",
+    "size": "0 B"
+  },
+  "status": "success",
+  "environment": "development"
+}

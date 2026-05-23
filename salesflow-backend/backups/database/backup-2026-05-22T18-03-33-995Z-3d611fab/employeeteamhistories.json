@@ -1,0 +1,642 @@
+[
+  {
+    "_id": {
+      "$oid": "6a033af21b9d1947798c84b3"
+    },
+    "employeeId": {
+      "$oid": "6a033af21b9d1947798c84b2"
+    },
+    "teamId": {
+      "$oid": "6a032a65757eafbdcfba8bad"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 134,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-12T14:36:34.515Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T10:48:31.771Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a03467f1b9d1947798c84b8"
+    },
+    "employeeId": {
+      "$oid": "6a03439b1b9d1947798c84b4"
+    },
+    "teamId": {
+      "$oid": "6a0329cf757eafbdcfba8bab"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 134,
+    "quarterId": "Q1-2026",
+    "createdAt": {
+      "$date": "2026-05-12T15:25:51.767Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:44:02.091Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a03479c1b9d1947798c84b9"
+    },
+    "employeeId": {
+      "$oid": "6a032a64757eafbdcfba8bac"
+    },
+    "teamId": {
+      "$oid": "6a0302104df15b08e2b8a107"
+    },
+    "joinDate": {
+      "$date": "2026-05-12T15:30:36.416Z"
+    },
+    "leaveDate": {
+      "$date": "2026-05-18T10:41:22.748Z"
+    },
+    "workingDaysInTeam": 0,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-12T15:30:36.622Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-18T10:41:22.813Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a03479c1b9d1947798c84ba"
+    },
+    "employeeId": {
+      "$oid": "6a0329cf757eafbdcfba8baa"
+    },
+    "teamId": {
+      "$oid": "6a0302104df15b08e2b8a107"
+    },
+    "joinDate": {
+      "$date": "2026-05-12T15:30:36.416Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 0,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-12T15:30:36.874Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-12T15:30:36.874Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0499a3b0ed3a5ade2278d3"
+    },
+    "employeeId": {
+      "$oid": "6a0499a3b0ed3a5ade2278d2"
+    },
+    "teamId": {
+      "$oid": "6a032a65757eafbdcfba8bad"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 134,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-13T15:32:51.705Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:41:52.923Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a049b2eb0ed3a5ade2278d5"
+    },
+    "employeeId": {
+      "$oid": "6a049b2eb0ed3a5ade2278d4"
+    },
+    "teamId": {
+      "$oid": "6a032a65757eafbdcfba8bad"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 134,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-13T15:39:26.473Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:40:59.142Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a049e8a5affe5f8adb76d52"
+    },
+    "employeeId": {
+      "$oid": "6a049e8a5affe5f8adb76d51"
+    },
+    "teamId": {
+      "$oid": "6a032a65757eafbdcfba8bad"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 134,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-13T15:53:46.835Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:29:27.929Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a049f545affe5f8adb76d54"
+    },
+    "employeeId": {
+      "$oid": "6a049f175affe5f8adb76d53"
+    },
+    "teamId": {
+      "$oid": "6a0329cf757eafbdcfba8bab"
+    },
+    "joinDate": {
+      "$date": "2026-01-12T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-05-01T00:00:00Z"
+    },
+    "workingDaysInTeam": 110,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-13T15:57:08.878Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:35:10.843Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a05974fcfe10ab792d1911d"
+    },
+    "employeeId": {
+      "$oid": "6a049f175affe5f8adb76d53"
+    },
+    "teamId": {
+      "$oid": "6a032a65757eafbdcfba8bad"
+    },
+    "joinDate": {
+      "$date": "2026-05-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 0,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-14T09:35:11.114Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T09:35:11.114Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a059ba3bce4090f831fb2f7"
+    },
+    "employeeId": {
+      "$oid": "6a059ba3bce4090f831fb2f6"
+    },
+    "teamId": {
+      "$oid": "6a0329cf757eafbdcfba8bab"
+    },
+    "joinDate": {
+      "$date": "2026-01-12T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-03-31T00:00:00Z"
+    },
+    "workingDaysInTeam": 79,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-14T09:53:39.729Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-14T10:15:52.117Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0af5e731ca5637e91e3164"
+    },
+    "employeeId": {
+      "$oid": "6a032a64757eafbdcfba8bac"
+    },
+    "teamId": {
+      "$oid": "6a0302104df15b08e2b8a107"
+    },
+    "joinDate": {
+      "$date": "2026-05-18T11:20:07.013Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 0,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-18T11:20:07.306Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-18T11:20:07.306Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc4583fcee5398689e540"
+    },
+    "employeeId": {
+      "$oid": "6a0dc4583fcee5398689e53f"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 141,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:25:28.773Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T10:04:10.627Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc46c3fcee5398689e541"
+    },
+    "employeeId": {
+      "$oid": "6a0dc3cf3fcee5398689e53e"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 141,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:25:48.811Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T10:02:46.448Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc538c3bc3b715f64ad1e"
+    },
+    "employeeId": {
+      "$oid": "6a0dc537c3bc3b715f64ad1d"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 141,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:29:12.126Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T10:06:52.012Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc862c3bc3b715f64ad20"
+    },
+    "employeeId": {
+      "$oid": "6a0dc862c3bc3b715f64ad1f"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 141,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:42:42.186Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T10:06:24.682Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc8e2c3bc3b715f64ad22"
+    },
+    "employeeId": {
+      "$oid": "6a0dc8e1c3bc3b715f64ad21"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 141,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:44:50.018Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T10:05:29.017Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc948c3bc3b715f64ad24"
+    },
+    "employeeId": {
+      "$oid": "6a0dc948c3bc3b715f64ad23"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-01-12T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-04-30T00:00:00Z"
+    },
+    "workingDaysInTeam": 109,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:46:32.967Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T09:48:14.125Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dc9d2c3bc3b715f64ad25"
+    },
+    "employeeId": {
+      "$oid": "6a0dc948c3bc3b715f64ad23"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-05-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 21,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T14:48:50.542Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T09:45:44.313Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dcd1e3ac181b350c27095"
+    },
+    "employeeId": {
+      "$oid": "6a0dcd1e3ac181b350c27094"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-04-19T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-04-30T00:00:00Z"
+    },
+    "workingDaysInTeam": 12,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T15:02:54.210Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-20T15:06:57.448Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0dcda93ac181b350c27098"
+    },
+    "employeeId": {
+      "$oid": "6a0dcda93ac181b350c27097"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-04-19T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 33,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-20T15:05:13.704Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T12:07:22.022Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0eda227d7300244312cf05"
+    },
+    "employeeId": {
+      "$oid": "6a0eda227d7300244312cf04"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-04-19T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 33,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-21T10:10:42.326Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T12:17:33.724Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0ef86a8cc8f26fb0ea5af0"
+    },
+    "employeeId": {
+      "$oid": "6a0ef86a8cc8f26fb0ea5aef"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-01-12T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-03-31T00:00:00Z"
+    },
+    "workingDaysInTeam": 79,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-21T12:19:54.225Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T13:25:14.557Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0efa268cc8f26fb0ea5af2"
+    },
+    "employeeId": {
+      "$oid": "6a0efa268cc8f26fb0ea5af1"
+    },
+    "teamId": {
+      "$oid": "6a0dc0643fcee5398689e537"
+    },
+    "joinDate": {
+      "$date": "2026-01-25T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-02-28T00:00:00Z"
+    },
+    "workingDaysInTeam": 34,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-21T12:27:18.279Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T13:17:43.799Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0eff3c9d9e674c2c2f76a3"
+    },
+    "employeeId": {
+      "$oid": "6a0eff3c9d9e674c2c2f76a2"
+    },
+    "teamId": {
+      "$oid": "6a0dc0df3fcee5398689e539"
+    },
+    "joinDate": {
+      "$date": "2026-02-02T00:00:00Z"
+    },
+    "leaveDate": {
+      "$date": "2026-02-28T00:00:00Z"
+    },
+    "workingDaysInTeam": 27,
+    "quarterId": "Q2-2026",
+    "createdAt": {
+      "$date": "2026-05-21T12:49:00.383Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T12:51:56.595Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0f005d9d9e674c2c2f76a4"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0623fcee5398689e536"
+    },
+    "teamId": {
+      "$oid": "6a0dbf173fcee5398689e534"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 0,
+    "quarterId": "Q1-2026",
+    "createdAt": {
+      "$date": "2026-05-21T12:53:49.529Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T12:53:49.529Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0f04019d9e674c2c2f76a5"
+    },
+    "employeeId": {
+      "$oid": "6a0dc0de3fcee5398689e538"
+    },
+    "teamId": {
+      "$oid": "6a0dbf173fcee5398689e534"
+    },
+    "joinDate": {
+      "$date": "2026-01-01T00:00:00Z"
+    },
+    "leaveDate": null,
+    "workingDaysInTeam": 0,
+    "quarterId": "Q1-2026",
+    "createdAt": {
+      "$date": "2026-05-21T13:09:21.354Z"
+    },
+    "updatedAt": {
+      "$date": "2026-05-21T13:09:21.354Z"
+    },
+    "__v": 0
+  }
+]
