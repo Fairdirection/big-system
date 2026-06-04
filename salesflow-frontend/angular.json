@@ -65,12 +65,7 @@
           "defaultConfiguration": "development",
           "options": {
             "proxyConfig": "proxy.conf.json",
-            "allowedHosts": [
-              "localhost",
-              ".ngrok-free.dev",
-              ".ngrok-free.app",
-              ".ngrok.io"
-            ]
+            "allowedHosts": true
           }
         },
         "extract-i18n": {

@@ -8,6 +8,7 @@ import {
   DestroyRef,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { forkJoin } from "rxjs";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { EmployeeService } from "@core/services/employee.service";
@@ -990,11 +991,18 @@ export class EmployeeListComponent implements OnInit {
     this.themeService.loading.set(true);
     this.loading.set(true);
 
-    this.employeeService
-      .getEmployees({ limit: "500" })
+    forkJoin({
+      employees: this.employeeService.getEmployees({ limit: "500" }),
+      targets: this.http.get<any>(`${environment.apiUrl}/targets/summary`, {
+        params: { quarterId: quarter },
+      }),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (res) => {
+        next: ({ employees: res, targets: targetsRes }) => {
+          this.themeService.loading.set(false);
+          this.loading.set(false);
+
           if (res.success) {
             const baseEmployees: EmployeeWithQuarterlyTarget[] = res.data.map(
               (e) => ({
@@ -1005,11 +1013,32 @@ export class EmployeeListComponent implements OnInit {
             this.employees.set(baseEmployees);
             this.applyFilters();
 
-            // Now bulk-fetch quarterly targets for the current quarter
-            this.loadQuarterlyTargets(baseEmployees, quarter);
-          } else {
-            this.themeService.loading.set(false);
-            this.loading.set(false);
+            if (targetsRes.success && targetsRes.data && targetsRes.data.employees) {
+              const targetMap = new Map<
+                string,
+                { adjusted: number | null; full: number | null; hasCustom: boolean }
+              >();
+              for (const empData of targetsRes.data.employees) {
+                targetMap.set(empData.employeeId?.toString(), {
+                  adjusted: empData.adjustedTarget ?? null,
+                  full: empData.fullTarget ?? null,
+                  hasCustom: empData.hasCustomTarget ?? false,
+                });
+              }
+
+              const enriched = baseEmployees.map((emp) => {
+                const t = targetMap.get(emp._id.toString());
+                return {
+                  ...emp,
+                  _quarterlyTarget: t ? t.adjusted : null,
+                  _fullTarget: t ? t.full : null,
+                  _hasCustomTarget: t ? t.hasCustom : false,
+                };
+              });
+
+              this.employees.set(enriched);
+              this.applyFilters();
+            }
           }
         },
         error: () => {

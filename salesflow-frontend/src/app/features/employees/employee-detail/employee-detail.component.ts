@@ -17,6 +17,7 @@ import { EmployeeService } from "@core/services/employee.service";
 import { SaleService } from "@core/services/sale.service";
 import { ThemeService } from "@core/services/theme.service";
 import { getAvailableYears, formatQuarter } from "@core/utils/quarter.utils";
+import { openPrintWindow, printBanner, printFooter, printFmt, statusPill } from "@core/utils/print.utils";
 import { ToastService } from "@core/services/toast.service";
 import { Employee } from "@core/models/employee.model";
 import { ApiResponse } from "@core/models/api-response.model";
@@ -49,6 +50,7 @@ import {
   heroArrowPath,
   heroSparkles,
   heroCamera,
+  heroPrinter,
 } from "@ng-icons/heroicons/outline";
 import { CurrencyEgpPipe } from "@shared/pipes/currency-egp.pipe";
 import { ConfirmDialogService } from "@core/services/confirm-dialog.service";
@@ -98,6 +100,7 @@ import { AvatarFrameComponent } from "@shared/components/avatar-frame/avatar-fra
       heroArrowPath,
       heroSparkles,
       heroCamera,
+      heroPrinter,
     }),
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -323,6 +326,15 @@ import { AvatarFrameComponent } from "@shared/components/avatar-frame/avatar-fra
           >
             <ng-icon name="heroTrash"></ng-icon>
             <span>{{ "employee.detail.delete_btn" | translate }}</span>
+          </button>
+
+          <button
+            (click)="printEmployee()"
+            class="btn btn-secondary h-11 sm:h-12 px-4 sm:px-6 flex-1 sm:flex-initial text-xs sm:text-sm flex items-center justify-center gap-2"
+            title="طباعة بيانات الموظف"
+          >
+            <ng-icon name="heroPrinter"></ng-icon>
+            <span>طباعة</span>
           </button>
         </div>
       </header>
@@ -640,100 +652,70 @@ import { AvatarFrameComponent } from "@shared/components/avatar-frame/avatar-fra
           <!-- Quick Stats -->
           @if (emp.department === "Sales") {
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-              <div
-                class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group"
-              >
-                <div
-                  class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"
-                ></div>
-                <p
-                  class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4"
-                >
-                  {{ "employee.detail.adjusted_target" | translate }}
-                </p>
-                <div class="flex items-end justify-between relative z-10">
-                  <h4 class="text-2xl font-display font-black text-sf-text">
-                    {{
-                      stats()?.adjustedTarget ||
-                        stats()?.fullTarget ||
-                        emp.target | currencyEgp
-                    }}
-                  </h4>
-                  <div
-                    class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary"
-                  >
+              <!-- Card: Adjusted Target -->
+              <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <div class="flex items-center justify-between mb-3 relative z-10">
+                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">
+                    {{ "employee.detail.adjusted_target" | translate }}
+                  </p>
+                  <div class="w-9 h-9 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary shrink-0">
                     <ng-icon name="heroChartBar"></ng-icon>
                   </div>
                 </div>
+                <h4 class="font-display font-black text-sf-text relative z-10 leading-snug break-words"
+                    style="font-size: clamp(0.95rem, 2.5vw, 1.25rem)">
+                  {{ stats()?.adjustedTarget || stats()?.fullTarget || emp.target | currencyEgp }}
+                </h4>
               </div>
 
-              <div
-                class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group"
-              >
-                <div
-                  class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"
-                ></div>
-                <p
-                  class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4"
-                >
-                  {{ "employee.detail.total_sales" | translate }}
-                </p>
-                <div class="flex items-end justify-between relative z-10">
-                  <h4 class="text-2xl font-display font-black text-sf-text">
-                    {{ stats()?.achievedSales || 0 | currencyEgp }}
-                  </h4>
-                  <div
-                    class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success"
-                  >
+              <!-- Card: Total Sales -->
+              <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <div class="flex items-center justify-between mb-3 relative z-10">
+                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">
+                    {{ "employee.detail.total_sales" | translate }}
+                  </p>
+                  <div class="w-9 h-9 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success shrink-0">
                     <ng-icon name="heroTrophy"></ng-icon>
                   </div>
                 </div>
+                <h4 class="font-display font-black text-sf-text relative z-10 leading-snug break-words"
+                    style="font-size: clamp(0.95rem, 2.5vw, 1.25rem)">
+                  {{ stats()?.achievedSales || 0 | currencyEgp }}
+                </h4>
               </div>
 
-              <div
-                class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group"
-              >
-                <div
-                  class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"
-                ></div>
-                <p
-                  class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4"
-                >
-                  {{ "employee.detail.achievement_pct" | translate }}
-                </p>
-                <div class="flex items-end justify-between relative z-10">
-                  <h4 class="text-2xl font-display font-black text-sf-text">
-                    {{ stats()?.achievementPercentage || 0 | number: "1.0-1" }}%
-                  </h4>
-                  <div
-                    class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent"
-                  >
+              <!-- Card: Achievement % -->
+              <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <div class="flex items-center justify-between mb-3 relative z-10">
+                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">
+                    {{ "employee.detail.achievement_pct" | translate }}
+                  </p>
+                  <div class="w-9 h-9 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent shrink-0">
                     <ng-icon name="heroChartBar"></ng-icon>
                   </div>
                 </div>
+                <h4 class="text-2xl font-display font-black text-sf-text relative z-10 leading-snug">
+                  {{ stats()?.achievementPercentage || 0 | number: "1.0-1" }}%
+                </h4>
               </div>
 
-              <div
-                class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group"
-              >
-                <div
-                  class="absolute top-0 right-0 w-24 h-24 bg-sf-warning/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"
-                ></div>
-                <p
-                  class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4"
-                >
-                  {{ "employee.detail.active_clients" | translate }}
-                </p>
-                <div class="flex items-end justify-between relative z-10">
-                  <h4 class="text-2xl font-display font-black text-sf-text">
-                    {{ stats()?.clientsCount || 0 }}
-                  </h4>
-                  <div
-                    class="w-10 h-10 rounded-xl bg-sf-warning/10 flex items-center justify-center text-sf-warning"
-                  >
+              <!-- Card: Active Clients -->
+              <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sf-warning/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
+                <div class="flex items-center justify-between mb-3 relative z-10">
+                  <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">
+                    {{ "employee.detail.active_clients" | translate }}
+                  </p>
+                  <div class="w-9 h-9 rounded-xl bg-sf-warning/10 flex items-center justify-center text-sf-warning shrink-0">
                     <ng-icon name="heroUsers"></ng-icon>
                   </div>
                 </div>
+                <h4 class="text-2xl font-display font-black text-sf-text relative z-10 leading-snug">
+                  {{ stats()?.clientsCount || 0 }}
+                </h4>
               </div>
             </div>
 
@@ -1929,6 +1911,93 @@ export class EmployeeDetailComponent implements OnInit {
           );
         },
       });
+  }
+
+  printEmployee() {
+    const emp = this.employee();
+    if (!emp) return;
+    const stats = this.stats();
+    const history = this.history();
+    const salesList = this.sales();
+    const quarter = this.viewQuarter();
+
+    const hireDateFormatted = emp.hireDate
+      ? new Date(emp.hireDate).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })
+      : "-";
+
+    const typeMap: Record<string, string> = { team: "فريق", deactivated: "إنهاء خدمة", "no-team": "بدون فريق" };
+
+    const statsSection = emp.department === "Sales" && stats ? `
+    <div class="section">
+      <div class="section-title">إحصائيات الربع ${quarter}</div>
+      <div class="stats-row cols-4">
+        <div class="stat-cell"><div class="stat-lbl">الهدف المعدّل</div><div class="stat-val">${printFmt(stats.adjustedTarget || stats.fullTarget || emp.target || 0)}</div></div>
+        <div class="stat-cell"><div class="stat-lbl">إجمالي المبيعات</div><div class="stat-val">${printFmt(stats.achievedSales || 0)}</div></div>
+        <div class="stat-cell"><div class="stat-lbl">نسبة الإنجاز</div><div class="stat-val">${(stats.achievementPercentage || 0).toFixed(1)}%</div></div>
+        <div class="stat-cell"><div class="stat-lbl">العملاء النشطون</div><div class="stat-val">${stats.clientsCount || 0}</div></div>
+      </div>
+    </div>` : "";
+
+    const salesSection = salesList.length > 0 ? `
+    <div class="section">
+      <div class="section-title">سجل المبيعات — ${quarter} (${salesList.length} صفقة)</div>
+      <table class="list-table">
+        <thead><tr><th>المشروع</th><th>رقم الوحدة</th><th>العميل</th><th>تاريخ العقد</th><th>قيمة الوحدة</th><th>الحالة</th></tr></thead>
+        <tbody>${salesList.map(s => `<tr>
+          <td>${s.projectName || "-"}</td><td>${s.unitNumber || "-"}</td><td>${s.clientName || "-"}</td>
+          <td>${s.contractDate ? new Date(s.contractDate).toLocaleDateString("ar-EG") : "-"}</td>
+          <td class="val accent">${printFmt(s.unitValue || 0)}</td>
+          <td>${statusPill(s.status)}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+    </div>` : "";
+
+    const histSection = history.length > 0 ? `
+    <div class="section">
+      <div class="section-title">السجل الوظيفي</div>
+      <table class="list-table">
+        <thead><tr><th>النوع</th><th>التفاصيل</th><th>من</th><th>إلى</th><th>المدة</th></tr></thead>
+        <tbody>${history.map(item => `<tr>
+          <td>${typeMap[item.type] ?? item.type}</td><td>${item.name ?? "-"}</td>
+          <td>${item.startDate ? new Date(item.startDate).toLocaleDateString("ar-EG") : "-"}</td>
+          <td>${item.endDate ? new Date(item.endDate).toLocaleDateString("ar-EG") : "حتى الآن"}</td>
+          <td>${item.durationDays ? item.durationDays + " يوم" : "-"}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+    </div>` : "";
+
+    const endDateRow = !emp.isActive && emp.endDate
+      ? `<tr><td class="lbl danger">تاريخ انتهاء الخدمة</td><td class="val danger" colspan="3">${new Date(emp.endDate).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })}</td></tr>`
+      : "";
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">بطاقة بيانات الموظف</div>
+        <div class="title-main">${emp.name}</div>
+        <div class="title-meta">
+          ${emp.jobTitle ? `<span style="font-size:.95rem;font-weight:700;color:#6337ff">${emp.jobTitle}</span><span style="color:#cbd5e1">•</span>` : ""}
+          <span style="font-size:.88rem;color:#64748b;font-weight:600">${emp.department}</span>
+          ${statusPill(emp.isActive ? "active" : "inactive")}
+        </div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <div class="section-title">البيانات الشخصية</div>
+          <table class="data-table">
+            <tr><td class="lbl">الكود الوظيفي</td><td class="val">${emp.code || "-"}</td><td class="lbl">رقم الهاتف</td><td class="val">${emp.phone || "-"}</td></tr>
+            <tr><td class="lbl">البريد الإلكتروني</td><td class="val" colspan="3">${emp.email || "-"}</td></tr>
+            <tr><td class="lbl">تاريخ التعيين</td><td class="val" colspan="3">${hireDateFormatted}</td></tr>
+            ${endDateRow}
+          </table>
+        </div>
+        ${statsSection}
+        ${salesSection}
+        ${histSection}
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `بيانات الموظف — ${emp.name}`);
   }
 
   goBack() {

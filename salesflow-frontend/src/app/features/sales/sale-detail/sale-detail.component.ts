@@ -11,6 +11,7 @@ import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroChevronRight, heroChevronLeft, heroCheckBadge, heroPencilSquare, heroPrinter, heroDocumentDuplicate, heroTrash, heroBanknotes } from '@ng-icons/heroicons/outline';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { openPrintWindow, printBanner, printFooter, printFmt, statusPill } from '@core/utils/print.utils';
 
 @Component({
   selector: 'app-sale-detail',
@@ -32,9 +33,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
           </div>
           <div class="flex flex-col items-center gap-1">
             <div class="w-14 h-14 bg-white p-1.5 rounded-xl border border-slate-200 flex items-center justify-center shadow-sm">
-              <img src="/logo.png" alt="fair direction Logo" class="w-full h-full object-contain" />
+              <img src="/logo.png" alt="FairDirection Logo" class="w-full h-full object-contain" />
             </div>
-            <span class="text-[10px] font-black text-slate-900 tracking-wider">fair direction</span>
+            <span class="text-[10px] font-black text-slate-900 tracking-wider">FairDirection</span>
           </div>
         </div>
 
@@ -233,7 +234,61 @@ export class SaleDetailComponent implements OnInit {
   todayDate = new Date();
 
   printSale() {
-    window.print();
+    const s = this.sale();
+    if (!s) return;
+    const quarter = s.quarterId || this.themeService.currentQuarter();
+
+    const sellersRows = (s.sellers || []).map((sel: any) => `<tr>
+      <td>${sel.employeeName || "-"}</td>
+      <td style="text-align:center">${sel.sharePercentage ?? sel.share ?? "-"}%</td>
+      <td class="val accent">${printFmt(sel.commissionValue || 0)}</td>
+    </tr>`).join("");
+
+    const taxRows = (s.appliedTaxes || []).map((t: any) =>
+      `<tr><td class="lbl">${t.label}</td><td class="val">${t.value}% (${t.type === 'add' ? 'إضافة' : 'خصم'})</td><td class="lbl">—</td><td class="val">—</td></tr>`
+    ).join("");
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">إيصال بيعة عقارية</div>
+        <div class="title-main">${s.saleNumber}</div>
+        <div class="title-meta">
+          <span style="font-size:.95rem;font-weight:700;color:#6337ff">${s.projectName}</span>
+          <span style="color:#cbd5e1">•</span>
+          <span style="font-size:.88rem;color:#64748b">وحدة ${s.unitNumber}</span>
+          ${statusPill(s.status)}
+        </div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <div class="section-title">بيانات الوحدة العقارية</div>
+          <table class="data-table">
+            <tr><td class="lbl">المطور / المشروع</td><td class="val">${s.projectName || "-"}</td><td class="lbl">رقم الوحدة</td><td class="val">${s.unitNumber || "-"}</td></tr>
+            <tr><td class="lbl">نوع الوحدة</td><td class="val">${s.unitType || "-"}</td><td class="lbl">تاريخ التعاقد</td><td class="val">${s.contractDate ? new Date(s.contractDate).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }) : "-"}</td></tr>
+            <tr><td class="lbl">مصدر المبيعة</td><td class="val">${s.source || "-"}</td><td class="lbl">العميل</td><td class="val">${s.clientName || "-"}</td></tr>
+          </table>
+        </div>
+        <div class="section">
+          <div class="section-title">التفاصيل المالية</div>
+          <table class="data-table">
+            <tr><td class="lbl">سعر التعاقد</td><td class="val accent">${printFmt(s.unitValue || 0)}</td><td class="lbl">نسبة العمولة</td><td class="val">${s.contractCommissionPercentage ?? "-"}%</td></tr>
+            <tr><td class="lbl">إجمالي العمولة (شامل VAT)</td><td class="val accent">${printFmt(s.grossCommissionWithVAT || 0)}</td><td class="lbl">صافي ربح الشركة</td><td class="val" style="color:#16a34a;font-weight:900">${printFmt(s.netRevenue || 0)}</td></tr>
+            ${taxRows}
+          </table>
+        </div>
+        ${sellersRows ? `
+        <div class="section">
+          <div class="section-title">توزيع العمولات على فريق البيع</div>
+          <table class="list-table">
+            <thead><tr><th>الموظف</th><th>نسبة المشاركة</th><th>العمولة المستحقة</th></tr></thead>
+            <tbody>${sellersRows}</tbody>
+          </table>
+        </div>` : ""}
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `إيصال بيعة — ${s.saleNumber}`);
   }
 
   ngOnInit() {

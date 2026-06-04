@@ -91,4 +91,9 @@ saleSchema.index({ 'sellers.employeeId': 1, status: 1 });
 saleSchema.index({ contractDate: -1 });
 saleSchema.index({ saleNumber: 'text', projectName: 'text', clientName: 'text' });
 
+saleSchema.index(
+  { 'sellers.employeeId': 1, status: 1, contractDate: -1 },
+  { name: 'idx_seller_status_date' }
+);
+
 module.exports = mongoose.model('Sale', saleSchema);

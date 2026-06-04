@@ -18,9 +18,19 @@ const { initBackupDirs } = require("./src/services/backup.service");
 const app = express();
 
 // Middleware
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:4200")
+  .split(",")
+  .map((o) => o.trim());
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:4200",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
@@ -49,7 +59,7 @@ connectDB()
     initBackupScheduler();
 
     console.log("Starting server...");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => {
     console.error("Failed to start server:", err);

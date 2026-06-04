@@ -49,37 +49,81 @@ const getTargetSummary = async (req, res, next) => {
     }
 
     const salesEmployees = await Employee.find({ department: 'Sales', isActive: true }).populate('currentTeamId');
-    
+
+    // Batch fetch leaf employee IDs and their aggregated sales in parallel
+    const leafIds = await employeeService.getAllLeafEmployeeIds(quarterId);
+    const progressMap = await employeeService.getTargetProgressBatch(leafIds, quarterId);
+
+    // Batch fetch all quarterly target overrides for this quarter in one query
+    const allQuarterlyTargets = await QuarterlyTarget.find({ quarterId }).lean();
+    const quarterlyTargetMap = new Map(allQuarterlyTargets.map(t => [t.employeeId.toString(), t]));
+
+    const leafIdSet = new Set(leafIds.map(id => id.toString()));
+
     const employeesData = [];
     let totalAdjustedTarget = 0;
     let totalAchieved = 0;
 
-    for (const emp of salesEmployees) {
-      try {
-        const progress = await employeeService.getTargetProgress(emp._id, quarterId);
-        employeesData.push({
-          employeeId: emp._id,
-          employeeName: emp.name,
-          teamName: emp.currentTeamId ? emp.currentTeamId.name : null,
-          fullTarget: progress.fullTarget,
-          hasCustomTarget: progress.hasCustomTarget || false,
-          adjustedTarget: progress.adjustedTarget,
-          achievedSales: progress.achievedSalesValue,
-          achievementPercentage: progress.achievementPercentage,
-          gap: progress.gap
-        });
-        
-        // Sum personal targets and achievements to prevent double-counting team leaders, sales managers and members
-        if ((progress.isTeamLeader || progress.isSalesManager) && progress.personalProgress) {
-          totalAdjustedTarget += progress.personalProgress.adjustedTarget || 0;
-          totalAchieved += progress.personalProgress.achievedSales || 0;
-        } else {
-          totalAdjustedTarget += progress.adjustedTarget || 0;
-          totalAchieved += progress.achievedSales || 0;
-        }
-      } catch (err) {
-        // Handle case where employee target progress fails, usually means no target set
+    // Process TL/SM employees in parallel — full recursive progress required for team rollups
+    const complexEmployees = salesEmployees.filter(e => !leafIdSet.has(e._id.toString()));
+    const complexResults = await Promise.all(
+      complexEmployees.map(emp =>
+        employeeService.getTargetProgress(emp._id, quarterId).catch(() => null)
+      )
+    );
+
+    for (let i = 0; i < complexEmployees.length; i++) {
+      const emp = complexEmployees[i];
+      const progress = complexResults[i];
+      if (!progress) continue;
+
+      employeesData.push({
+        employeeId: emp._id,
+        employeeName: emp.name,
+        teamName: emp.currentTeamId ? emp.currentTeamId.name : null,
+        fullTarget: progress.fullTarget,
+        hasCustomTarget: progress.hasCustomTarget || false,
+        adjustedTarget: progress.adjustedTarget,
+        achievedSales: progress.achievedSalesValue,
+        achievementPercentage: progress.achievementPercentage,
+        gap: progress.gap
+      });
+
+      // Sum personal targets and achievements to prevent double-counting team leaders, sales managers and members
+      if ((progress.isTeamLeader || progress.isSalesManager) && progress.personalProgress) {
+        totalAdjustedTarget += progress.personalProgress.adjustedTarget || 0;
+        totalAchieved += progress.personalProgress.achievedSales || 0;
+      } else {
+        totalAdjustedTarget += progress.adjustedTarget || 0;
+        totalAchieved += progress.achievedSalesValue || 0;
       }
+    }
+
+    // Process leaf employees from progressMap — single batch query replaces N individual Sale queries
+    const leafEmployees = salesEmployees.filter(e => leafIdSet.has(e._id.toString()));
+    for (const emp of leafEmployees) {
+      const empIdStr = emp._id.toString();
+      const batchData = progressMap[empIdStr] || { totalRevenue: 0, dealCount: 0 };
+      const customTargetRecord = quarterlyTargetMap.get(empIdStr);
+      const fullTarget = customTargetRecord ? customTargetRecord.target : (emp.target || 0);
+      const achievedSalesValue = batchData.totalRevenue || 0;
+      const achievementPercentage = fullTarget > 0 ? (achievedSalesValue / fullTarget) * 100 : 0;
+      const gap = Math.max(0, fullTarget - achievedSalesValue);
+
+      employeesData.push({
+        employeeId: emp._id,
+        employeeName: emp.name,
+        teamName: emp.currentTeamId ? emp.currentTeamId.name : null,
+        fullTarget,
+        hasCustomTarget: !!customTargetRecord,
+        adjustedTarget: fullTarget,
+        achievedSales: Math.round(achievedSalesValue),
+        achievementPercentage: Math.round(achievementPercentage * 10) / 10,
+        gap: Math.round(gap)
+      });
+
+      totalAdjustedTarget += fullTarget;
+      totalAchieved += achievedSalesValue;
     }
 
     const overallAchievementPercentage = totalAdjustedTarget > 0 ? (totalAchieved / totalAdjustedTarget) * 100 : 0;

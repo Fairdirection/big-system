@@ -8,12 +8,13 @@ import { AuthService } from '@core/services/auth.service';
 import { ToastService } from '@core/services/toast.service';
 import { ThemeService } from '@core/services/theme.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { 
-  heroBanknotes, heroCalculator, heroArrowPath, heroFunnel, heroUser, 
+import {
+  heroBanknotes, heroCalculator, heroArrowPath, heroFunnel, heroUser,
   heroCalendarDays, heroArrowDownTray, heroSparkles, heroListBullet,
   heroCheckCircle, heroExclamationTriangle, heroInformationCircle,
-  heroCheck, heroClock, heroScale
+  heroCheck, heroClock, heroScale, heroPrinter
 } from '@ng-icons/heroicons/outline';
+import { openPrintWindow, printBanner, printFooter, printFmt, statusPill } from '@core/utils/print.utils';
 import { formatQuarter } from '@core/utils/quarter.utils';
 import { ConfirmDialogService } from '@core/services/confirm-dialog.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -28,7 +29,7 @@ import { LanguageService } from '@core/services/language.service';
       heroBanknotes, heroCalculator, heroArrowPath, heroFunnel, heroUser,
       heroCalendarDays, heroArrowDownTray, heroSparkles, heroListBullet,
       heroCheckCircle, heroExclamationTriangle, heroInformationCircle,
-      heroCheck, heroClock, heroScale
+      heroCheck, heroClock, heroScale, heroPrinter
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +76,11 @@ import { LanguageService } from '@core/services/language.service';
           <!-- Refresh Button -->
           <button (click)="loadCommissionData()" class="p-2 hover:bg-sf-primary/10 rounded-xl text-sf-muted hover:text-sf-primary transition-all">
             <ng-icon name="heroArrowPath" [class.animate-spin]="loading()"></ng-icon>
+          </button>
+
+          <!-- Print Button -->
+          <button (click)="printCommissions()" class="p-2 hover:bg-sf-primary/10 rounded-xl text-sf-muted hover:text-sf-primary transition-all" title="طباعة">
+            <ng-icon name="heroPrinter"></ng-icon>
           </button>
         </div>
       </header>
@@ -977,5 +983,85 @@ export class CommissionsComponent implements OnInit {
 
   mathMin(a: number, b: number): number {
     return Math.min(a, b);
+  }
+
+  printCommissions() {
+    const d = this.data();
+    const quarter = this.selectedQuarterId();
+    const empName = this.salesEmployees().find(e => e._id === this.selectedEmployeeId())?.name || '-';
+
+    const statsSection = `
+      <div class="section">
+        <div class="stats-row cols-4">
+          <div class="stat-cell"><div class="stat-lbl">المستهدف المعدّل</div><div class="stat-val">${printFmt(d?.adjustedTarget || 0)}</div></div>
+          <div class="stat-cell"><div class="stat-lbl">المبيعات المحققة</div><div class="stat-val">${printFmt(d?.achievedSalesValue || 0)}</div></div>
+          <div class="stat-cell"><div class="stat-lbl">نسبة الإنجاز</div><div class="stat-val">${(d?.achievementPercentage || 0).toFixed(1)}%</div></div>
+          <div class="stat-cell"><div class="stat-lbl">فروقات التسوية</div><div class="stat-val">${printFmt(d?.settlementDifference || 0)}</div></div>
+        </div>
+      </div>`;
+
+    const salesRows = (d?.sales || []).map((s: any) => `<tr>
+      <td>${s.unitNumber || '-'}</td>
+      <td>${s.projectName || '-'} — ${s.clientName || '-'}</td>
+      <td class="val">${printFmt(s.sellerSaleValueRaw || 0)}</td>
+      <td>${(s.developerCommissionRate || 0).toFixed(2)}%</td>
+      <td class="val accent">${printFmt(s.monthlyPayout || 0)}</td>
+    </tr>`).join('');
+
+    const salesSection = `
+      <div class="section">
+        <div class="section-title">المبيعات المغلقة</div>
+        <table class="list-table">
+          <thead><tr><th>الوحدة</th><th>المشروع / العميل</th><th>قيمة الصفقة</th><th>نسبة المطور</th><th>العلاوة الشهرية</th></tr></thead>
+          <tbody>${salesRows || "<tr><td colspan='5' style='text-align:center;color:#94a3b8'>لا توجد مبيعات</td></tr>"}</tbody>
+        </table>
+      </div>`;
+
+    const payoutRows = (d?.payouts || []).map((p: any) => `<tr>
+      <td>${p.saleNumber || '-'}</td>
+      <td>${p.payoutCycle === 'Cycle A' ? 'دورة A' : 'دورة B'}</td>
+      <td>${p.payoutDate ? new Date(p.payoutDate).toLocaleDateString('ar-EG') : '-'}</td>
+      <td class="val accent">${printFmt(p.grossAmount || 0)}</td>
+      <td>${statusPill(p.status)}</td>
+    </tr>`).join('');
+
+    const payoutsSection = `
+      <div class="section">
+        <div class="section-title">جدول الاستحقاقات الشهرية</div>
+        <table class="list-table">
+          <thead><tr><th>رقم الصفقة</th><th>دورة الصرف</th><th>تاريخ الصرف</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+          <tbody>${payoutRows || "<tr><td colspan='5' style='text-align:center;color:#94a3b8'>لا توجد مستحقات</td></tr>"}</tbody>
+        </table>
+      </div>`;
+
+    const settlementSection = `
+      <div class="section">
+        <div class="section-title">ملخص التسوية الربعية</div>
+        <table class="data-table">
+          <tr><td class="lbl">إجمالي العمولة الفعلية</td><td class="val accent">${printFmt(d?.totalCommissionsEarnedFinal || 0)}</td>
+              <td class="lbl">إجمالي المدفوعات الشهرية</td><td class="val">${printFmt(d?.totalCommissionsPaidMonthly || 0)}</td></tr>
+          <tr><td class="lbl">فروقات التسوية</td>
+              <td class="val ${(d?.settlementDifference || 0) >= 0 ? 'accent' : 'danger'}">${printFmt(d?.settlementDifference || 0)}</td>
+              <td class="lbl">حالة التسوية</td>
+              <td class="val">${d?.settlement ? 'معتمد' : 'لم يتم التسوية بعد'}</td></tr>
+        </table>
+      </div>`;
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">تقرير العمولات</div>
+        <div class="title-main">كشف عمولات موظف</div>
+        <div class="title-sub">${empName} — ${this.formatQ(quarter)}</div>
+      </div>
+      <div class="body">
+        ${statsSection}
+        ${salesSection}
+        ${payoutsSection}
+        ${settlementSection}
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `عمولات ${empName} — ${quarter}`);
   }
 }

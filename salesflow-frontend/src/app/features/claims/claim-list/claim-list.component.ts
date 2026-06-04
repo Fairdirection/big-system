@@ -8,7 +8,8 @@ import { Claim } from '@core/models/claim.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays } from '@ng-icons/heroicons/outline';
+import { heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays, heroPrinter } from '@ng-icons/heroicons/outline';
+import { openPrintWindow, printBanner, printFooter, printFmt, statusPill } from '@core/utils/print.utils';
 import { RouterLink } from '@angular/router';
 import { formatQuarter } from '@core/utils/quarter.utils';
 import { ListToolbarComponent } from '@shared/components/list-toolbar/list-toolbar.component';
@@ -20,7 +21,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   standalone: true,
   imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, ListToolbarComponent, PaginationComponent, TranslateModule],
   providers: [
-    provideIcons({ heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays })
+    provideIcons({ heroDocumentText, heroCheckBadge, heroExclamationCircle, heroClock, heroArrowPath, heroArrowLeft, heroCalendarDays, heroPrinter })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -37,10 +38,16 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             </span>
           </p>
         </div>
-        <button (click)="onSyncClaims()" class="btn btn-secondary flex items-center gap-2">
-          <ng-icon name="heroArrowPath"></ng-icon>
-          <span>{{ 'claim.list.sync_btn' | translate }}</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <button (click)="printClaims()" class="btn btn-secondary flex items-center gap-2">
+            <ng-icon name="heroPrinter"></ng-icon>
+            <span>طباعة</span>
+          </button>
+          <button (click)="onSyncClaims()" class="btn btn-secondary flex items-center gap-2">
+            <ng-icon name="heroArrowPath"></ng-icon>
+            <span>{{ 'claim.list.sync_btn' | translate }}</span>
+          </button>
+        </div>
       </header>
 
       <!-- Unified Toolbar -->
@@ -287,5 +294,38 @@ export class ClaimListComponent implements OnInit {
 
   formatQ(q: string): string {
     return formatQuarter(q);
+  }
+
+  printClaims() {
+    const list = this.displayedClaims();
+    const quarter = this.themeService.currentQuarter();
+    const rows = list.map((c: any) => `<tr>
+      <td>${c.claimNumber || "-"}</td>
+      <td>${c.saleNumber || "-"}</td>
+      <td>${c.projectName || "-"} • ${c.unitNumber || ""}</td>
+      <td>${c.clientName || "-"}</td>
+      <td class="val accent">${printFmt(c.commissionDue || 0)}</td>
+      <td>${c.collectionDate ? new Date(c.collectionDate).toLocaleDateString("ar-EG") : "-"}</td>
+      <td>${statusPill(c.status)}</td>
+    </tr>`).join("");
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">سجل المطالبات</div>
+        <div class="title-main">قائمة المطالبات</div>
+        <div class="title-sub">${list.length} مطالبة — ${formatQuarter(quarter)}</div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <table class="list-table">
+            <thead><tr><th>رقم المطالبة</th><th>رقم البيعة</th><th>المشروع / الوحدة</th><th>العميل</th><th>العمولة</th><th>تاريخ التحصيل</th><th>الحالة</th></tr></thead>
+            <tbody>${rows || "<tr><td colspan='7' style='text-align:center;color:#94a3b8'>لا توجد مطالبات</td></tr>"}</tbody>
+          </table>
+        </div>
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `المطالبات — ${quarter}`);
   }
 }

@@ -165,14 +165,15 @@ import {
               </div>
 
               <!-- Financial Highlights -->
-              <div class="mt-8 p-5 bg-sf-primary/5 border border-sf-primary/20 rounded-2xl flex justify-between items-center">
-                <div>
-                  <span class="text-xs font-bold text-sf-primary uppercase tracking-widest block mb-1">قيمة العمولة المستحقة للتحصيل</span>
-                  <span class="text-3xl font-display font-black text-sf-primary">{{ c.commissionDue | currencyEgp }}</span>
+              <div class="mt-8 p-5 bg-sf-primary/5 border border-sf-primary/20 rounded-2xl">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold text-sf-primary uppercase tracking-widest">قيمة العمولة المستحقة للتحصيل</span>
+                  <div class="w-10 h-10 rounded-full bg-sf-primary/10 flex items-center justify-center border border-sf-primary/20 text-sf-primary text-lg shrink-0">
+                    <ng-icon name="heroBanknotes"></ng-icon>
+                  </div>
                 </div>
-                <div class="w-12 h-12 rounded-full bg-sf-primary/10 flex items-center justify-center border border-sf-primary/20 text-sf-primary text-xl">
-                  <ng-icon name="heroBanknotes"></ng-icon>
-                </div>
+                <span class="font-display font-black text-sf-primary break-words leading-snug"
+                      style="font-size: clamp(1.25rem, 4vw, 1.875rem)">{{ c.commissionDue | currencyEgp }}</span>
               </div>
 
               <!-- Extra Notes -->
@@ -740,7 +741,7 @@ export class ClaimFormComponent implements OnInit {
           
           <div class="header">
             <div class="logo-area" style="display: flex; align-items: center; gap: 15px;">
-              <img src="/logo.png" alt="fair direction Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px;" />
+              <img src="/logo.png" alt="FairDirection Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 8px;" />
               <div>
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #3b82f6;">الاتجاه العادل</h1>
                 <p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">المنصة الذكية لإدارة مبيعات العقارات</p>
@@ -756,7 +757,7 @@ export class ClaimFormComponent implements OnInit {
           <div class="parties">
             <div class="party-box">
               <h4>الجهة المستحقة للعمولة</h4>
-              <p class="title">شركة الاتجاه العادل للتطوير العقاري (fair direction)</p>
+              <p class="title">شركة الاتجاه العادل للتطوير العقاري (FairDirection)</p>
               <p>الموقع الإلكتروني: fairdirection.com</p>
               <p>رقم مبيعة مرجعي: ${c.saleNumber}</p>
             </div>

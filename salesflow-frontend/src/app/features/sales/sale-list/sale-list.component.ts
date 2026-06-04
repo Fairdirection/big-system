@@ -7,9 +7,10 @@ import { Sale } from '@core/models/sale.model';
 import { BadgeComponent } from '@shared/components/badge/badge.component';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar } from '@ng-icons/heroicons/outline';
+import { heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar, heroPrinter } from '@ng-icons/heroicons/outline';
 import { RouterLink } from '@angular/router';
 import { formatQuarter } from '@core/utils/quarter.utils';
+import { openPrintWindow, printBanner, printFooter, printFmt, statusPill } from '@core/utils/print.utils';
 import { ListToolbarComponent, ToolbarStatusOption, ToolbarSortOption } from '@shared/components/list-toolbar/list-toolbar.component';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { TranslateModule } from '@ngx-translate/core';
@@ -19,7 +20,7 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   imports: [CommonModule, BadgeComponent, CurrencyEgpPipe, NgIconComponent, RouterLink, ListToolbarComponent, PaginationComponent, TranslateModule],
   providers: [
-    provideIcons({ heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar })
+    provideIcons({ heroPlus, heroChevronRight, heroEllipsisVertical, heroShoppingBag, heroCalendar, heroPrinter })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -30,10 +31,16 @@ import { TranslateModule } from '@ngx-translate/core';
           <h1 class="text-3xl font-display font-bold text-sf-text tracking-tight">{{ 'sale.list.title' | translate }}</h1>
           <p class="text-sf-muted font-medium mt-1">إدارة وتتبع جميع المبيعات المؤكدة والعمولات للربع الحالي.</p>
         </div>
-        <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 shadow-glow-sm">
-          <ng-icon name="heroPlus"></ng-icon>
-          <span>{{ 'sale.list.add' | translate }}</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <button (click)="printSales()" class="btn btn-secondary flex items-center gap-2">
+            <ng-icon name="heroPrinter"></ng-icon>
+            <span>طباعة</span>
+          </button>
+          <button [routerLink]="['new']" class="btn btn-primary flex items-center gap-2 shadow-glow-sm">
+            <ng-icon name="heroPlus"></ng-icon>
+            <span>{{ 'sale.list.add' | translate }}</span>
+          </button>
+        </div>
       </header>
 
       <!-- Quarter selector (global, separate from toolbar) -->
@@ -44,7 +51,7 @@ import { TranslateModule } from '@ngx-translate/core';
         <select [value]="currentQuarter()" (change)="onQuarterChange($event)"
                 class="bg-transparent text-sf-text text-sm font-bold outline-none border-none cursor-pointer flex-1">
           @for (q of availableQuarters(); track q) {
-            <option [value]="q" class="bg-sf-surface">{{ formatQ(q) }}</option>
+            <option [value]="q" [selected]="q === currentQuarter()" class="bg-sf-surface">{{ formatQ(q) }}</option>
           }
         </select>
       </div>
@@ -315,5 +322,38 @@ export class SaleListComponent {
   getClientId(client: any): string {
     if (!client) return '';
     return typeof client === 'object' ? (client._id || client.toString()) : client;
+  }
+
+  printSales() {
+    const list = this.filteredSales();
+    const quarter = this.currentQuarter();
+    const rows = list.map(s => `<tr>
+      <td>${s.saleNumber || "-"}</td>
+      <td>${s.projectName || "-"}</td>
+      <td>${s.unitNumber || "-"}</td>
+      <td>${s.clientName || "-"}</td>
+      <td>${s.contractDate ? new Date(s.contractDate).toLocaleDateString("ar-EG") : "-"}</td>
+      <td class="val accent">${printFmt(s.unitValue || 0)}</td>
+      <td>${statusPill(s.status)}</td>
+    </tr>`).join("");
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">سجل المبيعات</div>
+        <div class="title-main">قائمة المبيعات</div>
+        <div class="title-sub">${list.length} صفقة — ${formatQuarter(quarter)}</div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <table class="list-table">
+            <thead><tr><th>رقم البيعة</th><th>المشروع</th><th>الوحدة</th><th>العميل</th><th>تاريخ العقد</th><th>القيمة</th><th>الحالة</th></tr></thead>
+            <tbody>${rows || "<tr><td colspan='7' style='text-align:center;color:#94a3b8'>لا توجد مبيعات</td></tr>"}</tbody>
+          </table>
+        </div>
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `سجل المبيعات — ${quarter}`);
   }
 }

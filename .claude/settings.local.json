@@ -38,7 +38,12 @@
       "Bash(node -e \"const { EJSON } = require\\('bson'\\); console.log\\('bson ok'\\)\")",
       "Bash(node -e \"require\\('./src/services/backup.service'\\); console.log\\('OK'\\)\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const p=JSON.parse\\(d\\);console.log\\('scripts:',JSON.stringify\\(p.scripts,null,2\\)\\);console.log\\('nodemonConfig:',JSON.stringify\\(p.nodemonConfig,null,2\\)\\)}\\)\")",
-      "Bash(dir uploads *)"
+      "Bash(dir uploads *)",
+      "Bash(xargs grep -l \"summary\")",
+      "Bash(npm test *)",
+      "Bash(Get-Item \"C:\\\\Users\\\\FT 2025\\\\Downloads\\\\Claude_Code_Beginner_Course_Documentation \\(3\\).pdf\")",
+      "Bash(Select-Object Name, Length)",
+      "PowerShell(python -c \"import fitz; doc = fitz.open\\('C:/Users/FT 2025/Downloads/Claude_Code_Beginner_Course_Documentation \\(3\\).pdf'\\); print\\(f'Pages: {len\\(doc\\)}'\\); [print\\(doc[i].get_text\\(\\)\\) for i in range\\(min\\(5, len\\(doc\\)\\)\\)]\" 2>&1 | Select-Object -First 100)"
     ]
   }
 }

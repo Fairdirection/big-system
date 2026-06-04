@@ -1248,6 +1248,48 @@ const deleteHistoryRecord = async (historyId) => {
   return { success: true };
 };
 
+const getAllLeafEmployeeIds = async (quarterId) => {
+  const employees = await Employee.find(
+    {
+      department: 'Sales',
+      isActive: true,
+      seniorityLevel: { $nin: ['TeamLeader', 'SalesManager'] }
+    },
+    { _id: 1 }
+  ).lean();
+  return employees.map(e => e._id);
+};
+
+const getTargetProgressBatch = async (employeeIds, quarterId) => {
+  const { start: startDate, end: endDate } = getQuarterBounds(quarterId);
+  const results = await Sale.aggregate([
+    {
+      $match: {
+        'sellers.employeeId': { $in: employeeIds },
+        status: { $in: ['confirmed', 'claimed', 'collected'] },
+        isActive: true,
+        contractDate: { $gte: startDate, $lte: endDate }
+      }
+    },
+    { $unwind: '$sellers' },
+    {
+      $match: { 'sellers.employeeId': { $in: employeeIds } }
+    },
+    {
+      $group: {
+        _id: '$sellers.employeeId',
+        totalRevenue: { $sum: '$unitValue' },
+        dealCount: { $sum: 1 }
+      }
+    }
+  ]);
+  const map = {};
+  for (const r of results) {
+    map[r._id.toString()] = { totalRevenue: r.totalRevenue, dealCount: r.dealCount };
+  }
+  return map;
+};
+
 module.exports = {
   createEmployee,
   getEmployees,
@@ -1261,5 +1303,7 @@ module.exports = {
   getSalesDeptEmployees,
   updateHistoryRecord,
   deleteHistoryRecord,
-  addHistoryRecord
+  addHistoryRecord,
+  getAllLeafEmployeeIds,
+  getTargetProgressBatch
 };

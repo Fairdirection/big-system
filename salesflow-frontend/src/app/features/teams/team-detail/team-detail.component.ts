@@ -6,21 +6,22 @@ import { ThemeService } from '@core/services/theme.service';
 import { ApiResponse } from '@core/models/api-response.model';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
-import { 
-  heroArrowRight, heroUserGroup, heroTrophy, heroChartBar, 
-  heroUsers, heroBuildingOffice, heroCalendar, heroChevronDown, 
-  heroChevronUp, heroPencilSquare, heroIdentification
+import {
+  heroArrowRight, heroUserGroup, heroTrophy, heroChartBar,
+  heroUsers, heroBuildingOffice, heroCalendar, heroChevronDown,
+  heroChevronUp, heroPencilSquare, heroIdentification, heroPrinter
 } from '@ng-icons/heroicons/outline';
+import { openPrintWindow, printBanner, printFooter, printFmt } from '@core/utils/print.utils';
 
 @Component({
   selector: 'app-team-detail',
   standalone: true,
   imports: [CommonModule, NgIconComponent, RouterLink, CurrencyEgpPipe],
   providers: [
-    provideIcons({ 
-      heroArrowRight, heroUserGroup, heroTrophy, heroChartBar, 
-      heroUsers, heroBuildingOffice, heroCalendar, heroChevronDown, 
-      heroChevronUp, heroPencilSquare, heroIdentification
+    provideIcons({
+      heroArrowRight, heroUserGroup, heroTrophy, heroChartBar,
+      heroUsers, heroBuildingOffice, heroCalendar, heroChevronDown,
+      heroChevronUp, heroPencilSquare, heroIdentification, heroPrinter
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +52,10 @@ import {
         </div>
 
         <div class="flex items-center gap-3">
+          <button (click)="printTeam()" class="btn btn-secondary h-12 px-6">
+            <ng-icon name="heroPrinter"></ng-icon>
+            <span>طباعة</span>
+          </button>
           <button [routerLink]="['edit']" class="btn btn-secondary h-12 px-6">
             <ng-icon name="heroPencilSquare"></ng-icon>
             <span>تعديل الفريق</span>
@@ -75,37 +80,39 @@ import {
 
       <!-- Team Overview Stats -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+        <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 w-24 h-24 bg-sf-primary/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-          <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">إجمالي مبيعات الفريق</p>
-          <div class="flex items-end justify-between relative z-10">
-            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAchieved | currencyEgp }}</h4>
-            <div class="w-10 h-10 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary">
+          <div class="flex items-center justify-between mb-3 relative z-10">
+            <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">إجمالي مبيعات الفريق</p>
+            <div class="w-9 h-9 rounded-xl bg-sf-primary/10 flex items-center justify-center text-sf-primary shrink-0">
               <ng-icon name="heroTrophy"></ng-icon>
             </div>
           </div>
+          <h4 class="font-display font-black text-sf-text relative z-10 leading-snug break-words"
+              style="font-size: clamp(1rem, 3vw, 1.5rem)">{{ perf.totalAchieved | currencyEgp }}</h4>
         </div>
 
-        <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+        <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 w-24 h-24 bg-sf-accent/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-          <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">المستهدف المعدل</p>
-          <div class="flex items-end justify-between relative z-10">
-            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.totalAdjustedTarget | currencyEgp }}</h4>
-            <div class="w-10 h-10 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent">
+          <div class="flex items-center justify-between mb-3 relative z-10">
+            <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">المستهدف المعدل</p>
+            <div class="w-9 h-9 rounded-xl bg-sf-accent/10 flex items-center justify-center text-sf-accent shrink-0">
               <ng-icon name="heroChartBar"></ng-icon>
             </div>
           </div>
+          <h4 class="font-display font-black text-sf-text relative z-10 leading-snug break-words"
+              style="font-size: clamp(1rem, 3vw, 1.5rem)">{{ perf.totalAdjustedTarget | currencyEgp }}</h4>
         </div>
 
-        <div class="glass-card p-6 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
+        <div class="glass-card p-5 rounded-3xl border border-sf-border shadow-xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 w-24 h-24 bg-sf-success/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150"></div>
-          <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] mb-4">نسبة إنجاز الفريق</p>
-          <div class="flex items-end justify-between relative z-10">
-            <h4 class="text-3xl font-display font-black text-sf-text">{{ perf.overallAchievementPercentage | number:'1.0-1' }}%</h4>
-            <div class="w-10 h-10 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success">
+          <div class="flex items-center justify-between mb-3 relative z-10">
+            <p class="text-[10px] font-black text-sf-muted uppercase tracking-[0.2em] leading-tight pr-2">نسبة إنجاز الفريق</p>
+            <div class="w-9 h-9 rounded-xl bg-sf-success/10 flex items-center justify-center text-sf-success shrink-0">
               <ng-icon name="heroUserGroup"></ng-icon>
             </div>
           </div>
+          <h4 class="text-3xl font-display font-black text-sf-text relative z-10 leading-snug">{{ perf.overallAchievementPercentage | number:'1.0-1' }}%</h4>
         </div>
       </div>
 
@@ -302,5 +309,47 @@ export class TeamDetailComponent implements OnInit {
     } else {
       this.expandedMember.set(memberId);
     }
+  }
+
+  printTeam() {
+    const perf = this.performance();
+    if (!perf) return;
+    const quarter = perf.quarterId || this.themeService.currentQuarter();
+
+    const memberRows = (perf.membersProgress || []).map((m: any) => `<tr>
+      <td>${m.name || "-"}</td>
+      <td>${m.code || "-"}</td>
+      <td class="val accent">${printFmt(m.adjustedTarget || 0)}</td>
+      <td class="val accent">${printFmt(m.achieved || 0)}</td>
+      <td style="font-weight:900;color:${(m.achievementPercentage || 0) >= 100 ? '#16a34a' : '#6337ff'}">${(m.achievementPercentage || 0).toFixed(1)}%</td>
+    </tr>`).join("");
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">تقرير أداء الفريق</div>
+        <div class="title-main">${perf.teamName}</div>
+        <div class="title-sub">${perf.membersProgress?.length || 0} أعضاء — ${quarter}</div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <div class="section-title">ملخص الفريق</div>
+          <div class="stats-row cols-3">
+            <div class="stat-cell"><div class="stat-lbl">إجمالي المبيعات</div><div class="stat-val">${printFmt(perf.totalAchieved || 0)}</div></div>
+            <div class="stat-cell"><div class="stat-lbl">المستهدف المعدّل</div><div class="stat-val">${printFmt(perf.totalAdjustedTarget || 0)}</div></div>
+            <div class="stat-cell"><div class="stat-lbl">نسبة الإنجاز</div><div class="stat-val">${(perf.overallAchievementPercentage || 0).toFixed(1)}%</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">أداء الأعضاء</div>
+          <table class="list-table">
+            <thead><tr><th>الموظف</th><th>الكود</th><th>الهدف المعدّل</th><th>المحقق</th><th>نسبة الإنجاز</th></tr></thead>
+            <tbody>${memberRows || "<tr><td colspan='5' style='text-align:center;color:#94a3b8'>لا يوجد أعضاء</td></tr>"}</tbody>
+          </table>
+        </div>
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `أداء الفريق — ${perf.teamName}`);
   }
 }

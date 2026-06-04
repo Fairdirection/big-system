@@ -1,99 +1,83 @@
-# CLAUDE.md
+# CLAUDE.md — FairDirection SalesFlow
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## CRITICAL GUARDRAILS (read first, always)
+- **NEVER hard-delete** employees, clients, or any business record — use `isActive: false` soft-delete only
+- **NEVER bypass TypeScript** — run `npx tsc --noEmit` after every frontend change; fix all errors before proceeding
+- **NEVER commit** credentials, `.env` files, or JWT secrets
+- **NEVER modify** `commission.service.js` logic without confirming the change against `commission_rules.txt`
+- **NEVER drop or rename** MongoDB collections — migrations only; data loss is unrecoverable
+- Write **no comments** unless the WHY is non-obvious; no docstrings; no task-reference comments
+- If Claude makes the same mistake twice → add a rule here so it's fixed for all future sessions
 
-## Project Overview
+## Project
+FairDirection SaaS ("SalesFlow") — real estate commission management platform.
+Tracks: employees, teams, clients, sales → quarterly commission calculation with role-based tiering.
 
-FairDirection SaaS ("SalesFlow") is a real estate commission management platform. It tracks employees, teams, clients, sales, and calculates complex quarterly commissions with role-based tiering.
+Stack: Node.js/Express + MongoDB (backend) · Angular 20 + Tailwind CSS (frontend) · monorepo root
 
-## Development Commands
-
-### Root (runs both services concurrently)
+## Dev Commands
 ```
-npm run dev          # Start backend + frontend together
-npm run install:all  # Install all dependencies in both subdirectories
+npm run dev           # root: starts backend + frontend concurrently
+npm run install:all   # install all deps
 ```
+Backend (`salesflow-backend/`): `npm run dev` (nodemon) | `npm start` | `npm run seed`
+Frontend (`salesflow-frontend/`): `npm run dev` (port 4200) | `npm run build` | `npm run typecheck`
 
-### Backend only (`salesflow-backend/`)
-```
-npm run dev    # nodemon watch mode
-npm run start  # production
-npm run seed   # seed database
-```
-
-### Frontend only (`salesflow-frontend/`)
-```
-npm run dev        # ng serve with proxy (http://localhost:4200)
-npm run build      # production build
-npm run typecheck  # tsc --noEmit
-npm run format     # prettier
-npm test           # Karma unit tests
-```
-
-### Environment setup
-Copy `salesflow-backend/.env.example` to `salesflow-backend/.env` and set:
-- `MONGODB_URI` — MongoDB connection string
-- `JWT_SECRET` — token signing key
-- `FRONTEND_URL` — CORS origin (default: `http://localhost:4200`)
+Env: copy `.env.example` → `.env`, set `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL=http://localhost:4200`
 
 ## Architecture
+Monorepo. Backend MVC+service layer: `routes/` → `controllers/` → `services/` → `models/`
+All API routes: `/api/v1`. Auth: JWT in httpOnly cookie **and** `Authorization: Bearer` header.
+Validators: Joi schemas via `middleware/validate.middleware.js`
 
-This is a monorepo with a separate Express backend and Angular frontend. The root `package.json` only orchestrates them via `concurrently`.
+**Key business logic:**
+- `services/commission.service.js` (27KB) — slab-based commission by role
+- `utils/quarter.utils.js` — working-day quarter calculations
+- `services/target.service.js` — adjusted target recalc on team transfers
 
-### Backend (`salesflow-backend/src/`)
+**Data conventions:**
+- Soft delete: `isActive` flag
+- Denormalized names in Sale: `employeeName`, `clientName` for query perf
+- Quarter IDs: `"Q1-2026"`, `"Q2-2026"` etc.
+- Sale shares: 1-4 sellers, shares must sum to 100%
 
-**MVC + Service layer pattern:**
-- `routes/` → `controllers/` → `services/` → `models/`
-- `validators/` — Joi schemas validated by `middleware/validate.middleware.js`
-- `utils/` — quarter calculations, pagination, response formatting
-- `config/` — MongoDB connection (`db.js`) and JWT helpers (`jwt.js`)
-
-All API routes are mounted under `/api/v1`. Auth uses JWTs stored in both httpOnly cookies and `Authorization: Bearer` headers — the middleware checks both.
-
-**Key business logic files:**
-- `services/commission.service.js` (27KB) — role-based, achievement-slab commission calculation
-- `utils/quarter.utils.js` — working-day calculations powering quarterly targets
-- `services/target.service.js` — adjusted target recalculation on team transfers
-
-**Data patterns:**
-- Soft deletes via `isActive` flag (never hard-delete employees or clients)
-- Denormalized `employeeName`/`clientName` in Sale documents for query performance
-- `quarterId` format: `"Q1-2026"`, `"Q2-2026"`, etc.
-
-**Core entities:** User (admin) → Employee → Team (via EmployeeTeamHistory) → Sale (1-4 sellers, shares sum to 100%) → Claim → CommissionPayout → QuarterlySettlement / QuarterlyTarget
+**Core entity chain:** User (admin) → Employee → Team (via EmployeeTeamHistory) → Sale → Claim → CommissionPayout → QuarterlySettlement / QuarterlyTarget
 
 **Sale status flow:** `draft` → `confirmed` → `claimed` → `collected`
 
-### Frontend (`salesflow-frontend/src/app/`)
+## Frontend Conventions
+Angular 20 standalone components, `ChangeDetectionStrategy.OnPush`, signals + RxJS.
+Feature modules lazy-loaded: `employees, teams, sales, clients, claims, commissions, dashboard, targets, audits, settings, auth`
+State: Angular signals in services (no NgRx). `computed()` for derived UI state.
+Interceptors: `authInterceptor` (attaches Bearer) · `errorInterceptor` (clears state on 401)
+Dev proxy: `proxy.conf.json` → `localhost:3000` for `/api/v1`
+i18n: `@ngx-translate` Arabic (`ar-EG`) / English, persisted in localStorage
+Path aliases: `@core/*` · `@shared/*` · `@features/*` · `@env/*`
 
-**Angular 20 standalone components, feature-based folder structure:**
-- `core/` — guards (`auth`, `guest`), interceptors (`auth`, `error`), shared services, models
-- `features/` — 12 lazy-loaded feature modules (employees, teams, sales, clients, claims, commissions, dashboard, targets, audits, settings, auth)
-- `layout/` — main layout + auth layout shell components
-- `shared/` — reusable components (navbar, sidebar, pagination, modals, badges, avatar-upload) and the `currency-egp` pipe
+## UI Design System (Tailwind)
+CSS tokens: `--sf-bg`, `--sf-primary`, `--sf-muted`, `--sf-text`, `--sf-border`
+Glassmorphism surfaces · neon glow: purple, cyan, pink, green
+Status badges: `draft` / `confirmed` / `claimed` / `collected`
+Fonts: Cairo (display) · DM Sans (body) · JetBrains Mono (code)
+Brand name: **FairDirection** (never "fair direction", never "فير دايراكشن")
 
-**State management:** Angular signals + services + RxJS. Services cache API responses in signals; `computed()` signals derive UI state (e.g., `isAuthenticated`). No NgRx.
+**Card overflow rule:** For KPI/stat cards with large numbers — label+icon in top flex row (`shrink-0` on icon), number full-width below with `font-size: clamp(0.95rem, 2.5vw, 1.5rem)` + `break-words`
 
-**HTTP:** Two functional interceptors registered in `app.config.ts`:
-- `authInterceptor` — attaches `Bearer` token from localStorage
-- `errorInterceptor` — clears auth state and redirects on 401
-
-Dev proxy (`proxy.conf.json`) forwards all `/api/v1` requests to `localhost:3000`.
-
-**i18n:** `@ngx-translate` with Arabic (`ar-EG`) / English toggle, persisted in `localStorage`.
-
-**UI:** Tailwind CSS with a custom design system defined in `tailwind.config.js`:
-- CSS custom property-based color tokens (`--sf-bg`, `--sf-primary`, etc.)
-- Glassmorphism surfaces, neon glow utilities (purple, cyan, pink, green)
-- Status badge colors: `draft` / `confirmed` / `claimed` / `collected`
-- Fonts: Cairo (display), DM Sans (body), JetBrains Mono (code)
-- Path aliases: `@core/*`, `@shared/*`, `@features/*`, `@env/*`
+## Print System
+Shared print util: `@core/utils/print.utils.ts` — exports `openPrintWindow`, `printBanner`, `printFooter`, `printFmt`, `statusPill`
+All feature components have a print button with `heroPrinter` icon (ng-icons)
+Print design: official document style, purple banner, bordered tables, Cairo font
 
 ## Commission Business Rules
-
-Documented in `commission_rules.txt` and `salesflow-backend/README.md`. Key points:
+See `commission_rules.txt` and `salesflow-backend/README.md`
 - Roles: Fresh → BA → BC → Senior → SV → TeamLeader
-- Commission is achievement-slab-based within each role
-- Personal-source vs. company-source sales use different rate tables
+- Achievement-slab-based commission per role
+- Personal-source vs company-source: different rate tables
 - Taxes: VAT 14%, withholding tax 5%
-- Quarterly targets are adjusted for actual working days in a quarter, recalculated when employees transfer teams
+- Quarterly targets adjusted for actual working days; recalculated on team transfer
+
+## Response Style
+- Terse. No trailing summaries — user can read the diff
+- No emojis unless user requests
+- Reference file paths as `path/to/file.ts:lineNumber`
+- When making changes: state what changed in one sentence; state what's next if anything remains

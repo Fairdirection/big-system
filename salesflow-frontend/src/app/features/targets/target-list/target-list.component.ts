@@ -8,31 +8,20 @@ import { ApiResponse } from '@core/models/api-response.model';
 import { CurrencyEgpPipe } from '@shared/pipes/currency-egp.pipe';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { 
-  heroChartBar, 
-  heroArrowTrendingUp, 
-  heroUsers, 
-  heroFire, 
-  heroInformationCircle, 
-  heroPencilSquare, 
-  heroCheck, 
-  heroXMark 
+import {
+  heroChartBar, heroArrowTrendingUp, heroUsers, heroFire,
+  heroInformationCircle, heroPencilSquare, heroCheck, heroXMark, heroPrinter
 } from '@ng-icons/heroicons/outline';
+import { openPrintWindow, printBanner, printFooter, printFmt } from '@core/utils/print.utils';
 
 @Component({
   selector: 'app-target-list',
   standalone: true,
   imports: [CommonModule, CurrencyEgpPipe, NgIconComponent, TranslateModule],
   providers: [
-    provideIcons({ 
-      heroChartBar, 
-      heroArrowTrendingUp, 
-      heroUsers, 
-      heroFire, 
-      heroInformationCircle, 
-      heroPencilSquare, 
-      heroCheck, 
-      heroXMark 
+    provideIcons({
+      heroChartBar, heroArrowTrendingUp, heroUsers, heroFire,
+      heroInformationCircle, heroPencilSquare, heroCheck, heroXMark, heroPrinter
     })
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,10 +41,14 @@ import {
         </div>
         
         <div class="flex items-center gap-3">
-          <select [value]="currentQuarter()" (change)="onQuarterChange($event)" 
+          <button (click)="printTargets()" class="btn btn-secondary flex items-center gap-2">
+            <ng-icon name="heroPrinter"></ng-icon>
+            <span>طباعة</span>
+          </button>
+          <select [value]="currentQuarter()" (change)="onQuarterChange($event)"
                   class="px-4 py-2.5 bg-sf-surface border border-sf-border rounded-xl text-sm font-bold text-sf-text outline-none focus:ring-2 focus:ring-sf-primary/50 cursor-pointer">
             @for (q of availableQuarters(); track q) {
-              <option [value]="q">{{ formatQ(q) }}</option>
+              <option [value]="q" [selected]="q === currentQuarter()">{{ formatQ(q) }}</option>
             }
           </select>
         </div>
@@ -343,5 +336,46 @@ export class TargetListComponent {
 
   formatQ(q: string) {
     return formatQuarter(q);
+  }
+
+  printTargets() {
+    const data = this.summary();
+    if (!data) return;
+    const quarter = this.currentQuarter();
+    const rows = (data.employees || []).map((emp: any) => `<tr>
+      <td>${emp.employeeName || "-"}</td>
+      <td>${emp.teamName || "بدون فريق"}</td>
+      <td class="val accent">${printFmt(emp.adjustedTarget || 0)}</td>
+      <td class="val accent">${printFmt(emp.achievedSales || 0)}</td>
+      <td style="font-weight:900;color:${(emp.achievementPercentage || 0) >= 100 ? '#16a34a' : '#6337ff'}">${emp.achievementPercentage ?? 0}%</td>
+    </tr>`).join("");
+
+    const body = `
+      ${printBanner(quarter)}
+      <div class="title-block">
+        <div class="title-label">تقرير المستهدفات</div>
+        <div class="title-main">مستهدفات المبيعات</div>
+        <div class="title-sub">${data.employees?.length || 0} موظف — ${formatQuarter(quarter)}</div>
+      </div>
+      <div class="body">
+        <div class="section">
+          <div class="section-title">ملخص القسم</div>
+          <div class="stats-row cols-3">
+            <div class="stat-cell"><div class="stat-lbl">إجمالي المستهدف</div><div class="stat-val">${printFmt(data.totals?.totalAdjustedTarget || 0)}</div></div>
+            <div class="stat-cell"><div class="stat-lbl">نسبة الإنجاز</div><div class="stat-val">${data.totals?.overallAchievementPercentage ?? 0}%</div></div>
+            <div class="stat-cell"><div class="stat-lbl">عدد الموظفين</div><div class="stat-val">${data.employees?.length || 0}</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">تفاصيل الموظفين</div>
+          <table class="list-table">
+            <thead><tr><th>الموظف</th><th>الفريق</th><th>الهدف المعدّل</th><th>المحقق</th><th>نسبة الإنجاز</th></tr></thead>
+            <tbody>${rows || "<tr><td colspan='5' style='text-align:center;color:#94a3b8'>لا توجد بيانات</td></tr>"}</tbody>
+          </table>
+        </div>
+        ${printFooter()}
+      </div>`;
+
+    openPrintWindow(body, `المستهدفات — ${quarter}`);
   }
 }
