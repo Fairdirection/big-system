@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "Root management for Fairdirection SaaS",
   "scripts": {
+    "start": "node server.js",
+    "build": "npm run build --prefix salesflow-frontend",
+    "postinstall": "npm run install:all",
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev --prefix salesflow-backend\" \"npm run dev --prefix salesflow-frontend\"",
     "install:all": "npm install --prefix salesflow-backend && npm install --prefix salesflow-frontend",
     "backend": "npm run dev --prefix salesflow-backend",
     "frontend": "npm run dev --prefix salesflow-frontend"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

@@ -1,4 +1,6 @@
-require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
@@ -40,6 +42,21 @@ app.use(morgan("dev"));
 
 // Routes
 app.use("/api/v1", routes);
+
+// Serve static frontend files in production/integrated mode
+const frontendPath = path.join(__dirname, "../salesflow-frontend/dist/salesflow-frontend/browser");
+
+if (fs.existsSync(path.join(frontendPath, "index.html"))) {
+  console.log("Serving frontend static files from:", frontendPath);
+  app.use(express.static(frontendPath));
+  
+  // Wildcard route to handle Angular's client-side routing
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+} else {
+  console.log("Frontend build index.html not found. Backend running in API-only mode.");
+}
 
 // Error handling
 app.use(notFoundHandler);

@@ -1,0 +1,1 @@
+import"./chunk-4CLCTAJ7.js";var o=[{path:"",loadComponent:()=>import("./chunk-2QPF7RNL.js").then(t=>t.ClaimListComponent),title:"Claims"},{path:":id",loadComponent:()=>import("./chunk-Q6NRHFQM.js").then(t=>t.ClaimFormComponent),title:"Manage Claim"}];export{o as CLAIM_ROUTES};

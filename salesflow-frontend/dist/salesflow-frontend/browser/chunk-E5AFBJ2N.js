@@ -1,0 +1,1 @@
+import{N as o,ea as i}from"./chunk-MJGMQPWO.js";var r=class n{state=i(null);confirm(t){return new Promise(e=>{this.state.set({options:t,resolve:e})})}answer(t){let e=this.state();e&&(e.resolve(t),this.state.set(null))}static \u0275fac=function(e){return new(e||n)};static \u0275prov=o({token:n,factory:n.\u0275fac,providedIn:"root"})};export{r as a};
