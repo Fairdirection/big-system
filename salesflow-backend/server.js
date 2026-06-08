@@ -27,12 +27,8 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:4200")
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.error(`CORS Blocked Origin: ${origin}`);
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
+      // Accept all origins
+      callback(null, true);
     },
     credentials: true,
   }),
